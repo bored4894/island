@@ -124,6 +124,7 @@ body.mob #clock{top:70px;right:12px}
 <h1>3D 무인도 생존 게임</h1>
 <div class="sub">월드를 선택하거나 새로 만드세요</div>
 <div class="sub" id="gver" style="margin-top:-8px;color:#4CAF50"></div>
+<div style="margin:-2px 0 10px"><button id="updBtn" onclick="checkUpdate()" style="padding:6px 12px;background:#1565c0;border:1px solid #64b5f6;color:#fff;border-radius:8px;font-size:13px;cursor:pointer">🔄 업데이트 확인</button> <span id="updSt" style="font-size:12px;color:#bbb;margin-left:6px"></span></div>
 <h3>내 월드</h3>
 <div id="wlist"></div>
 <h3>새 월드 만들기</h3>
@@ -2096,10 +2097,12 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=6,GAME_VERSION='v10.1.0';
+const SAVE_VER=6,GAME_VERSION='v10.2.0';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v10",t:"대규모 · 앱 패키지·추락한 비행기",subs:[
+    {v:"10.2.0",d:'',items:[
+      "소규모: 메인 메뉴에 업데이트 확인 버튼 추가 — 인터넷이 연결되어 있으면 새 버전을 받아 적용 (월드 저장은 유지)"]},
     {v:"10.1.0",d:'',items:[
       "소규모: 광석 균열 개선 — 맞아도 흔들리지 않음, 밑면을 뺀 모든 면에 크고 갈라진 금이 가며 때릴 때마다 크게 퍼짐"]},
     {v:"10.0.0",d:'',items:[
@@ -2327,6 +2330,28 @@ const ROADMAP=[
 ];
 function buildRoadmap(){
   $('rmList').innerHTML=ROADMAP.map((m,i)=>`<details${i===0?' open':''}><summary>${m.v} — ${m.t}</summary><div class="mn">${m.subs.map(sb=>`<h4>${sb.v}${sb.d?`<i>${sb.d}</i>`:''}${sb.v===GAME_VERSION?' <i style="color:#4CAF50">현재 버전</i>':''}</h4><ul>${sb.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div></details>`).join('');
+}
+/* 업데이트 확인: 웹 주소(PWA)로 실행 중일 때, 인터넷이 되면 새 버전을 받아 다시 시작 */
+async function checkUpdate(){
+  const st=$('updSt'),b=$('updBtn');
+  if(!navigator.onLine){st.textContent='인터넷에 연결되어 있지 않습니다';return}
+  if(location.protocol!=='https:'&&location.protocol!=='http:'){st.textContent='웹 주소로 실행할 때만 업데이트할 수 있습니다';return}
+  b.disabled=true;st.textContent='확인 중...';
+  try{
+    const r=await fetch('index.html?u='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('http');
+    const m=(await r.text()).match(/GAME_VERSION='(v[\d.]+)'/);
+    if(!m)throw new Error('ver');
+    if(m[1]===GAME_VERSION){st.textContent='최신 버전입니다 ('+GAME_VERSION+')';b.disabled=false}
+    else{
+      st.textContent=m[1]+' 받는 중...';
+      await fetch('index.html',{cache:'reload'}); // 서비스워커가 새 파일을 저장
+      try{const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}catch(e){}
+      st.textContent=m[1]+' 업데이트 완료! 다시 시작합니다';
+      setTimeout(()=>location.reload(),900);
+    }
+    try{for(const k of await caches.keys()){const c=await caches.open(k);for(const q of await c.keys())if(q.url.includes('?u='))await c.delete(q)}}catch(e){} // 확인용 임시 저장 정리
+  }catch(e){st.textContent='업데이트 확인 실패. 인터넷 상태를 확인하세요';b.disabled=false}
 }
 function openRoadmap(){$('roadmap').style.display='flex'}
 function closeRoadmap(){$('roadmap').style.display='none'}
