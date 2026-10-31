@@ -128,6 +128,7 @@ body.mob #clock{top:70px;right:12px}
 <div id="noti" class="abs msg"></div>
 <div id="bowg"><div class="bar"><div class="fill" id="bowf"></div></div><div class="txt" id="bowt"></div></div>
 <div id="det" class="abs msg"></div>
+<div id="radar" class="abs" style="top:130px;right:12px;display:none;font:700 13px/1.25 monospace;white-space:pre;color:#00e5ff;text-shadow:0 0 3px #000,0 0 3px #000"></div>
 <div id="chem" class="abs" style="top:100px;right:12px;display:none;font-weight:700;color:#8bc34a"></div>
 <div id="gunh" class="abs msg" style="top:auto;bottom:130px;border:2px solid #ffc107;color:#ffc107"></div>
 <div id="lensw"><canvas id="lens"></canvas></div>
@@ -149,7 +150,7 @@ body.mob #clock{top:70px;right:12px}
 <div id="blocker"><div id="ins">
 <h1>3D 무인도 생존 게임</h1>
 <p>어두운 밤, 빛과 온기를 찾으세요.</p>
-<p>이동 W A S D · 달리기 Shift · 앉기 Ctrl / C · 점프 Space</p>
+<p>이동 W A S D · 달리기 Shift · 앉기 C · 점프 Space · 제작 Ctrl+클릭(5개)</p>
 <p>가방 TAB · E: 마우스 해제/복귀 · 채굴 좌클릭 · 설치 우클릭 · 슬롯 1~9</p>
 <p style="color:#ffc107;font-size:13px">나무를 캐 막대·밧줄을 만들고, 땅의 돌을 도끼로 부싯돌로 가공하세요.<br>점토는 강가, 티타늄은 탐지→발굴→채굴.<br>동굴 입구에 닿으면 동굴 공간으로 이동합니다.</p>
 <p style="margin-top:10px;color:#4CAF50">클릭하여 시작</p>
@@ -230,12 +231,12 @@ Object.assign(ITEMS,{
   magnifier:{name:'돋보기',type:'tool',kind:'magnifier',tier:0,cd:300},
   musket:{name:'조총',type:'tool',kind:'gun',tier:0,cd:600},
   lucky_charm:{name:'행운의 부적',type:'passive',util:true},
-  chem_detector:{name:'화학물탐지기',type:'passive',util:true},
+  chem_detector:{name:'화학물탐지기'},
   sea_bucket:{name:'바닷물 양동이',type:'tool',kind:'bucket',tier:0,cd:500},
   water_bucket:{name:'물 양동이',type:'tool',kind:'bucket',tier:0,cd:500}
 });
 const MAG_ZOOM=[1.5,2,2.5,3,4]; // 돋보기 강화 단계별 배율 (inv 항목의 lv 0~4)
-ITEMS.detector.att=[{l:'레이더',ok:['metal_radar']}]; // 부착물창: 슬롯 이름 / 장착 가능 아이템
+ITEMS.detector.att=[{l:'레이더',ok:['metal_radar']},{l:'화학물탐지기',ok:['chem_detector']}]; // 부착물창: 슬롯 이름 / 장착 가능 아이템
 const TIERN=['','부싯돌','구리','철','티타늄','다이아'];
 const TN={pickaxe:'곡괭이',axe:'도끼',shovel:'삽',spear:'창',sword:'검'};
 const TCD={pickaxe:600,axe:500,shovel:400,spear:300,sword:400};
@@ -391,6 +392,7 @@ const inv=new Array(137).fill(null); // 134 머리장신구, 135 망토, 136 화
 const ARM0=126,QV0=130,ACC_S=134,CAPE_S=135,QUIV_S=136,ARM_PARTS=['helmet','chest','legs','boots'],ARM_LBL=['헬멧','갑옷','바지','신발'];
 let sel=0,tab='tools',invOpen=false,lastAtk=0,swing=0,swingDur=.2,swingAlt=0,swingS=false,curRig=null,curBow=null,bowAim=0;
 const nodes=[],placed=[];
+const HELD_POS={detector:[.3,-.15,-.68],musket:[.22,-.27,-.78]};let toolZ=-.6,curGun=null; // 손에 든 아이템 위치 (기본: 손 위로 띄움)
 const NC={n:-1,ti:[],sl:[],an:[],nm:[]};let lastResp=0; // 종류별 노드 목록 캐시 (노드 수가 바뀔 때만 다시 만듦)
 function nc(){if(NC.n!==nodes.length){NC.n=nodes.length;NC.ti=nodes.filter(n=>n.type==='titanium');NC.sl=nodes.filter(n=>n.slime);NC.an=nodes.filter(n=>n.animal);NC.nm=nodes.filter(n=>n.night)}return NC}
 const dm=v=>Math.round(v/2); // 길이 기준: 월드 2단위 = 1m (거리 표기는 모두 절반)
@@ -911,14 +913,14 @@ function tree(x,z){
 function rockMesh(type){
   const OC={coal:0x151515,copper:0xd2691e,iron:0xe0c9a6,gold:0xffd54f,diamond:0x4dd0e1,titanium:0xb9bec3};
   const g=new THREE.Group();
-  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,2),new THREE.MeshStandardMaterial({color:0x6b6b6b,roughness:1}));
+  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,4),new THREE.MeshStandardMaterial({color:0x6b6b6b,roughness:1}));
   big.position.y=.9;g.add(big);
   if(OC[type]){
     const mat=new THREE.MeshStandardMaterial({color:OC[type],roughness:type==='titanium'?.35:.5,emissive:type==='diamond'?0x0a4a55:0});
     for(let i=0;i<8;i++){
       const sz=.3+Math.random()*.2,m=new THREE.Mesh(new THREE.BoxGeometry(sz,sz,sz),mat),f=i%3;
-      let px=(Math.random()-.5)*2.4,py=.4+Math.random()*1.2,pz=(Math.random()-.5)*1.6;
-      if(f===0)py=1.8;else if(f===1)px=(Math.random()<.5?-1:1)*1.5;else pz=(Math.random()<.5?-1:1)*1;
+      let px=(Math.random()-.5)*2.4,py=.4+Math.random()*1.2,pz=(Math.random()-.5)*3.2;
+      if(f===0)py=1.8;else if(f===1)px=(Math.random()<.5?-1:1)*1.5;else pz=(Math.random()<.5?-1:1)*2;
       m.position.set(px,py,pz);m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m);
     }
   }
@@ -926,16 +928,16 @@ function rockMesh(type){
 }
 function sulfurAt(x,z){ // 유황: 노란 본체 + 회색 조약돌
   const g=new THREE.Group();
-  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,2),new THREE.MeshStandardMaterial({color:0xe8cf2a,roughness:.8}));big.position.y=.9;g.add(big);
+  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,4),new THREE.MeshStandardMaterial({color:0xe8cf2a,roughness:.8}));big.position.y=.9;g.add(big);
   const pm=new THREE.MeshStandardMaterial({color:0x8a8a8a,roughness:1});
   for(let i=0;i<9;i++){const sz=.25+Math.random()*.25,m=new THREE.Mesh(new THREE.BoxGeometry(sz,sz*.8,sz),pm);
-    m.position.set((Math.random()-.5)*3.2,.1+Math.random()*.1,(Math.random()<.5?-1:1)*(1.05+Math.random()*.4));m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m)}
-  g.position.set(x,height(x,z)-.2,z);g.rotation.y=Math.random()*Math.PI;AS(g);reg(g,'sulfur',6,x,z,1.4);
+    m.position.set((Math.random()-.5)*3.2,.1+Math.random()*.1,(Math.random()<.5?-1:1)*(2.05+Math.random()*.4));m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m)}
+  g.position.set(x,height(x,z)-.2,z);g.rotation.y=Math.random()*Math.PI;AS(g);reg(g,'sulfur',6,x,z,2);
 }
 function rock(x,z,type){
   const g=rockMesh(type);
   g.position.set(x,height(x,z)-.2,z);g.rotation.y=Math.random()*Math.PI;AS(g);
-  reg(g,type,6,x,z,1.4);
+  reg(g,type,6,x,z,2);
 }
 function caneMesh(){ // 키 약 1.8m, 초록 막대 4개가 조금씩 떨어져 모인 모양
   const g=new THREE.Group(),cols=[0x2e8b3a,0x3fa34d,0x4caf50,0x58b85a];
@@ -1070,10 +1072,10 @@ function updateLighting(){
     let hm=hid?buildHeld(hid):null;const isB=!!hid&&ITEMS[hid].kind==='bow';if(isB)hm=buildBowRig();if(hm)toolMesh.add(hm);
     toolMesh.userData.hid=hid;
     const kd0=hid&&ITEMS[hid].type==='tool'?ITEMS[hid].kind:null;
-    curRig=(hm&&RIG[kd0])||null;curBow=isB?hm.userData.bow:null;
-    handMesh.visible=!(curRig||curBow); // 양손 도구는 자루 위에 두 손을 따로 표시
+    curRig=(hm&&RIG[kd0])||null;curBow=isB?hm.userData.bow:null;curGun=(hm&&hm.userData.gun)||null;toolZ=(HELD_POS[hid]||[0,0,-.6])[2];
+    handMesh.visible=!(curRig||curBow||curGun); // 양손 도구는 자루 위에 두 손을 따로 표시
     if(curRig){for(const gy of curRig.hands){const h=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),new THREE.MeshBasicMaterial({color:0xffdbac}));h.position.set(0,gy,0);hm.add(h)}}
-    else if(!curBow){toolMesh.position.set(.3,-.2,-.6);toolMesh.rotation.set(0,0,0)}
+    else if(!curBow){const hp=HELD_POS[hid]||[.3,-.05,-.6];toolMesh.position.set(hp[0],hp[1],hp[2]);toolMesh.rotation.set(0,0,0)}
   }
   toolMesh.visible=toolMesh.children.length>0;torchMesh.visible=!!torch;
 }
@@ -1099,7 +1101,6 @@ function bindEvents(){
     camera.rotation.set(pitch,yaw,0);
   });
   addEventListener('keydown',e=>{
-    if(e.code!=='ControlLeft'&&ctrlDown)ctrlUsed=true;
     if(e.code==='Tab'){e.preventDefault();toggleInv();return}
     if(e.code==='KeyE'&&!mobile){toggleMouse();return}
     if(invOpen)return;
@@ -1111,7 +1112,6 @@ function bindEvents(){
       case'KeyC':if(!e.repeat)keys.crouch=keys.crouch?0:1;break;
       case'KeyG':if(!e.repeat)toggleGrid();break;
       case'KeyR':if(!e.repeat)reloadStart();break;
-      case'ControlLeft':ctrlDown=true;ctrlUsed=false;e.preventDefault();break;
     }
     const m=/^Digit([1-9])$/.exec(e.code);
     if(m)selectSlot(+m[1]-1);
@@ -1121,7 +1121,6 @@ function bindEvents(){
       case'KeyW':keys.f=0;break;case'KeyS':keys.b=0;break;
       case'KeyA':keys.l=0;break;case'KeyD':keys.r=0;break;
       case'ShiftLeft':keys.sprint=0;break;
-      case'ControlLeft':if(ctrlDown&&!ctrlUsed)keys.crouch=keys.crouch?0:1;ctrlDown=false;break;
     }
   });
   addEventListener('mousedown',e=>{
@@ -1279,31 +1278,52 @@ function bowTick(){
 /* ---------- 조총·돋보기 ---------- */
 const GUN_DMG=50,GUN_MAG=5,GUN_RELOAD=2000,GUN_RNG_HIP=100,GUN_RNG_AIM=400; // 데미지 = 활 최대(10)의 5배
 let gunAim=false,magOn=false,reloadT0=0,gunT=0,_gh='';const TRC=[];
+const GL=.3,PER_B=.34;let reloadTotal=0,reloadNeed=0,reloadDone=0,gunFire=0; // 레버 당김 0.3초 + 탄 1발당 0.34초 (5발=2초, 남은 탄이 있으면 그만큼 짧아짐)
 const isGun=()=>{const a=inv[sel];return !!a&&ITEMS[a.id].kind==='gun'};
 const isMag=()=>{const a=inv[sel];return !!a&&ITEMS[a.id].kind==='magnifier'};
 const bulletCount=()=>SL().reduce((c,i)=>c+(inv[i]&&inv[i].id==='bullet'?inv[i].count:0),0);
 function reloadStart(){
   if(!isGun()||reloadT0)return;const a=inv[sel];
   if((a.mag||0)>=GUN_MAG){note('이미 가득 찼습니다');return}
-  if(bulletCount()<=0){note('총알이 없습니다');return}
-  reloadT0=Date.now();gunAim=false;$('bowg').style.display='block';
+  const need=Math.min(GUN_MAG-(a.mag||0),bulletCount());
+  if(need<=0){note('총알이 없습니다');return}
+  reloadNeed=need;reloadDone=0;reloadTotal=GL+need*PER_B;reloadT0=Date.now();gunAim=false;$('bowg').style.display='block';
 }
 function reloadCancel(){reloadT0=0;if(!bowOn&&!sgOn)$('bowg').style.display='none'}
 function reloadTick(){
   if(!reloadT0)return;
   if(!isGun()||!active()){reloadCancel();return}
-  const p=Math.min(1,(Date.now()-reloadT0)/GUN_RELOAD);
-  $('bowf').style.width=p*100+'%';$('bowt').textContent='장전 중...';
-  if(p<1)return;
-  const a=inv[sel];let need=GUN_MAG-(a.mag||0);
-  for(const i of SL()){if(need<=0)break;const q=inv[i];if(q&&q.id==='bullet'){const t=Math.min(need,q.count);q.count-=t;need-=t;if(q.count<=0)inv[i]=null}}
-  a.mag=GUN_MAG-need;reloadCancel();renderInv();note(`장전 완료 (${a.mag}/${GUN_MAG})`);
+  const e=(Date.now()-reloadT0)/1000;
+  $('bowf').style.width=Math.min(100,e/reloadTotal*100)+'%';$('bowt').textContent=`장전 중... ${reloadDone}/${reloadNeed}`;
+  const ready=Math.min(reloadNeed,Math.floor(Math.max(0,e-GL)/PER_B));
+  while(reloadDone<ready){ // 탄을 하나씩 장전구에 넣음
+    const a=inv[sel];let took=false;
+    for(const i of SL()){const q=inv[i];if(q&&q.id==='bullet'){q.count--;if(q.count<=0)inv[i]=null;took=true;break}}
+    if(!took){reloadCancel();renderInv();return}
+    a.mag=(a.mag||0)+1;reloadDone++;renderInv();
+  }
+  if(e>=reloadTotal){reloadCancel();note(`장전 완료 (${inv[sel].mag}/${GUN_MAG})`)}
+}
+function updateGunAnim(dt){ // 레버 당기기(발사 후) · 장전(레버 → 탄을 하나씩 장전구에 넣기) · 두 손 위치
+  const G=curGun;if(!G)return;
+  let lev=0,bv=false,hx=-.36,hy=-.1,hz=0;
+  if(gunFire>0){gunFire=Math.max(0,gunFire-dt);lev=Math.sin((1-gunFire/.45)*Math.PI)*.95}
+  let loading=false,f=0;
+  if(reloadT0){
+    const e=(Date.now()-reloadT0)/1000,T=reloadTotal;
+    lev=e<GL?.95*e/GL:e>T-.12?.95*Math.max(0,(T-e)/.12):.95;
+    if(e>=GL&&e<T-.12){loading=true;const k=(e-GL)/PER_B;f=k-Math.floor(k)}
+  }
+  G.lev.rotation.z=lev;
+  if(loading){const s2=Math.sin(Math.min(1,f)*Math.PI);hx=-.38+.3*s2;hy=-.2+.22*s2;hz=.14-.07*s2;bv=f<.62} // 허리춤 → 장전구로 탄을 넣고 돌아옴
+  else if(lev>.02){const b=Math.min(1,lev*4),tx=-.2-.1*Math.cos(lev)+.14*Math.sin(lev),ty=-.03-.1*Math.sin(lev)-.14*Math.cos(lev);hx+=(tx-hx)*b;hy+=(ty-hy)*b} // 오른손이 레버 끝을 따라감
+  G.hR.position.set(hx,hy,hz);G.bul.visible=bv;if(bv)G.bul.position.set(hx+.04,hy+.04,hz);
 }
 function fireGun(now){
   const a=inv[sel];
   if(reloadT0)return;
   if(!a.mag){note(bulletCount()>0?'R키로 장전하세요':'총알이 없습니다');return}
-  lastAtk=now;a.mag--;swing=1;swingDur=.2;
+  lastAtk=now;a.mag--;swing=1;swingDur=.2;gunFire=.45;
   const cp=camera.getWorldPosition(new THREE.Vector3()),dir=new THREE.Vector3();camera.getWorldDirection(dir);
   const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
   if(!gunAim){const r=.01*Math.sqrt(Math.random()),ph=Math.random()*6.283;dir.addScaledVector(right,r*Math.cos(ph)).addScaledVector(up,r*Math.sin(ph)).normalize()} // 그냥 조준: 10m당 반지름 0.1m 원 안 임의 지점
@@ -1364,9 +1384,11 @@ function updateSlimes(dt){
     n.mesh.position.set(n.x,height(n.x,n.z)+Math.abs(Math.sin(n.bph))*.25,n.z);n.mesh.scale.y=d>.5?1+.15*Math.sin(n.bph*2):1;
   }
 }
-function arrowTo(x,z){const b=((-yaw*180/Math.PI)%360+360)%360,rel=((Math.atan2(x-camera.position.x,-(z-camera.position.z))*180/Math.PI-b)%360+360)%360;return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(rel/45)%8]}
+const ARW=['↑','↗','→','↘','↓','↙','←','↖'];
+function dirIdx(x,z){const b=((-yaw*180/Math.PI)%360+360)%360,rel=((Math.atan2(x-camera.position.x,-(z-camera.position.z))*180/Math.PI-b)%360+360)%360;return Math.round(rel/45)%8} // 내 시선 기준 8방향
+function arrowTo(x,z){return ARW[dirIdx(x,z)]}
 function updateChem(){
-  const e=$('chem'),has=hasU('chem_detector');
+  const a=inv[sel],e=$('chem'),has=!!(a&&a.id==='detector'&&a.att&&a.att[1]&&a.att[1].id==='chem_detector'); // 금속탐지기 2번 슬롯
   e.style.display=has?'block':'none';if(!has)return;
   let b=null,bd=1e9;for(const n of nc().sl)if(n.active){const d=Math.hypot(n.x-camera.position.x,n.z-camera.position.z);if(d<bd){bd=d;b=n}}
   setT(e,b?`🧪 ${arrowTo(b.x,b.z)} 슬라임 ${dm(bd)}m`:'🧪 슬라임 없음');
@@ -1447,7 +1469,7 @@ function attack(strong){
   if(NEED[n.type]>tier){note(`${TIERN[NEED[n.type]]} 곡괭이 이상 필요`);return}
   const good=(n.type==='wood'&&kind==='axe')||(ore&&kind==='pickaxe')||(n.type==='clay'&&kind==='shovel')||(n.type==='sand'&&kind==='shovel');
   const rk={rock:0,stone:0,coal:1,copper:2,sulfur:2,gold:2,iron:3,titanium:4,diamond:5}[n.type];
-  let dm=(a&&(a.id==='axe'||a.id==='craft_axe'))?1.5:(a&&a.id==='battle_axe')?6.5:[1,1.25,1.5,2,3,3][tier]||1;
+  let dm=(a&&a.id==='axe')?1:(a&&a.id==='craft_axe')?1.5:(a&&a.id==='battle_axe')?6.5:[1,1.25,1.5,2,3,3][tier]||1;
   if(good&&kind==='pickaxe'&&rk!==undefined&&tier-rk>=2)dm=99;
   n.hp-=(good?dm:(n.animal?wdmg(kind,tier,a):1))*(strong?2:1);hitFx(n);
   if(n.hp>0)return;
@@ -1530,12 +1552,13 @@ function updatePlayer(dt){
     if(sprint){P.st=Math.max(0,P.st-(buffT>0?1:2)*dt);lastStUse=now}
     else if(now-lastStUse>=5000)P.st=Math.min(P.maxSt,P.st+5*1.3*dt);
     if(moving){
-      const sp=(sprint?12:6)*(1+armorSpd())*(gh(camera.position.x,camera.position.z)<-.3?.55:1),dz=keys.f-keys.b,dx=keys.r-keys.l;
+      const bY0=bridgeY(camera.position.x,camera.position.z),onBr=bY0!==null&&camera.position.y-eyeH>=bY0-1.5; // 다리 위에서는 물속 감속 없음
+      const sp=(sprint?12:6)*(1+armorSpd())*(gh(camera.position.x,camera.position.z)<-.3&&!onBr?.55:1),dz=keys.f-keys.b,dx=keys.r-keys.l;
       const len=Math.hypot(dx,dz)||1;
       const sy=Math.sin(yaw),cy=Math.cos(yaw),ox=camera.position.x,oz=camera.position.z;
       camera.position.x+=((-sy)*dz+cy*dx)/len*sp*dt;
       camera.position.z+=((-cy)*dz+(-sy)*dx)/len*sp*dt;
-      if(gh(camera.position.x,camera.position.z)<-2.2){camera.position.x=ox;camera.position.z=oz}
+      if(gh(camera.position.x,camera.position.z)<-2.2){const b2=bridgeY(camera.position.x,camera.position.z);if(!(b2!==null&&camera.position.y-eyeH>=b2-1.5)){camera.position.x=ox;camera.position.z=oz}}
     }
   }
   // 충돌: 나무/바위 밀어내기
@@ -1558,18 +1581,21 @@ function updatePlayer(dt){
 /* ---------- 탐지기 ---------- */
 function updateDetector(){
   const a=inv[sel],holding=!!(a&&a.id==='detector'),el=$('det');
-  let best=1e9,bn=null;
+  let best=1e9,bn=null;const radar=!!(holding&&a.att&&a.att[0]&&a.att[0].id==='metal_radar'),sec=radar?new Array(8).fill(1e9):null;
   for(const n of nc().ti){
     if(!n.active)continue;
     const d=Math.hypot(camera.position.x-n.x,camera.position.z-n.z);
-    if(n.stage===0&&d<best){best=d;bn=n} // 아직 안 판 것 중 가장 가까운 티타늄
+    if(n.stage===0){if(d<best){best=d;bn=n}if(sec&&d<=100){const k=dirIdx(n.x,n.z);if(d<sec[k])sec[k]=d}} // 아직 안 판 것 중 가장 가까운 티타늄
     n.mesh.visible=!!(n.stage===1||n.dig>0||(holding&&d<6));
   }
-  if(!holding||best>=1e9){el.style.display='none';return}
+  if(!holding||best>=1e9){el.style.display='none';$('radar').style.display='none';return}
   el.style.display='block';
-  if(best>100){el.textContent='티타늄 신호 없음 (50m 밖)';return} // 탐지 범위 100m
-  const radar=!!(a.att&&a.att[0]&&a.att[0].id==='metal_radar'); // 금속 레이더 부착 시 거리·방향 표시
-  el.textContent=best<6?'티타늄 발견! 삽으로 발굴하세요':radar?`티타늄 ${arrowTo(bn.x,bn.z)} ${dm(best)}m`:'티타늄 신호 감지';
+  if(best>100){el.textContent='티타늄 신호 없음 (50m 밖)';$('radar').style.display='none';return} // 탐지 범위 100(표기 50m)
+  el.textContent=best<6?'티타늄 발견! 삽으로 발굴하세요':radar?`티타늄 ${arrowTo(bn.x,bn.z)} ${dm(best)}m`:`티타늄 신호 ${dm(best)}m`; // 레이더 없으면 거리만, 있으면 방향도
+  const rd=$('radar');
+  if(radar){const c=k=>ARW[k]+(sec[k]<1e9?String(dm(sec[k])):'-').padEnd(4);rd.style.display='block';setT(rd,`${c(7)}${c(0)}${c(1)}
+${c(6)}  ·  ${c(2)}
+${c(5)}${c(4)}${c(3)}`)}else rd.style.display='none';
   const iv=Math.max(150,Math.min(2000,best*30));
   if(audio&&Date.now()-lastBeep>iv){
     lastBeep=Date.now();
@@ -1755,12 +1781,12 @@ function buildHeld(id){
   else if(!isHead&&it.type==='tool'&&kd==='sword'){B(.07,.5,.02,mt==='wood'?W:tcol,0,.2);B(.22,.04,.05,0x5d4037,0,-.06);B(.05,.16,.05,W,0,-.16)}
   else if(!isHead&&it.type==='tool'&&kd==='hammer'){B(.05,.6,.05,W);B(.38,.15,.15,0x9e9e9e,0,.3)}
   else if(it.kind==='bow'){const t=new THREE.Mesh(new THREE.TorusGeometry(.28,.018,6,14,Math.PI),ms(W));t.rotation.z=-Math.PI/2;g.add(t);B(.008,.56,.008,0xeeeeee)}
-  else if(it.kind==='detector'){ // 진짜 금속탐지기: 긴 막대 + 탐지 코일(원판) + 조작부 + 손잡이·팔걸이
-    B(.03,.5,.03,0xb0bec5,0,.02);
-    const c1=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.025,18),ms(0x455a64));c1.position.y=.3;g.add(c1);
-    const c2=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.03,18),ms(0x263238));c2.position.y=.3;g.add(c2);
-    B(.07,.09,.05,0x37474f,0,-.1,.04);B(.02,.02,.02,0x66bb6a,0,-.1,.07);
-    B(.035,.035,.14,0x6d4c41,0,-.24,.05);B(.09,.02,.15,0x8d6e63,0,-.19,.08);
+  else if(it.kind==='detector'){ // 금속탐지기: 코일이 앞쪽(아래로 살짝), 손잡이·팔걸이가 손 쪽 (모델 +x = 앞)
+    B(.72,.03,.03,0xb0bec5,.06,0,0);
+    const c1=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.025,18),ms(0x455a64));c1.position.set(.44,-.05,0);g.add(c1);
+    const c2=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.03,18),ms(0x263238));c2.position.set(.44,-.05,0);g.add(c2);
+    B(.09,.07,.06,0x37474f,-.05,.06,0);B(.02,.02,.02,0x66bb6a,-.05,.1,0);
+    B(.14,.035,.035,0x6d4c41,-.2,-.03,0);B(.15,.02,.09,0x8d6e63,-.14,.02,0);
   }
   else if(it.part){
     const a=hx(MATC[mt]||'#9e9e9e');
@@ -1804,7 +1830,14 @@ function buildHeld(id){
     case 'table':B(.3,.04,.2,0x8d6e63,0,.06);B(.03,.12,.03,W,-.12,-.02,-.07);B(.03,.12,.03,W,.12,-.02,.07);break;
     case 'chest':B(.26,.16,.18,0x8d5a2b);B(.27,.04,.19,0x5d3a1a,0,.1);break;
     case 'flag':B(.02,.5,.02,W);B(.18,.12,.02,0xd32f2f,.1,.18);break;
-    case 'musket':B(.9,.04,.04,0x546e7a,.1,.05,0);B(.35,.09,.06,0x6d4c41,-.45,0,0);B(.05,.1,.05,0x37474f,-.2,-.05,0);break;
+    case 'musket':{ // 레버액션 총: 모델 +x = 총구 방향. 오른손=방아쇠 쪽(레버 쥠), 왼손=총 몸체 아래
+      const sk=new THREE.MeshBasicMaterial({color:0xffdbac}),hand=(x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),sk);m.position.set(x,y,z);g.add(m);return m};
+      B(.95,.035,.035,0x546e7a,.12,.06,0);B(.3,.09,.07,0x6d4c41,-.1,.03,0);B(.3,.1,.055,0x6d4c41,-.4,-.0,0);B(.42,.05,.055,0x6d4c41,.22,.02,0);
+      B(.06,.04,.02,0xb0bec5,-.05,.05,.04); // 장전구(오른쪽)
+      const lev=new THREE.Group();lev.position.set(-.2,-.03,0);const lm=ms(0x90a4ae),lb=(w,h,x,y)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.025),lm);m.position.set(x,y,0);lev.add(m)};
+      lb(.02,.14,-.01,-.07);lb(.2,.02,-.1,-.14);lb(.02,.12,-.2,-.08);g.add(lev); // 레버 고리
+      const bul=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.06,6),ms(0xd4a017));bul.rotation.z=Math.PI/2;bul.visible=false;g.add(bul);
+      g.userData.gun={lev,bul,hR:hand(-.36,-.1,0),hL:hand(.22,-.07,0)};break}
     case 'magnifier':{const r=new THREE.Mesh(new THREE.TorusGeometry(.1,.014,6,18),ms(0x78909c));r.position.y=.2;r.rotation.y=Math.PI/2;g.add(r);const gl=new THREE.Mesh(new THREE.CylinderGeometry(.095,.095,.006,18),new THREE.MeshStandardMaterial({color:0xb3e5fc,transparent:true,opacity:.45}));gl.position.y=.2;gl.rotation.z=Math.PI/2;g.add(gl);Cy(.014,.26,W,0,.03,0);break}
     case 'lantern':B(.12,.18,.12,0x455a64);B(.08,.12,.08,0xffe082);break;
     case 'headlamp':B(.16,.1,.1,0x455a64);B(.07,.07,.02,0xffe082,0,0,.06);break;
@@ -1880,6 +1913,7 @@ function findAxe(){
   return ok(inv[sel])?inv[sel]:(SL().map(i=>inv[i]).find(ok)||null);
 }
 function craft(r){
+  if(ctrlHeld&&!craftLoop){craftLoop=true;let c=0;try{for(let i=0;i<5;i++){craftOK=false;craft(r);if(!craftOK)break;c++}}finally{craftLoop=false}if(c>1)note(`${r.name} ${c}개 제작`);return} // Ctrl+제작: 5번
   if(shiftDown&&!craftLoop){craftLoop=true;let c=0;try{do{craftOK=false;craft(r)}while(craftOK&&++c<500)}finally{craftLoop=false}if(c>1)note(`${r.name} ${c}번 제작`);return}
   if(r.id==='flag'&&(placed.some(s=>s.id==='flag')||count('flag')>0)){note('깃발은 하나만 만들 수 있어요');return}
   const hold=r.tool?findAxe():null;
@@ -2069,7 +2103,6 @@ function bindMobile(){
   document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
 }
 
-let ctrlDown=false,ctrlUsed=false;
 
 /* ---------- 부착물창: 인벤토리에서 아이템 우클릭(모바일: 꾹 누르기)으로 열고, 같은 아이템을 다시 누르면 닫힘 ---------- */
 let attIdx=null,lpT=null;
@@ -2198,8 +2231,8 @@ function addCrack(n){
     const c=new THREE.Mesh(new THREE.BoxGeometry(.05,.7,.05),new THREE.MeshBasicMaterial({color:0x111111})),a=Math.random()*6.28;
     c.position.set(Math.cos(a)*1.1,.6+Math.random()*.6,Math.sin(a)*1.1);c.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);n.mesh.add(c);return c;
   }
-  // 바위 상자(3×1.8×2): 밑면을 뺀 5개 면 전체에 크고 갈라진 금 — 한 대 맞을 때마다 "파박" 하고 크게 퍼짐
-  const FACES=[{p:[0,1.815,0],r:[-Math.PI/2,0,0],w:3,h:2},{p:[1.515,.9,0],r:[0,Math.PI/2,0],w:2,h:1.8},{p:[-1.515,.9,0],r:[0,-Math.PI/2,0],w:2,h:1.8},{p:[0,.9,1.015],r:[0,0,0],w:3,h:1.8},{p:[0,.9,-1.015],r:[0,Math.PI,0],w:3,h:1.8}];
+  // 바위 상자(3×1.8×4, 세로 2m): 밑면을 뺀 5개 면 전체에 크고 갈라진 금 — 한 대 맞을 때마다 "파박" 하고 크게 퍼짐
+  const FACES=[{p:[0,1.815,0],r:[-Math.PI/2,0,0],w:3,h:4},{p:[1.515,.9,0],r:[0,Math.PI/2,0],w:4,h:1.8},{p:[-1.515,.9,0],r:[0,-Math.PI/2,0],w:4,h:1.8},{p:[0,.9,2.015],r:[0,0,0],w:3,h:1.8},{p:[0,.9,-2.015],r:[0,Math.PI,0],w:3,h:1.8}];
   const all=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:0x0a0a0a});
   for(const f of FACES){
     const grp=new THREE.Group();
@@ -2379,20 +2412,20 @@ function animate(){
   if(swing>0)swing=Math.max(0,swing-dt/(swingDur||.2));
   if(curRig){applyRig(swing>0?1-swing:0);torchMesh.position.z=-.6}
   else if(curBow){updateBow(dt);torchMesh.position.z=-.6}
-  else{const o=swing>0?Math.sin((1-swing)*Math.PI)*.25:0;handMesh.position.z=-.5-o;toolMesh.position.z=-.6-o;torchMesh.position.z=-.6-o}
+  else{const o=swing>0?Math.sin((1-swing)*Math.PI)*.25:0;handMesh.position.z=-.5-o;toolMesh.position.z=curGun?toolZ+o*.35:toolZ-o;torchMesh.position.z=-.6-o;if(curGun)updateGunAnim(dt)}
   updateArrows(dt);
   for(const o of SPIN)o.rotation.y+=dt*.8;
   if(!isGun()||!active())gunAim=false;if(!isMag()||!active())magOn=false;
   gunT+=((gunAim&&!reloadT0?1:0)-gunT)*Math.min(1,dt*10);
-  if(isGun()&&!curRig&&!curBow){toolMesh.position.x=.3-.3*gunT;toolMesh.position.y=-.2+.05*gunT} // 정조준: 총을 화면 중앙으로
+  if(curGun&&isGun()){const bp=HELD_POS.musket;toolMesh.position.x=bp[0]*(1-gunT);toolMesh.position.y=bp[1]+.07*gunT} // 정조준: 총을 화면 중앙으로
   updateTracers(dt);gunHud();
   updateSky();updateCompass();updateChem();updateGrid();
   renderAll();
 }
-let shiftDown=false,craftLoop=false,craftOK=false;
-addEventListener('keydown',e=>{if(e.key==='Shift')shiftDown=true});
-addEventListener('keyup',e=>{if(e.key==='Shift')shiftDown=false});
-addEventListener('blur',()=>{shiftDown=false});
+let shiftDown=false,ctrlHeld=false,craftLoop=false,craftOK=false;
+addEventListener('keydown',e=>{if(e.key==='Shift')shiftDown=true;if(e.key==='Control')ctrlHeld=true});
+addEventListener('keyup',e=>{if(e.key==='Shift')shiftDown=false;if(e.key==='Control')ctrlHeld=false});
+addEventListener('blur',()=>{shiftDown=false;ctrlHeld=false});
 let curChest=null;
 function openChest(s){if(invOpen)return;curChest=s;for(let i=0;i<45;i++)inv[81+i]=s.items[i]||null;toggleInv();$('chestWrap').style.display='block';renderInv()}
 function closeChest(){if(curChest)for(let i=0;i<45;i++){curChest.items[i]=inv[81+i]||null;inv[81+i]=null}curChest=null;$('chestWrap').style.display='none'}
@@ -2587,10 +2620,30 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v11.0.0';
+const SAVE_VER=7,GAME_VERSION='v11.1.2';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v11",t:"대규모 · 금속·총·요리",subs:[
+    {v:"11.1.2",d:'손맛·조총·탐지기',items:[
+      "수정: 손에 든 아이템을 손 위로 띄워 손에 묻히지 않게 변경",
+      "수정: 조총을 양손으로 잡음 (한 손은 방아쇠 쪽, 한 손은 총 몸체 아래) + 레버액션 레버 추가, 쏘면 레버를 당기는 모션",
+      "수정: 조총 장전 — 레버를 당긴 뒤 탄을 하나씩 장전구에 넣는 모션, 넣을 때마다 장탄이 늘고 남은 탄이 있으면 그만큼 장전 시간 단축 (5발 2초 기준)",
+      "수정: 금속탐지기를 반대로 잡음 (코일이 앞쪽, 손잡이가 손 쪽)",
+      "수정: 기본(비상용) 도끼로 나무 베기 4대 → 6대",
+      "수정: 앉기에서 Ctrl 키 제거 (C키 유지) / Ctrl을 누르고 제작하면 5개씩 제작",
+      "수정: 금속탐지기 — 레이더가 없으면 거리만 표시, 레이더를 달면 시선 기준 8방향(↑↗→↘↓↙←↖)별 가장 가까운 티타늄 거리를 표로 표시",
+      "수정: 금속탐지기 부착 슬롯 2개 (레이더 / 화학물탐지기) — 화학물탐지기는 금속탐지기에 장착해야 슬라임 방향·거리가 표시되고 유틸칸에는 넣을 수 없음",
+      "수정: 광석·유황 세로(밑면 긴 쪽) 2m (월드 4단위, 충돌 범위·균열도 맞춤)",
+      "버그: 다리 위에서 물속에 있는 것처럼 느려지고 막히던 문제 수정"]},
+    {v:"11.0.1",d:'정리·강공격·길이 기준',items:[
+      "수정: 유틸리티 제작을 도구 카테고리의 '유틸리티' 탭으로 이동, 제작창 카테고리 3x2 (도구·무기·갑옷·재료·건물·요리)",
+      "수정: 광석·유황 밑면 짧은 쪽 1m → 2m로 복구 (이전 축소는 의도와 달랐음, 균열도 맞춤)",
+      "수정: 인벤토리 닫기 버튼 삭제 — 창 바깥을 누르면 닫힘",
+      "수정: 인벤토리에서 우클릭은 아이템을 집지 않고 부착물창만 열림",
+      "수정: 가죽·큰 가죽·야생 가죽 아이콘을 동물 가죽 모양으로 / 부싯돌 곡괭이 뒷면을 뭉툭하게",
+      "수정: 길이 기준 변경 — 월드 2단위 = 1m로 표기 (맵 500m x 500m, 광석 밑면 1m). 거리 표시(나침반·탐지기·레이더·화학물탐지기·활 사거리·격자·제작 범위 안내)를 모두 절반으로, 월드·속도·사거리 실제 값은 그대로",
+      "수정: 강공격 무기별 분리 — 전투도끼: 도끼를 수평으로 눕혀 오른쪽→왼쪽으로 휩쓸기(앞쪽 부채꼴 범위 피해, 공속 0.5초) / 창: 빠른 찌르기 유지, 사거리 1.5배(9m)·일직선 관통 범위 피해 / 검: 기존 유지 (범위 안에 몹이 없으면 기존처럼 단일 대상 채집·공격)",
+      "최적화: 플레이어 충돌을 주변 칸만 검사, 종류별 노드 목록 캐시(탐지기·몹·슬라임), 리스폰 검사 0.5초 간격, 공격·사격 레이캐스트를 가까운 대상만, HUD 글자 변경 시에만 갱신, 모바일 렌더 해상도 상한 1.5배"]},
     {v:"11.0.0",d:'1단계: 버그 수정',items:[
       "버그: 티타늄을 캘 때 균열(금)이 광석과 같이 회전하지 않아 공기를 캐는 것처럼 보이던 문제 수정",
       "버그: 티타늄 탐지가 이미 발굴한 것을 세지 않고, 아직 안 판 가장 가까운 티타늄 기준으로 표시",
@@ -2632,15 +2685,8 @@ const ROADMAP=[
       "추가(4-b): 금속 레이더 — 금속탐지기 부착물창에 장착하면 티타늄 거리·방향 표시 (미장착 시 신호 감지만 표시)",
       "추가(4-b): 행운의 부적(유틸칸) — 모든 아이템 드랍 수 1.5배 (소수는 확률 반올림)",
       "추가(4-b): 돋보기 — 우클릭 꾹 하면 화면 앞으로 들어 올려 중앙 원형 렌즈 안만 확대 (강화 단계별 1.5→2→2.5→3→4배)",
-      "추가(4-b): 조총 — 데미지 50(활 최대의 5배), 공속 0.6초, 장탄 5발, R키(모바일 장전 버튼) 2초 장전, 총알은 인벤토리에서 소모 / 정조준(우클릭 꾹) 사거리 400m·에임대로, 그냥 조준 사거리 100m·10m당 반지름 0.1m 원 안 임의 탄착 / 새 시스템이라 오류 가능, 이후 업데이트로 수정",
-      "수정: 유틸리티 제작을 도구 카테고리의 '유틸리티' 탭으로 이동, 제작창 카테고리 3x2 (도구·무기·갑옷·재료·건물·요리)",
-      "수정: 광석·유황 밑면 짧은 쪽 1m → 2m로 복구 (이전 축소는 의도와 달랐음, 균열도 맞춤)",
-      "수정: 인벤토리 닫기 버튼 삭제 — 창 바깥을 누르면 닫힘",
-      "수정: 인벤토리에서 우클릭은 아이템을 집지 않고 부착물창만 열림",
-      "수정: 가죽·큰 가죽·야생 가죽 아이콘을 동물 가죽 모양으로 / 부싯돌 곡괭이 뒷면을 뭉툭하게",
-      "수정: 길이 기준 변경 — 월드 2단위 = 1m로 표기 (맵 500m x 500m, 광석 밑면 1m). 거리 표시(나침반·탐지기·레이더·화학물탐지기·활 사거리·격자·제작 범위 안내)를 모두 절반으로, 월드·속도·사거리 실제 값은 그대로",
-      "수정: 강공격 무기별 분리 — 전투도끼: 도끼를 수평으로 눕혀 오른쪽→왼쪽으로 휩쓸기(앞쪽 부채꼴 범위 피해, 공속 0.5초) / 창: 빠른 찌르기 유지, 사거리 1.5배(9m)·일직선 관통 범위 피해 / 검: 기존 유지 (범위 안에 몹이 없으면 기존처럼 단일 대상 채집·공격)",
-      "최적화: 플레이어 충돌을 주변 칸만 검사, 종류별 노드 목록 캐시(탐지기·몹·슬라임), 리스폰 검사 0.5초 간격, 공격·사격 레이캐스트를 가까운 대상만, HUD 글자 변경 시에만 갱신, 모바일 렌더 해상도 상한 1.5배"]}]},
+      "추가(4-b): 조총 — 데미지 50(활 최대의 5배), 공속 0.6초, 장탄 5발, R키(모바일 장전 버튼) 2초 장전, 총알은 인벤토리에서 소모 / 정조준(우클릭 꾹) 사거리 400m·에임대로, 그냥 조준 사거리 100m·10m당 반지름 0.1m 원 안 임의 탄착 / 새 시스템이라 오류 가능, 이후 업데이트로 수정"]},
+  ]},
   {v:"v10",t:"대규모 · 앱 패키지·추락한 비행기",subs:[
     {v:"10.2.1",d:'',items:[
       "버그: 모바일에서 인벤토리·창고가 닫히지 않던 문제 수정 (고정 닫기 버튼, 바깥 탭으로 닫기)",
@@ -2874,7 +2920,7 @@ const ROADMAP=[
       "제작, 제작대, 횃불"]}]}
 ];
 function buildRoadmap(){
-  $('rmList').innerHTML=ROADMAP.map((m,i)=>`<details${i===0?' open':''}><summary>${m.v} — ${m.t}</summary><div class="mn">${m.subs.map(sb=>`<h4>${sb.v}${sb.d?`<i>${sb.d}</i>`:''}${sb.v===GAME_VERSION?' <i style="color:#4CAF50">현재 버전</i>':''}</h4><ul>${sb.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div></details>`).join('');
+  $('rmList').innerHTML=ROADMAP.map((m,i)=>`<details${i===0?' open':''}><summary>${m.v} — ${m.t}</summary><div class="mn">${m.subs.map(sb=>`<h4>${sb.v}${sb.d?`<i>${sb.d}</i>`:''}${'v'+sb.v===GAME_VERSION?' <i style="color:#4CAF50">현재 버전</i>':''}</h4><ul>${sb.items.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div></details>`).join('');
 }
 /* 업데이트 확인: 웹 주소(PWA)로 실행 중일 때, 인터넷이 되면 새 버전을 받아 다시 시작 */
 async function checkUpdate(){
