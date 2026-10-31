@@ -178,10 +178,9 @@ body.mob #clock{top:70px;right:12px}
 <div class="mb" id="mi" style="right:12px;top:10px">가방</div>
 <div class="mb" id="mgrid" style="right:12px;top:72px">격자</div>
 </div>
-<button id="invX" style="display:none;position:fixed;top:8px;right:8px;z-index:60;padding:10px 16px;font-size:15px;font-weight:700;background:#b71c1c;color:#fff;border:2px solid #fff;border-radius:10px;touch-action:manipulation">✕ 닫기</button>
 <div id="attWin"><div id="attT"></div><div id="attS"></div></div>
 <div id="inv"><div id="win">
-<h2>인벤토리 <small style="font-size:12px;color:#aaa;font-weight:400">드래그 또는 탭→탭으로 이동</small> <button class="setbtn" id="closeInv" style="margin:0 0 0 10px">닫기</button></h2>
+<h2>인벤토리 <small style="font-size:12px;color:#aaa;font-weight:400">드래그 또는 탭→탭으로 이동</small></h2>
 <button class="setbtn" id="mobBtn2" style="margin:0">모바일 모드: 끔</button> <button class="setbtn" id="exitBtn2" style="margin:0 0 0 6px">💾 저장하고 메인 메뉴로</button>
 <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">장비</div><div id="equip"></div></div><div style="flex:1 1 300px;min-width:0"><div style="font-size:13px;color:#aaa;margin-bottom:6px">인벤토리 (36칸)</div><div id="grid"></div></div><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">유틸리티 (8칸)</div><div id="util"></div></div></div>
 <div id="chestWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px">창고 (45칸)</div><div id="cgrid"></div></div>
@@ -323,7 +322,7 @@ add('mat','가공','stake','말뚝',{stick:1},{tool:1});
 add('mat','가공','plank','판자 x6',{log:1},{yield:6,tool:1});
 for(const [m,mn] of [['copper','구리'],['iron','철'],['gold','금'],['titanium','티타늄']])
   add('mat','주괴',m+'_ingot',mn+' 주괴',{[m]:2,coal:1},{near:'furnace'});
-/* ===== 맵 데이터 (1000m x 1000m, x 동쪽 / z 남쪽) — 원본 400m 지도를 S배 확대 ===== */
+/* ===== 맵 데이터 (월드 1000단위 = 표기 500m x 500m, x 동쪽 / z 남쪽) — 원본 400m 지도를 S배 확대 ===== */
 const S=2.5,MAP_SIZE=1000;
 const sc=p=>p.map(q=>[q[0]*S,q[1]*S]);
 const TRUNK=sc([[105,-10],[106,40],[110,100],[114,150],[112,178]]);
@@ -390,8 +389,13 @@ const P={hp:100,maxHp:100,st:100,maxSt:100};
 let lastStUse=0,buffT=0,nearCamp=false,nearFurn=false;
 const inv=new Array(137).fill(null); // 134 머리장신구, 135 망토, 136 화살통칸 / 130 화살칸(1칸) / 0~35 인벤토리, 36 휴지통, 37~44 유틸리티, 45~80 가방, 81~125 창고, 126~129 갑옷(헬멧·갑옷·바지·신발), 130~133 화살통
 const ARM0=126,QV0=130,ACC_S=134,CAPE_S=135,QUIV_S=136,ARM_PARTS=['helmet','chest','legs','boots'],ARM_LBL=['헬멧','갑옷','바지','신발'];
-let sel=0,tab='tools',invOpen=false,lastAtk=0,swing=0,swingDur=.2,swingAlt=0,curRig=null,curBow=null,bowAim=0;
+let sel=0,tab='tools',invOpen=false,lastAtk=0,swing=0,swingDur=.2,swingAlt=0,swingS=false,curRig=null,curBow=null,bowAim=0;
 const nodes=[],placed=[];
+const NC={n:-1,ti:[],sl:[],an:[],nm:[]};let lastResp=0; // 종류별 노드 목록 캐시 (노드 수가 바뀔 때만 다시 만듦)
+function nc(){if(NC.n!==nodes.length){NC.n=nodes.length;NC.ti=nodes.filter(n=>n.type==='titanium');NC.sl=nodes.filter(n=>n.slime);NC.an=nodes.filter(n=>n.animal);NC.nm=nodes.filter(n=>n.night)}return NC}
+const dm=v=>Math.round(v/2); // 길이 기준: 월드 2단위 = 1m (거리 표기는 모두 절반)
+const hasU=id=>{for(let i=37;i<45;i++)if(inv[i]&&inv[i].id===id)return true;return false};
+const setT=(e,t)=>{if(e._t!==t){e._t=t;e.textContent=t}};
 let titan=null,audio=null,lastBeep=0,notiT=null;
 let prevCamp=false,nearAnvil=false,nearFoundry=false,nearGun=false,prevAnvil=false,prevFoundry=false,prevGun=false;
 let mobile=false,started=false,saved=null,worldSeed=1,mouseMode=false,prevFurn=false,craftCat=null;let SAVE='';let worldT=0,ambL=null,sunL=null;
@@ -421,7 +425,7 @@ function init2(){
   sunL.position.set(100,150,50);scene.add(sunL);
   renderer=new THREE.WebGLRenderer({antialias:true});
   renderer.setSize(innerWidth,innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1.5:2));
   $('cv').appendChild(renderer.domElement);
 
   const _r=Math.random;let _s=worldSeed;RESEED=k=>{_s=(worldSeed+Math.imul(k+1,0x9E3779B1))|0};
@@ -907,14 +911,14 @@ function tree(x,z){
 function rockMesh(type){
   const OC={coal:0x151515,copper:0xd2691e,iron:0xe0c9a6,gold:0xffd54f,diamond:0x4dd0e1,titanium:0xb9bec3};
   const g=new THREE.Group();
-  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,1),new THREE.MeshStandardMaterial({color:0x6b6b6b,roughness:1}));
+  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,2),new THREE.MeshStandardMaterial({color:0x6b6b6b,roughness:1}));
   big.position.y=.9;g.add(big);
   if(OC[type]){
     const mat=new THREE.MeshStandardMaterial({color:OC[type],roughness:type==='titanium'?.35:.5,emissive:type==='diamond'?0x0a4a55:0});
     for(let i=0;i<8;i++){
       const sz=.3+Math.random()*.2,m=new THREE.Mesh(new THREE.BoxGeometry(sz,sz,sz),mat),f=i%3;
-      let px=(Math.random()-.5)*2.4,py=.4+Math.random()*1.2,pz=(Math.random()-.5)*.6;
-      if(f===0)py=1.8;else if(f===1)px=(Math.random()<.5?-1:1)*1.5;else pz=(Math.random()<.5?-1:1)*.5;
+      let px=(Math.random()-.5)*2.4,py=.4+Math.random()*1.2,pz=(Math.random()-.5)*1.6;
+      if(f===0)py=1.8;else if(f===1)px=(Math.random()<.5?-1:1)*1.5;else pz=(Math.random()<.5?-1:1)*1;
       m.position.set(px,py,pz);m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m);
     }
   }
@@ -922,10 +926,10 @@ function rockMesh(type){
 }
 function sulfurAt(x,z){ // 유황: 노란 본체 + 회색 조약돌
   const g=new THREE.Group();
-  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,1),new THREE.MeshStandardMaterial({color:0xe8cf2a,roughness:.8}));big.position.y=.9;g.add(big);
+  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,2),new THREE.MeshStandardMaterial({color:0xe8cf2a,roughness:.8}));big.position.y=.9;g.add(big);
   const pm=new THREE.MeshStandardMaterial({color:0x8a8a8a,roughness:1});
   for(let i=0;i<9;i++){const sz=.25+Math.random()*.25,m=new THREE.Mesh(new THREE.BoxGeometry(sz,sz*.8,sz),pm);
-    m.position.set((Math.random()-.5)*3.2,.1+Math.random()*.1,(Math.random()<.5?-1:1)*(.55+Math.random()*.4));m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m)}
+    m.position.set((Math.random()-.5)*3.2,.1+Math.random()*.1,(Math.random()<.5?-1:1)*(1.05+Math.random()*.4));m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m)}
   g.position.set(x,height(x,z)-.2,z);g.rotation.y=Math.random()*Math.PI;AS(g);reg(g,'sulfur',6,x,z,1.4);
 }
 function rock(x,z,type){
@@ -969,7 +973,8 @@ const RIG=(()=>{
   return {
     pickaxe:{idle:dg,hands:[-.2,-.02],kf:[[[0,dg],[.32,[.26,0,-.5,.9,0,.25]],[.58,[.2,-.28,-.72,-1.8,0,.15]],[.78,[.2,-.28,-.72,-1.8,0,.15]],[1,dg]]]}, // 위→아래 내리치기
     axe:(()=>{const id=[.3,-.22,-.62,-.2,-.15,-.45],a=[.38,-.05,-.55,.35,-.1,-.75],b=[.05,-.38,-.75,-1.3,.25,.35]; // 날은 정면 고정: 살짝 들었다가 오른쪽 위→대각선 아래로 긋기
-      return {idle:id,hands:[-.2,-.02],kf:[[[0,id],[.3,a],[.6,b],[.8,b],[1,id]]]}})(),
+      const i7=[...id,0],s1=[.55,-.2,-.55,-1.5708,-1,0,1],s2=[0,-.2,-.62,-1.5708,0,0,1],s3=[-.5,-.2,-.5,-1.5708,1,0,1]; // 강공격: 손잡이를 앞으로 눕히고 날을 좌우로 (tw=날 비틀기)
+      return {idle:id,hands:[-.2,-.02],tw:Math.PI,kfS:[[0,i7],[.18,s1],[.5,s2],[.82,s3],[1,i7]],kf:[[[0,id],[.3,a],[.6,b],[.8,b],[1,id]]]}})(),
     sword:{idle:dg,hands:[-.14,-.23],kf:[ // 클릭할 때마다 번갈아: 우상→좌하 / 좌상→우하
       [[0,dg],[.3,[.28,.02,-.5,-.5,-.2,-.7]],[.65,[-.16,-.32,-.72,-.7,.5,1.7]],[.85,[-.16,-.32,-.72,-.7,.5,1.7]],[1,dg]],
       [[0,dg],[.3,[-.2,.02,-.5,-.5,.2,.7]],[.65,[.3,-.32,-.72,-.7,-.5,-1.7]],[.85,[.3,-.32,-.72,-.7,-.5,-1.7]],[1,dg]]]},
@@ -979,7 +984,7 @@ const RIG=(()=>{
 })();
 function poseAt(kf,t){let i=0;while(i<kf.length-2&&t>kf[i+1][0])i++;const a=kf[i],b=kf[i+1],u=Math.min(1,Math.max(0,(t-a[0])/(b[0]-a[0]))),e=u*u*(3-2*u);return a[1].map((v,j)=>v+(b[1][j]-v)*e)}
 function applyRig(p){
-  const q=p>0&&p<1?poseAt(curRig.kf[swingAlt%curRig.kf.length],p):curRig.idle;
+  const q=p>0&&p<1?poseAt((swingS&&curRig.kfS)?curRig.kfS:curRig.kf[swingAlt%curRig.kf.length],p):curRig.idle;
   toolMesh.position.set(q[0],q[1],q[2]);toolMesh.rotation.set(q[3],q[4],q[5]);
   if(curRig.tw!==undefined&&toolMesh.children[0])toolMesh.children[0].rotation.y=Math.PI/2+(curRig.tw-Math.PI/2)*(q[6]||0);
 }
@@ -1052,8 +1057,8 @@ function buildHands(){
 function updateLighting(){
   if(!toolMesh||!playerLight||!torchMesh)return; // 메인 메뉴(월드 로드 전)에서 호출되면 무시
   const a=inv[sel];
-  const lantern=inv.slice(37,45).some(i=>i&&i.id==='lantern');
-  if(headSpot)headSpot.intensity=inv.slice(37,45).some(i=>i&&i.id==='headlamp')?2.6:0;
+  const lantern=hasU('lantern');
+  if(headSpot)headSpot.intensity=hasU('headlamp')?2.6:0;
   const torch=a&&a.id==='torch';
   const tool=a&&ITEMS[a.id].type==='tool';
   if(lantern){playerLight.userData.base=1.5;playerLight.distance=25}
@@ -1254,7 +1259,7 @@ function bowRelease(){
   if(now-lastAtk<(ai>=QV0?400:700))return; // 화살통 화살: 쿨타임 0.7초 → 0.4초
   lastAtk=now;swing=1;swingDur=.2;inv[ai].count--;if(inv[ai].count<=0)inv[ai]=null;renderInv();
   const st=bowStats(c);
-  const l2=nodes.filter(n=>n.active&&n.mesh.visible&&n.animal),h2=ray(l2.map(n=>n.mesh),true)[0],gh=ray(GR,false)[0];
+  const l2=nc().an.filter(n=>n.active&&n.mesh.visible),h2=ray(l2.map(n=>n.mesh),true)[0],gh=ray(GR,false)[0];
   let D=st.rng,tn=null;
   if(gh&&gh.distance<D)D=gh.distance;
   if(h2&&h2.distance<st.rng&&(!gh||h2.distance<=gh.distance+.5)){
@@ -1269,7 +1274,7 @@ function bowTick(){
   bowC=Math.min(1,(Date.now()-bowT0)/bowMs());
   const st=bowStats(bowC);
   $('bowf').style.width=(bowC*100)+'%';
-  $('bowt').textContent=`차징 ${Math.round(bowC*100)}% · 사거리 ${st.rng.toFixed(0)}m · 데미지 ${st.dmg.toFixed(1)}`;
+  $('bowt').textContent=`차징 ${Math.round(bowC*100)}% · 사거리 ${dm(st.rng)}m · 데미지 ${st.dmg.toFixed(1)}`;
 }
 /* ---------- 조총·돋보기 ---------- */
 const GUN_DMG=50,GUN_MAG=5,GUN_RELOAD=2000,GUN_RNG_HIP=100,GUN_RNG_AIM=400; // 데미지 = 활 최대(10)의 5배
@@ -1303,7 +1308,7 @@ function fireGun(now){
   const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
   if(!gunAim){const r=.01*Math.sqrt(Math.random()),ph=Math.random()*6.283;dir.addScaledVector(right,r*Math.cos(ph)).addScaledVector(up,r*Math.sin(ph)).normalize()} // 그냥 조준: 10m당 반지름 0.1m 원 안 임의 지점
   const rng=gunAim?GUN_RNG_AIM:GUN_RNG_HIP,rc=new THREE.Raycaster(cp,dir,0,rng);
-  const live=nodes.filter(n=>n.active&&n.mesh.visible),h=rc.intersectObjects(live.map(n=>n.mesh),true)[0],g=rc.intersectObjects(GR,false)[0];
+  const live=nodes.filter(n=>n.active&&n.mesh.visible&&Math.abs(n.x-cp.x)<rng+5&&Math.abs(n.z-cp.z)<rng+5),h=rc.intersectObjects(live.map(n=>n.mesh),true)[0],g=rc.intersectObjects(GR,false)[0];
   let D=g?g.distance:rng;
   if(h&&(!g||h.distance<=g.distance+.5)){
     D=h.distance;let o=h.object;while(o&&!live.some(n=>n.mesh===o))o=o.parent;const n=live.find(x=>x.mesh===o);
@@ -1337,7 +1342,7 @@ function renderAll(){ // 돋보기: 같은 장면을 확대 배율로 한 번 �
 let slimeOn=false;const SLP=[];
 const slimeOK=(x,z)=>height(x,z)>.8&&riverInfo(x,z)>8&&!caveNear(x,z)&&forestAmt(x,z)<.05&&caveT(x,z)<-.02&&!inTemple(x,z,10);
 function spawnSlimes(){
-  SLP.length=0;const pool=nodes.filter(n=>n.slime);let pi=0;
+  SLP.length=0;const pool=nc().sl;let pi=0;
   for(let p=0;p<3&&pi<pool.length;p++){
     let c=null;for(let i=0;i<80&&!c;i++){const x=20+Math.random()*(MAP_SIZE-40),z=20+Math.random()*(MAP_SIZE-50);if(slimeOK(x,z))c={x,z,t:0,a:null}}
     if(!c)continue;SLP.push(c);
@@ -1351,7 +1356,7 @@ function updateSlimes(dt){
   if(!night)slimeOn=false;
   for(const p of SLP){p.t-=dt;if(p.t<=0){p.t=4+Math.random()*6;p.a=Math.random()<.3?null:Math.random()*6.28}
     if(p.a!=null){const nx=p.x+Math.cos(p.a)*1.2*dt,nz=p.z+Math.sin(p.a)*1.2*dt;if(slimeOK(nx,nz)){p.x=nx;p.z=nz}else p.t=0}}
-  for(const n of nodes)if(n.slime&&n.active){
+  for(const n of nc().sl)if(n.active){
     if(!slimeOn){n.fade-=dt/20;n.sm.opacity=.85*Math.max(0,n.fade);if(n.fade<=0){n.active=false;n.mesh.visible=false;continue}} // 낮에 서서히 투명해지며 사라짐
     n.bph+=dt*3;
     const dx=n.pk.x+n.ox-n.x,dz=n.pk.z+n.oz-n.z,d=Math.hypot(dx,dz);
@@ -1361,10 +1366,10 @@ function updateSlimes(dt){
 }
 function arrowTo(x,z){const b=((-yaw*180/Math.PI)%360+360)%360,rel=((Math.atan2(x-camera.position.x,-(z-camera.position.z))*180/Math.PI-b)%360+360)%360;return['↑','↗','→','↘','↓','↙','←','↖'][Math.round(rel/45)%8]}
 function updateChem(){
-  const e=$('chem'),has=inv.slice(37,45).some(i=>i&&i.id==='chem_detector');
+  const e=$('chem'),has=hasU('chem_detector');
   e.style.display=has?'block':'none';if(!has)return;
-  let b=null,bd=1e9;for(const n of nodes)if(n.slime&&n.active){const d=Math.hypot(n.x-camera.position.x,n.z-camera.position.z);if(d<bd){bd=d;b=n}}
-  e.textContent=b?`🧪 ${arrowTo(b.x,b.z)} 슬라임 ${Math.round(bd)}m`:'🧪 슬라임 없음';
+  let b=null,bd=1e9;for(const n of nc().sl)if(n.active){const d=Math.hypot(n.x-camera.position.x,n.z-camera.position.z);if(d<bd){bd=d;b=n}}
+  setT(e,b?`🧪 ${arrowTo(b.x,b.z)} 슬라임 ${dm(bd)}m`:'🧪 슬라임 없음');
 }
 /* ---------- 강공격 (전투도끼·검·창): 우클릭(모바일은 상호작용 버튼) 꾹 → 2초 차징 → 데미지 2배·사거리 1.3배·모션 빠르게 ---------- */
 const SG_MS=2000;let sgOn=false,sgT0=0,sgC=0;
@@ -1384,6 +1389,18 @@ function sgTick(){
   sgC=Math.min(1,(Date.now()-sgT0)/SG_MS);
   $('bowf').style.width=(sgC*100)+'%';
   $('bowt').textContent=sgC>=1?'강공격 준비 완료! 놓으면 발동':`강공격 차징 ${Math.round(sgC*100)}%`;
+}
+function aoeHit(a,it,now){ // 강공격 범위 피해 (몹·동물·슬라임): 도끼=앞쪽 부채꼴(±70°), 창=사거리 9의 일직선(폭 2)
+  const spear=it.kind==='spear',reach=spear?9:5.2,cp=camera.position,fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw),tier=it.tier||0;
+  let hit=0;
+  for(const n of nc().an){
+    if(!n.active||!n.mesh.visible)continue;
+    const dx=n.x-cp.x,dz=n.z-cp.z,u=dx*fx+dz*fz,w=dx*rx+dz*rz,r=n.r||.8;
+    const inside=spear?(u>0&&u<reach+r&&Math.abs(w)<1+r*.5):(u>0&&Math.hypot(u,w)<reach+r&&Math.atan2(Math.abs(w),u)<1.22);
+    if(!inside)continue;
+    n.hp-=wdmg(it.kind,tier,a)*2;hitFx(n);hit++;if(n.hp<=0)harvest(n,now);
+  }
+  return hit>0;
 }
 function attack(strong){
   const now=Date.now(),a=inv[sel],it=a&&ITEMS[a.id];
@@ -1406,9 +1423,12 @@ function attack(strong){
   }
   lastAtk=now;P.st-=cost;lastStUse=now;swing=1;swingAlt++;swingDur=curRig&&it&&it.kind==='axe'?.3:curRig?Math.min(.6,Math.max(.22,((it&&it.cd)||400)/1000*.9)):.2;
   if(strong)swingDur*=.6; // 강공격은 모션이 더 빠름
-  const live=nodes.filter(n=>n.active&&n.mesh.visible);
+  swingS=!!(strong&&a&&a.id==='battle_axe');
+  if(swingS){swingDur=.5;lastAtk=now+500-((it&&it.cd)||150)} // 도끼 강공격: 공속 0.5초
+  if(strong&&it&&(swingS||it.kind==='spear')&&aoeHit(a,it,now))return; // 도끼: 부채꼴 휩쓸기 / 창: 일직선 관통
+  const live=nodes.filter(n=>n.active&&n.mesh.visible&&Math.abs(n.x-camera.position.x)<12&&Math.abs(n.z-camera.position.z)<12); // 가까운 것만 검사
   const hit=ray(live.map(n=>n.mesh),true)[0];
-  const reach=(it&&it.kind==='spear'?6:it&&it.kind==='sword'?3.5:4)*(strong?1.3:1);
+  const reach=(it&&it.kind==='spear'?6:it&&it.kind==='sword'?3.5:4)*(strong?(it&&it.kind==='spear'?1.5:1.3):1);
   if(!hit||hit.distance>reach){digGround(it);return}
   let o=hit.object;
   while(o&&!live.some(n=>n.mesh===o))o=o.parent;
@@ -1443,7 +1463,7 @@ function harvest(n,now){
     ghoul:[['stick',R(1,2)]],wolf:[['pork',R(1,2)],['wild_hide',R(1,2)]],bear:[['big_hide',R(2,3)],['pork',R(2,3)]],spider:[['rope',R(1,2)],['elastic_rope',R(1,2)]],cow:[['hide',R(1,2)]],sheep:[['wool',R(1,2)]],pig:[['pork',R(1,2)]],coal:[['coal',R(4,8)]],stone:[['stone',1]],rock:[['stone',R(4,6)]],clay:[['clay',R(2,4)]],sand:[['sand',1]],cane:[['sugarcane',R(1,2)]],slime:[['chemical',R(2,4)]]
   })[n.type]||[[n.type,R(2,4)]];
   if((ORE.includes(n.type)&&n.type!=='rock')||n.type==='titanium')drops.push(['stone',R(1,2)]);
-  if(inv.slice(37,45).some(i=>i&&i.id==='lucky_charm'))for(const d of drops){const m=d[1]*1.5,f=Math.floor(m);d[1]=f+(Math.random()<m-f?1:0)} // 행운의 부적: 드랍 1.5배
+  if(hasU('lucky_charm'))for(const d of drops){const m=d[1]*1.5,f=Math.floor(m);d[1]=f+(Math.random()<m-f?1:0)} // 행운의 부적: 드랍 1.5배
   drops.forEach(([id,c])=>addItem(id,c));
   note(drops.map(([id,c])=>`${ITEMS[id].name} ${c}`).join(', ')+' 획득!');
 }
@@ -1519,11 +1539,11 @@ function updatePlayer(dt){
     }
   }
   // 충돌: 나무/바위 밀어내기
-  for(const n of nodes){
-    if(!n.active||!n.mesh.visible||n.r===0)continue;
-    const dx=camera.position.x-n.x,dz=camera.position.z-n.z,d=Math.hypot(dx,dz),m=n.r+.4;
-    if(d<m&&d>0){camera.position.x=n.x+dx/d*m;camera.position.z=n.z+dz/d*m}
-  }
+  {const C=nc();if(!BG||BGn!==nodes.length||BGc!==COL.length)buildBG();
+    const push=n=>{if(!n.active||!n.mesh.visible||!(n.r>0))return;const dx=camera.position.x-n.x,dz=camera.position.z-n.z,d=Math.hypot(dx,dz),m=n.r+.4;if(d<m&&d>0){camera.position.x=n.x+dx/d*m;camera.position.z=n.z+dz/d*m}};
+    const gx=Math.floor(camera.position.x/10),gz=Math.floor(camera.position.z/10);
+    for(let i=gx-1;i<=gx+1;i++)for(let j=gz-1;j<=gz+1;j++){const a=BG.get(bgk(i,j));if(a)for(const n of a)if(n.mesh)push(n)} // 주변 칸의 나무·바위·광석만 검사
+    for(const n of C.an)push(n);}
   for(const c of COL){const dx=camera.position.x-c.x,dz=camera.position.z-c.z,d=Math.hypot(dx,dz),m=c.r+.4;if(d<m&&d>0){camera.position.x=c.x+dx/d*m;camera.position.z=c.z+dz/d*m}}
   // 섬 가장자리
   const ZB=zone==='main'?[3,MAP_SIZE-3,3,MAP_SIZE-3]:[ZN[zone].x0+8,ZN[zone].x0+ZN[zone].w-8,ZN[zone].z0+8,ZN[zone].z0+ZN[zone].h-8];
@@ -1539,17 +1559,17 @@ function updatePlayer(dt){
 function updateDetector(){
   const a=inv[sel],holding=!!(a&&a.id==='detector'),el=$('det');
   let best=1e9,bn=null;
-  for(const n of nodes){
-    if(n.type!=='titanium'||!n.active)continue;
+  for(const n of nc().ti){
+    if(!n.active)continue;
     const d=Math.hypot(camera.position.x-n.x,camera.position.z-n.z);
     if(n.stage===0&&d<best){best=d;bn=n} // 아직 안 판 것 중 가장 가까운 티타늄
     n.mesh.visible=!!(n.stage===1||n.dig>0||(holding&&d<6));
   }
   if(!holding||best>=1e9){el.style.display='none';return}
   el.style.display='block';
-  if(best>100){el.textContent='티타늄 신호 없음 (100m 밖)';return} // 탐지 범위 100m
+  if(best>100){el.textContent='티타늄 신호 없음 (50m 밖)';return} // 탐지 범위 100m
   const radar=!!(a.att&&a.att[0]&&a.att[0].id==='metal_radar'); // 금속 레이더 부착 시 거리·방향 표시
-  el.textContent=best<6?'티타늄 발견! 삽으로 발굴하세요':radar?`티타늄 ${arrowTo(bn.x,bn.z)} ${Math.round(best)}m`:'티타늄 신호 감지';
+  el.textContent=best<6?'티타늄 발견! 삽으로 발굴하세요':radar?`티타늄 ${arrowTo(bn.x,bn.z)} ${dm(best)}m`:'티타늄 신호 감지';
   const iv=Math.max(150,Math.min(2000,best*30));
   if(audio&&Date.now()-lastBeep>iv){
     lastBeep=Date.now();
@@ -1587,10 +1607,11 @@ function iconSVG(id){
   if(!b)b=`<rect x="5" y="5" width="22" height="22" rx="4" fill="#607d8b"/><text x="16" y="22" font-size="14" text-anchor="middle" fill="#fff">${it?it.name[0]:'?'}</text>`;
   return _svgC[id]=`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
 }
+const PELT=(f,d)=>`<path d="M7 8 L12 6 L16 8 L20 6 L25 8 L24 13 L28 16 L24 20 L25 26 L20 24 L16 27 L12 24 L7 26 L8 20 L4 16 L8 13Z" fill="${f}" stroke="#000" stroke-width="1" stroke-linejoin="round"/><ellipse cx="13" cy="14" rx="2.6" ry="2" fill="${d}"/><ellipse cx="20" cy="17" rx="3" ry="2.2" fill="${d}"/><ellipse cx="14" cy="21" rx="2" ry="1.6" fill="${d}"/>`;
 function iconBody(id){
   const it=ITEMS[id]||{},[mt,rest]=_mat(id),H='#8d6e63',O='stroke="#0006" stroke-width=".8"';
   const tc=mt?MATC[mt]:MATC.iron,c=mt?MATC[mt]:(ICOL[id]||'#9e9e9e');
-  if(id==='big_hide'||id==='wild_hide')return `<polygon points="6,8 13,5 19,5 26,8 29,14 24,17 24,27 8,27 8,17 3,14" fill="${id==='big_hide'?'#6d4c41':'#9e8c6a'}" ${O}/><polygon points="13,5 19,5 16,11" fill="#0003"/>`;
+  if(id==='big_hide')return PELT('#6d4c41','#4e342e');if(id==='wild_hide')return PELT('#9e8c6a','#6b5d43');
   if(id==='ruby')return `<polygon points="16,4 27,12 16,28 5,12" fill="#e53935" ${O}/><polygon points="16,4 21,12 16,28 11,12" fill="#ff8a80"/>`;
   if(id==='titanium_alloy')return `<polygon points="5,23 10,11 22,11 27,23" fill="#90a4ae" ${O}/><polygon points="10,11 22,11 20,15 12,15" fill="#fff5"/><circle cx="16" cy="19" r="2.4" fill="#ffd54f"/>`;
   if(id==='alloy')return `<polygon points="5,23 10,11 22,11 27,23" fill="#a9845a" ${O}/><polygon points="10,11 22,11 20,15 12,15" fill="#fff5"/><circle cx="12" cy="19" r="1.6" fill="#d2691e"/><circle cx="20" cy="19" r="1.6" fill="#cfd8dc"/>`;
@@ -1622,7 +1643,7 @@ function iconBody(id){
   if(id==='sea_bucket'||id==='water_bucket')return `<path d="M7 9 L25 9 L22 28 L10 28Z" fill="#9e9e9e" ${O}/><ellipse cx="16" cy="9" rx="9" ry="2.5" fill="${id==='sea_bucket'?'#0288d1':'#4fc3f7'}" ${O}/><path d="M7 9 Q16 -2 25 9" stroke="#607d8b" stroke-width="1.6" fill="none"/>`;
   if(id==='craft_axe')return `<rect x="14.8" y="4" width="2.4" height="27" fill="${H}"/><polygon points="29,3.5 29,17.5 17,10.5" fill="#ffd54f" ${O}/><circle cx="9" cy="8" r="3.6" fill="#ffd54f" ${O}/><circle cx="9" cy="8" r="1.3" fill="#8d6e63"/>`;
   if(id==='axe')return `<rect x="14.8" y="4" width="2.4" height="27" fill="${H}"/><polygon points="29,3.5 29,17.5 17,10.5" fill="#d32f2f" ${O}/><polygon points="27.2,4.55 29,3.5 29,17.5 27.2,16.45" fill="#fff"/><rect x="13.6" y="22" width="4.8" height="3" fill="#ffd54f"/>`;
-  if(id==='flint_pickaxe')return `<rect x="14.8" y="2.5" width="2.4" height="28.5" fill="${H}"/><polygon points="8,12 12,5.5 20,4.5 23,9.5 19,14.5 11,15" fill="#62666d" ${O}/><polygon points="20,4.5 23,9.5 19,14.5 16,9" fill="#7c8189"/><polygon points="23,9.5 29,10.5 23,12.5" fill="#4a4d53" ${O}/>`;
+  if(id==='flint_pickaxe')return `<rect x="14.8" y="2.5" width="2.4" height="28.5" fill="${H}"/><polygon points="9,14 9,7 12,5.5 20,4.5 23,9.5 19,14.5 11,15" fill="#62666d" ${O}/><polygon points="20,4.5 23,9.5 19,14.5 16,9" fill="#7c8189"/><polygon points="23,9.5 29,10.5 23,12.5" fill="#4a4d53" ${O}/>`;
   if(id==='battle_axe_head')return `<polygon points="16,16 3,4 3,28" fill="#8fa5b3" ${O}/><polygon points="16,16 29,4 29,28" fill="#cfd8dc" ${O}/>`;
   if(id==='battle_axe')return `<rect x="14.8" y="2" width="2.4" height="29" fill="${H}"/><polygon points="15,10.5 3,3 3,18" fill="#8fa5b3" ${O}/><polygon points="17,10.5 29,3 29,18" fill="#cfd8dc" ${O}/>`;
   const isHead=/_head$/.test(id),kd=isHead?rest.replace('_head',''):it.kind;
@@ -1683,7 +1704,7 @@ function iconBody(id){
     case 'coal':return `<polygon points="5,22 9,10 18,6 27,13 25,24 14,27" fill="#262626" ${O}/><polygon points="9,10 18,6 17,12" fill="#555"/>`;
     case 'copper':case 'iron':case 'gold':case 'titanium':return `<polygon points="4,23 8,10 17,5 27,11 28,23 16,28" fill="#757575" ${O}/><rect x="9" y="11" width="5" height="5" fill="${ICOL[id]}"/><rect x="18" y="14" width="6" height="5" fill="${ICOL[id]}"/><rect x="12" y="20" width="5" height="4" fill="${ICOL[id]}"/>`;
     case 'diamond':return `<polygon points="16,3 27,12 16,29 5,12" fill="#4dd0e1" ${O}/><polygon points="5,12 27,12 16,3" fill="#b2ebf2"/><polygon points="16,29 11,12 21,12" fill="#26c6da"/>`;
-    case 'hide':return `<path d="M5 9 L11 6 L16 9 L22 6 L27 10 L25 17 L27 24 L20 27 L14 24 L7 26 L8 17Z" fill="#8d5a2b" ${O}/>`;
+    case 'hide':return PELT('#a0693a','#6d4326');
     case 'wool':return `<circle cx="11" cy="17" r="6" fill="#f5f5f5" ${O}/><circle cx="19" cy="15" r="7" fill="#fafafa" ${O}/><circle cx="16" cy="21" r="6" fill="#eeeeee" ${O}/>`;
     case 'cloth':return `<rect x="5" y="7" width="22" height="18" rx="2" fill="#eceff1" ${O}/><line x1="5" y1="13" x2="27" y2="13" stroke="#cfd8dc"/><line x1="5" y1="19" x2="27" y2="19" stroke="#cfd8dc"/>`;
     case 'pork':return `<ellipse cx="15" cy="17" rx="11" ry="8" fill="#f4a6b0" ${O}/><ellipse cx="13" cy="15" rx="5" ry="3" fill="#ffd0d6"/><circle cx="25" cy="10" r="3" fill="#fff"/>`;
@@ -1713,7 +1734,7 @@ function buildHeld(id){
     const fm=ms(0x62666d),fm2=ms(0x4a4d53);
     const ch=new THREE.Mesh(new THREE.DodecahedronGeometry(.075),fm);ch.scale.set(1.25,1.05,.95);ch.position.set(.015,.27,0);ch.rotation.set(.4,.3,.2);g.add(ch);
     const pk=new THREE.Mesh(new THREE.ConeGeometry(.045,.2,5),fm2);pk.rotation.z=-Math.PI/2;pk.position.set(.14,.28,0);g.add(pk);
-    const pk2=new THREE.Mesh(new THREE.ConeGeometry(.03,.12,5),fm2);pk2.rotation.z=Math.PI/2;pk2.position.set(-.09,.26,0);g.add(pk2);
+    const pk2=new THREE.Mesh(new THREE.CylinderGeometry(.05,.055,.09,6),fm2);pk2.rotation.z=Math.PI/2;pk2.position.set(-.1,.265,0);g.add(pk2); // 뒷면은 뭉툭하게
   }
   else if(!isHead&&it.type==='tool'&&kd==='pickaxe'){
     B(.05,.6,.05,W);
@@ -1913,7 +1934,7 @@ function toggleMouse(){
 }
 function toggleInv(){
   mouseMode=false;invOpen=!invOpen;held=null;markHeld();if(!invOpen){closeChest();closeAtt()}
-  $('inv').style.display=invOpen?'flex':'none';$('invX').style.display=invOpen?'block':'none';
+  $('inv').style.display=invOpen?'flex':'none';
   if(invOpen){
     for(const k in keys)keys[k]=0;
     document.exitPointerLock();proximity();renderRec();
@@ -1928,9 +1949,9 @@ function note(m){
 }
 
 /* ---------- 제작 패널 (테라리아식) ---------- */
-const CATS=[['tools','도구'],['weapons','무기'],['armor','갑옷'],['util','유틸리티'],['build','건물'],['cook','요리'],['mat','재료']];
-const rcat=r=>r.cat==='func'?'build':r.cat,rsub=r=>r.cat==='func'?'기능':r.cat==='build'?'건축':r.sub; // 기능·건축 블록은 건물 카테고리 안의 탭
-const SUBS={tools:['곡괭이','도끼','삽','기타'],weapons:['창','도끼','검','활','화살','갑옷'],mat:['가공','주괴','틀','머리']};
+const CATS=[['tools','도구'],['weapons','무기'],['armor','갑옷'],['mat','재료'],['build','건물'],['cook','요리']];
+const rcat=r=>r.cat==='func'?'build':r.cat==='util'?'tools':r.cat,rsub=r=>r.cat==='func'?'기능':r.cat==='build'?'건축':r.cat==='util'?'유틸리티':r.sub; // 기능·건축 블록은 건물 카테고리 안의 탭
+const SUBS={tools:['곡괭이','도끼','삽','기타','유틸리티'],weapons:['창','도끼','검','활','화살','갑옷'],mat:['가공','주괴','틀','머리']};
 let craftSub=null;
 function renderCraft(){
   const cats=$('cats'),list=$('rlist');
@@ -1946,8 +1967,8 @@ function renderCraft(){
   if(!craftCat)return;
   const vis=RECIPES.filter(r=>rcat(r)===craftCat&&(!r.near||({furnace:nearFurn,util_table:nearUtil,table:nearTable,anvil:nearAnvil,foundry:nearFoundry,gun_table:nearGun,campfire:nearCamp})[r.near]));
   const ncn=nearChests().length;
-  if(ncn){const h=document.createElement('div');h.style.cssText='font-size:11px;color:#ffcc80;padding:2px 4px';h.textContent=`📦 근처 창고 ${ncn}개의 재료도 사용 (50m)`;list.appendChild(h)}
-  const subs=craftCat==='build'?['기능','건축']:(SUBS[craftCat]||[]).filter(x=>vis.some(r=>r.sub===x));
+  if(ncn){const h=document.createElement('div');h.style.cssText='font-size:11px;color:#ffcc80;padding:2px 4px';h.textContent=`📦 근처 창고 ${ncn}개의 재료도 사용 (25m)`;list.appendChild(h)}
+  const subs=craftCat==='build'?['기능','건축']:(SUBS[craftCat]||[]).filter(x=>x==='유틸리티'||vis.some(r=>rsub(r)===x));
   if(subs.length){
     if(!subs.includes(craftSub))craftSub=subs[0];
     const row=document.createElement('div');row.style.cssText='display:flex;gap:4px;flex-wrap:wrap';
@@ -1958,7 +1979,7 @@ function renderCraft(){
     list.appendChild(row);
   }
   const rs=vis.filter(r=>!subs.length||rsub(r)===craftSub);
-  if(!rs.length){const d0=document.createElement('div');d0.className='rc';d0.textContent=craftCat==='util'&&!nearUtil?'유틸리티 작업대 근처(20m)에서 제작할 수 있어요':'제작법 없음';list.appendChild(d0)};
+  if(!rs.length){const d0=document.createElement('div');d0.className='rc';d0.textContent=craftSub==='유틸리티'&&!nearUtil?'유틸리티 작업대 근처(10m)에서 제작할 수 있어요':'제작법 없음';list.appendChild(d0)};
   rs.forEach(r=>{
     const ok=!(r.up&&!inv.some(x=>x&&x.id===r.up&&(x.lv||0)<4))&&Object.entries(r.cost).every(([k,v])=>count(k)>=v)&&Object.entries(r.need||{}).every(([k,v])=>count(k)>=v)&&!(r.tool&&!findAxe());
     let txt=Object.entries(r.cost).map(([k,v])=>`${ITEMS[k].name} ${count(k)}/${v}`).join(', ');
@@ -2009,8 +2030,7 @@ function bindMobile(){
   $('mp').addEventListener('pointerdown',ev=>{ev.preventDefault();if(!active())return;if(!canInteract()&&isGun())gunAim=true;else if(!canInteract()&&isMag())magOn=true;else if(strongOK()&&!canInteract())sgStart();else place()});
   for(const ev of ['pointerup','pointercancel'])$('mp').addEventListener(ev,()=>{sgRelease();gunAim=false;magOn=false});
   tap('mc',()=>{keys.crouch=keys.crouch?0:1});tap('mrl',()=>reloadStart());tap('mj',()=>{if(grounded){velY=7;grounded=false}});tap('mi',()=>toggleInv());tap('mgrid',()=>toggleGrid());
-  {let lastX=0;const closeOnce=e=>{if(e){e.preventDefault();e.stopPropagation()}const t=Date.now();if(t-lastX<300)return;lastX=t;if(invOpen)toggleInv()}; // 모바일: 인벤토리·창고 닫기 (큰 고정 버튼 + 바깥 탭)
-    for(const id of ['closeInv','invX']){const b=$(id);b.addEventListener('pointerdown',closeOnce);b.addEventListener('click',closeOnce)}
+  {let lastX=0;const closeOnce=e=>{if(e){e.preventDefault();e.stopPropagation()}const t=Date.now();if(t-lastX<300)return;lastX=t;if(invOpen)toggleInv()}; // 인벤토리·창고 닫기: 창 바깥을 누르면 닫힘
     $('inv').addEventListener('pointerdown',e=>{if(e.target===$('inv'))closeOnce(e)})}
   let tid=null,lx=0,ly=0,sx=0,sy=0,moved=false,t0=0,hT=null,hI=null;const cv=$('cv');
   const stopHold=()=>{clearTimeout(hT);clearInterval(hI);hT=hI=null};
@@ -2123,7 +2143,7 @@ function bindInv(){
   const ghost=document.createElement('div');ghost.id='ghost';ghost.style.display='none';
   document.body.appendChild(ghost);
   document.addEventListener('pointerdown',e=>{
-    if(!invOpen)return;
+    if(!invOpen||(e.pointerType==='mouse'&&e.button!==0))return; // 우클릭은 부착물창만 (contextmenu)
     const i=slotIdx(e.target);
     if(i>=0){drag={i,x:e.clientX,y:e.clientY,moved:false};clearTimeout(lpT);
       if(mobile||e.pointerType==='touch')lpT=setTimeout(()=>{if(drag&&!drag.moved&&attDef(drag.i)){drag.lp=true;toggleAtt(drag.i)}},500)}
@@ -2165,9 +2185,9 @@ function updateSky(){
   else{ambL.intensity=.3+.6*f;sunL.intensity=.45+.6*f;if(zone==='forest')scene.fog.density+=.006}
   sunL.color.lerpColors(C_MN,C_SD,f);
   const p=worldT%1200,day=p<600,left=Math.ceil((day?600:1200)-p);
-  const ck=$('clock'),has=inv.slice(37,45).some(i=>i&&i.id==='clock');
+  const ck=$('clock'),has=hasU('clock');
   ck.style.display=has?'block':'none';
-  if(has)ck.textContent=`${day?'☀ 낮':'🌙 밤'} ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;
+  if(has)setT(ck,`${day?'☀ 낮':'🌙 밤'} ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`);
 }
 
 let nightT=0;
@@ -2178,8 +2198,8 @@ function addCrack(n){
     const c=new THREE.Mesh(new THREE.BoxGeometry(.05,.7,.05),new THREE.MeshBasicMaterial({color:0x111111})),a=Math.random()*6.28;
     c.position.set(Math.cos(a)*1.1,.6+Math.random()*.6,Math.sin(a)*1.1);c.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);n.mesh.add(c);return c;
   }
-  // 바위 상자(3×1.8×1): 밑면을 뺀 5개 면 전체에 크고 갈라진 금 — 한 대 맞을 때마다 "파박" 하고 크게 퍼짐
-  const FACES=[{p:[0,1.815,0],r:[-Math.PI/2,0,0],w:3,h:1},{p:[1.515,.9,0],r:[0,Math.PI/2,0],w:1,h:1.8},{p:[-1.515,.9,0],r:[0,-Math.PI/2,0],w:1,h:1.8},{p:[0,.9,.515],r:[0,0,0],w:3,h:1.8},{p:[0,.9,-.515],r:[0,Math.PI,0],w:3,h:1.8}];
+  // 바위 상자(3×1.8×2): 밑면을 뺀 5개 면 전체에 크고 갈라진 금 — 한 대 맞을 때마다 "파박" 하고 크게 퍼짐
+  const FACES=[{p:[0,1.815,0],r:[-Math.PI/2,0,0],w:3,h:2},{p:[1.515,.9,0],r:[0,Math.PI/2,0],w:2,h:1.8},{p:[-1.515,.9,0],r:[0,-Math.PI/2,0],w:2,h:1.8},{p:[0,.9,1.015],r:[0,0,0],w:3,h:1.8},{p:[0,.9,-1.015],r:[0,Math.PI,0],w:3,h:1.8}];
   const all=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:0x0a0a0a});
   for(const f of FACES){
     const grp=new THREE.Group();
@@ -2247,7 +2267,7 @@ function pushMob(n){ // 몹·동물이 장애물 안으로 들어가면 밖으�
 function updateMobs(dt,now){
   const cx=camera.position.x,cz=camera.position.z;
   nightT-=dt;
-  const night=dayAmount(worldT)<.2,nm=nodes.filter(n=>n.night);
+  const night=dayAmount(worldT)<.2,nm=nc().nm;
   if(!night){for(const n of nm)if(n.active){n.active=false;n.mesh.visible=false;n.respawn=Infinity}}
   else if(nightT<=0){
     nightT=10;
@@ -2256,7 +2276,7 @@ function updateMobs(dt,now){
         if(x>5&&x<MAP_SIZE-5&&z>5&&z<MAP_SIZE-5&&height(x,z)>.6&&riverInfo(x,z)>6&&!inTemple(x,z,4)){n.x=x;n.z=z;n.active=true;n.hp=n.maxHp;n.mesh.visible=true;n.respawn=Infinity;break}}
     }
   }
-  for(const n of nodes)if(n.mob&&n.active){
+  for(const n of nc().an)if(n.mob&&n.active){
     const dx=cx-n.x,dz=cz-n.z,d=Math.hypot(dx,dz);
     if(n.pack&&d<n.aggro)n.pack.alert=now+5000; // 한 마리가 발견하면 무리 전체가 추적
     n.chase=d<n.aggro||(!!n.pack&&n.pack.alert>now&&d<n.aggro*2);
@@ -2276,13 +2296,13 @@ function updateMobs(dt,now){
   }
 }
 function updateCompass(){
-  const e=$('comp'),has=inv.slice(37,45).some(i=>i&&i.id==='compass');
+  const e=$('comp'),has=hasU('compass');
   e.style.display=has?'block':'none';if(!has)return;
   const b=((-yaw*180/Math.PI)%360+360)%360,D=['북','북동','동','남동','남','남서','서','북서'];
   const fl=placed.find(s=>s.id==='flag');
   let ft='깃발 없음';
-  if(fl){const dx=fl.pos.x-camera.position.x,dz=fl.pos.z-camera.position.z,rel=((Math.atan2(dx,-dz)*180/Math.PI-b)%360+360)%360;ft=`${['↑','↗','→','↘','↓','↙','←','↖'][Math.round(rel/45)%8]} 깃발 ${Math.round(Math.hypot(dx,dz))}m`}
-  e.textContent=`🧭 ${ft} · ${D[Math.round(b/45)%8]} ${Math.round(b)}°`;
+  if(fl){const dx=fl.pos.x-camera.position.x,dz=fl.pos.z-camera.position.z,rel=((Math.atan2(dx,-dz)*180/Math.PI-b)%360+360)%360;ft=`${['↑','↗','→','↘','↓','↙','←','↖'][Math.round(rel/45)%8]} 깃발 ${dm(Math.hypot(dx,dz))}m`}
+  setT(e,`🧭 ${ft} · ${D[Math.round(b/45)%8]} ${Math.round(b)}°`);
 }
 /* ---------- 루프 ---------- */
 let last=0;
@@ -2301,20 +2321,20 @@ function animate(){
     else b.style.display='none';
     $('hp').style.width=P.hp/P.maxHp*100+'%';
     $('st').style.width=P.st/P.maxSt*100+'%';
-    $('hpt').textContent=`체력 ${P.hp.toFixed(1)} / ${P.maxHp}${armorDef()>0?' · 방어 '+Math.round(armorDef()*100)+'%':''}`;
-    $('stt').textContent=`스테미나 ${P.st.toFixed(1)} / ${P.maxSt}`;
+    setT($('hpt'),`체력 ${P.hp.toFixed(1)} / ${P.maxHp}${armorDef()>0?' · 방어 '+Math.round(armorDef()*100)+'%':''}`);
+    setT($('stt'),`스테미나 ${P.st.toFixed(1)} / ${P.maxSt}`);
   }
   // 리스폰
   const ms=Date.now();
-  for(const n of nodes)if(!n.active&&!n.night&&!n.slime&&ms>=n.respawn){
+  if(ms-lastResp>500){lastResp=ms;for(const n of nodes)if(!n.active&&!n.night&&!n.slime&&ms>=n.respawn){
     if(n.pick){const p=n.pick();if(p){n.x=p[0];n.z=p[1];n.mesh.position.set(p[0],height(p[0],p[1])+(n.dy||0),p[1])}}
-    n.active=true;n.hp=n.maxHp;if(n.mob){if(n.pack){n.x=n.pack.x+n.ox;n.z=n.pack.z+n.oz}else{n.x=n.hx;n.z=n.hz}}n.mesh.visible=n.type!=='titanium';if(n.type==='titanium')setTi(n,0)}
+    n.active=true;n.hp=n.maxHp;if(n.mob){if(n.pack){n.x=n.pack.x+n.ox;n.z=n.pack.z+n.oz}else{n.x=n.hx;n.z=n.hz}}n.mesh.visible=n.type!=='titanium';if(n.type==='titanium')setTi(n,0)}}
   for(const h of herds){
     h.t-=dt;if(h.t<=0){h.t=4+Math.random()*5;h.a=Math.random()<.4?null:Math.random()*6.28}
     if(h.a!=null){const nx=h.x+Math.cos(h.a)*1.2*dt,nz=h.z+Math.sin(h.a)*1.2*dt;
       if(height(nx,nz)>.6&&riverInfo(nx,nz)>8&&caveT(nx,nz)<-.02&&forestAmt(nx,nz)<.05){h.x=nx;h.z=nz}else h.t=0}
   }
-  for(const n of nodes)if(n.animal&&n.h&&n.active){
+  for(const n of nc().an)if(n.h&&n.active){
     // 개체마다 각자 목적지·속도·휴식을 정해 군집 범위 안에서 자유롭게 움직임 (군집 중심은 조금씩 이동)
     n.jt=(n.jt===undefined?Math.random()*5:n.jt)-dt;
     if(n.jt<=0){n.jt=2+Math.random()*6;n.ox=(Math.random()*2-1)*7;n.oz=(Math.random()*2-1)*7;n.idle=Math.random()<.35;n.sp=.5+Math.random()*1.1}
@@ -2332,7 +2352,7 @@ function animate(){
     if(p.a!=null){const nx=p.x+Math.cos(p.a)*1.7*dt,nz=p.z+Math.sin(p.a)*1.7*dt;
       if(nx>12&&nx<MAP_SIZE-12&&nz>12&&nz<MAP_SIZE-24&&height(nx,nz)>.6&&riverInfo(nx,nz)>8&&!caveNear(nx,nz)&&forestAmt(nx,nz)>.3&&!inTemple(nx,nz,10)){p.x=nx;p.z=nz}else p.t=0}
   }
-  for(const n of nodes)if(n.pack&&n.active&&!n.chase){
+  for(const n of nc().an)if(n.pack&&n.active&&!n.chase){
     n.jt=(n.jt===undefined?Math.random()*5:n.jt)-dt;
     if(n.jt<=0){n.jt=3+Math.random()*6;n.ox=(Math.random()*2-1)*3.5;n.oz=(Math.random()*2-1)*3.5;n.idle=Math.random()<.25}
     const tx=n.pack.x+n.ox,tz=n.pack.z+n.oz,d=Math.hypot(tx-n.x,tz-n.z);
@@ -2341,7 +2361,7 @@ function animate(){
       if(!inTemple(nx,nz,3)){n.x=nx;n.z=nz;n.mesh.rotation.y=-ang;n.mesh.position.set(n.x,Math.max(height(n.x,n.z),fl0(n.x,n.z)+.2),n.z)}}
   }
   // 몹·동물 오브젝트 충돌
-  for(const n of nodes)if(n.animal&&n.active&&n.mesh.visible&&pushMob(n))n.mesh.position.set(n.x,n.mob?Math.max(height(n.x,n.z),fl0(n.x,n.z)+.2):height(n.x,n.z),n.z);
+  for(const n of nc().an)if(n.active&&n.mesh.visible&&pushMob(n))n.mesh.position.set(n.x,n.mob?Math.max(height(n.x,n.z),fl0(n.x,n.z)+.2):height(n.x,n.z),n.z);
   // 불빛 깜빡임
   const fl=Math.sin(t*12)*.08+Math.sin(t*7.3)*.06;
   if(playerLight.userData.base)playerLight.intensity=playerLight.userData.base+fl;else playerLight.intensity=0;
@@ -2558,7 +2578,7 @@ function updateGrid(){
   let tc=null; // 바라보는 칸 (최대 14m 앞, 지형과 만나는 곳)
   for(let t=1;t<=14;t+=.5){const px=camera.position.x+dir.x*t,py=camera.position.y+dir.y*t,pz=camera.position.z+dir.z*t;
     if(py<height(px,pz)){tc=cellOf(px,pz);break}}
-  const me=cellInfo(ci,cj);let txt=`격자 [${ci}, ${cj}] (${GRID}m 칸) · ${me.ok?'건축 가능':'건축 불가: '+me.why}`;
+  const me=cellInfo(ci,cj);let txt=`격자 [${ci}, ${cj}] (${GRID/2}m 칸) · ${me.ok?'건축 가능':'건축 불가: '+me.why}`;
   if(tc){const ti=cellInfo(tc[0],tc[1]),[cx,cz]=cellCenter(tc[0],tc[1]);
     gridHL.position.set(cx,height(cx,cz)+.2,cz);gridHL.material.color.set(ti.ok?0x66ff77:0xff5555);gridHL.visible=true;
     txt+=`\n보는 칸 [${tc[0]}, ${tc[1]}] · ${ti.ok?'건축 가능':ti.why}`}
@@ -2612,7 +2632,15 @@ const ROADMAP=[
       "추가(4-b): 금속 레이더 — 금속탐지기 부착물창에 장착하면 티타늄 거리·방향 표시 (미장착 시 신호 감지만 표시)",
       "추가(4-b): 행운의 부적(유틸칸) — 모든 아이템 드랍 수 1.5배 (소수는 확률 반올림)",
       "추가(4-b): 돋보기 — 우클릭 꾹 하면 화면 앞으로 들어 올려 중앙 원형 렌즈 안만 확대 (강화 단계별 1.5→2→2.5→3→4배)",
-      "추가(4-b): 조총 — 데미지 50(활 최대의 5배), 공속 0.6초, 장탄 5발, R키(모바일 장전 버튼) 2초 장전, 총알은 인벤토리에서 소모 / 정조준(우클릭 꾹) 사거리 400m·에임대로, 그냥 조준 사거리 100m·10m당 반지름 0.1m 원 안 임의 탄착 / 새 시스템이라 오류 가능, 이후 업데이트로 수정"]}]},
+      "추가(4-b): 조총 — 데미지 50(활 최대의 5배), 공속 0.6초, 장탄 5발, R키(모바일 장전 버튼) 2초 장전, 총알은 인벤토리에서 소모 / 정조준(우클릭 꾹) 사거리 400m·에임대로, 그냥 조준 사거리 100m·10m당 반지름 0.1m 원 안 임의 탄착 / 새 시스템이라 오류 가능, 이후 업데이트로 수정",
+      "수정: 유틸리티 제작을 도구 카테고리의 '유틸리티' 탭으로 이동, 제작창 카테고리 3x2 (도구·무기·갑옷·재료·건물·요리)",
+      "수정: 광석·유황 밑면 짧은 쪽 1m → 2m로 복구 (이전 축소는 의도와 달랐음, 균열도 맞춤)",
+      "수정: 인벤토리 닫기 버튼 삭제 — 창 바깥을 누르면 닫힘",
+      "수정: 인벤토리에서 우클릭은 아이템을 집지 않고 부착물창만 열림",
+      "수정: 가죽·큰 가죽·야생 가죽 아이콘을 동물 가죽 모양으로 / 부싯돌 곡괭이 뒷면을 뭉툭하게",
+      "수정: 길이 기준 변경 — 월드 2단위 = 1m로 표기 (맵 500m x 500m, 광석 밑면 1m). 거리 표시(나침반·탐지기·레이더·화학물탐지기·활 사거리·격자·제작 범위 안내)를 모두 절반으로, 월드·속도·사거리 실제 값은 그대로",
+      "수정: 강공격 무기별 분리 — 전투도끼: 도끼를 수평으로 눕혀 오른쪽→왼쪽으로 휩쓸기(앞쪽 부채꼴 범위 피해, 공속 0.5초) / 창: 빠른 찌르기 유지, 사거리 1.5배(9m)·일직선 관통 범위 피해 / 검: 기존 유지 (범위 안에 몹이 없으면 기존처럼 단일 대상 채집·공격)",
+      "최적화: 플레이어 충돌을 주변 칸만 검사, 종류별 노드 목록 캐시(탐지기·몹·슬라임), 리스폰 검사 0.5초 간격, 공격·사격 레이캐스트를 가까운 대상만, HUD 글자 변경 시에만 갱신, 모바일 렌더 해상도 상한 1.5배"]}]},
   {v:"v10",t:"대규모 · 앱 패키지·추락한 비행기",subs:[
     {v:"10.2.1",d:'',items:[
       "버그: 모바일에서 인벤토리·창고가 닫히지 않던 문제 수정 (고정 닫기 버튼, 바깥 탭으로 닫기)",
