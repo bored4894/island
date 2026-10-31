@@ -227,7 +227,7 @@ Object.assign(ITEMS,{
 Object.assign(ITEMS,{
   sand:{name:'모래'},sulfur:{name:'유황'},coal_powder:{name:'석탄가루'},gunpowder:{name:'화약'},glass:{name:'유리'},
   copper_plate:{name:'구리판'},titanium_rod:{name:'티타늄봉'},bullet:{name:'총알'},salt:{name:'소금'},chemical:{name:'화학물질'},
-  metal_radar:{name:'금속 레이더'},
+  metal_radar:{name:'금속 레이더'},detect_amp:{name:'감지 증폭기'},
   magnifier:{name:'돋보기',type:'tool',kind:'magnifier',tier:0,cd:300},
   musket:{name:'조총',type:'tool',kind:'gun',tier:0,cd:600},
   lucky_charm:{name:'행운의 부적',type:'passive',util:true},
@@ -236,7 +236,9 @@ Object.assign(ITEMS,{
   water_bucket:{name:'물 양동이',type:'tool',kind:'bucket',tier:0,cd:500}
 });
 const MAG_ZOOM=[1.5,2,2.5,3,4]; // 돋보기 강화 단계별 배율 (inv 항목의 lv 0~4)
-ITEMS.detector.att=[{l:'레이더',ok:['metal_radar']},{l:'화학물탐지기',ok:['chem_detector']}]; // 부착물창: 슬롯 이름 / 장착 가능 아이템
+const DET_ATT=['metal_radar','detect_amp','chem_detector']; // 금속탐지기에 달 수 있는 부착물 (4칸 중 아무 칸이나)
+ITEMS.detector.att=[1,2,3,4].map(i=>({l:'슬롯 '+i,ok:DET_ATT}));
+for(const k in ITEMS)if(ITEMS[k].kind==='gun')ITEMS[k].att=[1,2,3,4].map(i=>({l:'슬롯 '+i,ok:[]})); // 모든 총: 부착물 슬롯 4개 // 부착물창: 슬롯 이름 / 장착 가능 아이템
 const TIERN=['','부싯돌','구리','철','티타늄','다이아'];
 const TN={pickaxe:'곡괭이',axe:'도끼',shovel:'삽',spear:'창',sword:'검'};
 const TCD={pickaxe:600,axe:500,shovel:400,spear:300,sword:400};
@@ -308,9 +310,11 @@ add('tools','기타','magnifier','돋보기',{glass:2,iron_ingot:2},{near:'table
 add('tools','기타','magnifier_up','돋보기 강화 (최대 4번)',{glass:1},{near:'anvil',up:'magnifier'});
 add('weapons','화살','bullet','총알 x5',{copper_plate:1,gunpowder:2,copper_ingot:1},{near:'gun_table',yield:5});
 add('weapons','활','musket','조총',{plank:2,metal_plate:4,alloy:4,iron_ingot:10,titanium_rod:4},{near:'gun_table'});
+add('cook',null,'cooked_pork','구운 고기',{pork:1},{near:'campfire'});
 add('cook',null,'salt','소금 x4',{sea_bucket:1},{near:'campfire',yield:4,ret:{bucket:1}});
 add('tools','기타','chem_detector','화학물탐지기',{diamond:3,wire:2,gold_ingot:2});
 add('util',null,'metal_radar','금속 레이더',{compass:1,diamond:3,wire:3},{near:'util_table'});
+add('util',null,'detect_amp','감지 증폭기',{metal_radar:1,ruby:1,titanium_alloy:4},{near:'util_table'}); // 레이더 능력 + 탐지거리 150m
 add('util',null,'lucky_charm','행운의 부적',{ruby:1,titanium_alloy:4,diamond:4},{near:'util_table'});
 add('func',null,'table','제작대',{plank:6,rope:2});
 add('func',null,'furnace','화로',{stone:20});
@@ -392,7 +396,7 @@ const inv=new Array(137).fill(null); // 134 머리장신구, 135 망토, 136 화
 const ARM0=126,QV0=130,ACC_S=134,CAPE_S=135,QUIV_S=136,ARM_PARTS=['helmet','chest','legs','boots'],ARM_LBL=['헬멧','갑옷','바지','신발'];
 let sel=0,tab='tools',invOpen=false,lastAtk=0,swing=0,swingDur=.2,swingAlt=0,swingS=false,curRig=null,curBow=null,bowAim=0;
 const nodes=[],placed=[];
-const HELD_POS={detector:[.3,-.15,-.68],musket:[.22,-.27,-.78]};let toolZ=-.6,curGun=null; // 손에 든 아이템 위치 (기본: 손 위로 띄움)
+const HELD_POS={detector:[.3,-.15,-.68],musket:[.22,-.27,-.78]};let toolZ=-.6,curGun=null,curDet=null; // 손에 든 아이템 위치 (기본: 손 위로 띄움)
 const NC={n:-1,ti:[],sl:[],an:[],nm:[]};let lastResp=0; // 종류별 노드 목록 캐시 (노드 수가 바뀔 때만 다시 만듦)
 function nc(){if(NC.n!==nodes.length){NC.n=nodes.length;NC.ti=nodes.filter(n=>n.type==='titanium');NC.sl=nodes.filter(n=>n.slime);NC.an=nodes.filter(n=>n.animal);NC.nm=nodes.filter(n=>n.night)}return NC}
 const dm=v=>Math.round(v/2); // 길이 기준: 월드 2단위 = 1m (거리 표기는 모두 절반)
@@ -475,7 +479,7 @@ function buildWorld(){
   // 나무: 맵 전체 듬성듬성 + 우측 숲 빽빽
   const tp=[];
   const okT=(x,z,sp)=>landOK(x,z)&&caveT(x,z)<-.02&&Math.hypot(x-START.x,z-START.z)>6&&!tp.some(p=>Math.hypot(p[0]-x,p[1]-z)<sp);
-  RS(1);for(let i=0,n=0;i<40000&&n<450;i++){const x=R(10,MAP_SIZE-10),z=R(10,MAP_SIZE-20);if(okT(x,z,14)){tp.push([x,z]);tree(x,z);n++}}
+  RS(1);for(let i=0,n=0;i<40000&&n<450;i++){const x=R(10,MAP_SIZE-10),z=R(10,MAP_SIZE-20);if(okT(x,z,14)){tp.push([x,z]);tree(x,z,oakAt(x,z));n++}}
   RS(2);for(let i=0,n=0;i<200000&&n<3300;i++){const x=R(440,MAP_SIZE-5),z=R(25,880);if(forestAmt(x,z)>.5&&okT(x,z,7)){tp.push([x,z]);tree(x,z);n++}}
   // 줍는 돌: 시작 주변 + 맵 전체
   const stoneAt=(x,z)=>{
@@ -567,25 +571,26 @@ function buildWorld(){
     for(let q=-hw;q<=hw;q+=hw){for(const sd of [-1,1])BM(.35,y+2.2,.35,0x5d3a1a,q,(y-2.2)/2,sd*1.3)} // 강 속 기둥
     g.position.set(cx,0,cz);g.rotation.y=-Math.atan2(uz,ux);AS(g);
   }
-  // 강가 사탕수수: 개수는 시드마다 14~30개 랜덤, 듬성듬성
+  // 강가 사탕수수: 한 뭉치 3~5개, 강 전체 길이를 칸으로 나눠 칸마다 한 뭉치씩 고르게 배치
   RS(18);
   {
     const cnt=Math.floor(R(14,31)),segs=[];let tot=0;
     for(const [p,hw] of RIVERS)for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]);segs.push([a,b,hw,L,-(b[1]-a[1])/L,(b[0]-a[0])/L]);tot+=L}
     const cp=[];
-    for(let i=0;i<20000&&cp.length<cnt;i++){
-      let r=R(0,tot),sg=segs[0];for(const q of segs){if(r<q[3]){sg=q;break}r-=q[3]}
-      let x,z;
-      if(cp.length===0){const [a,b,hw,L,nx,nz]=sg,d=R(6,Math.max(7,L-6)),side=R(0,1)<.5?-1:1,off=hw+R(8,11);
-        x=a[0]+(b[0]-a[0])*d/L+nx*side*off;z=a[1]+(b[1]-a[1])*d/L+nz*side*off}
-      else{const q=cp[Math.floor(R(0,cp.length))%cp.length],an=R(0,6.283),dd=R(10,22); // 기존 지점에서 10~22m 떨어진 곳(강가 유지)
-        x=q[0]+Math.cos(an)*dd;z=q[1]+Math.sin(an)*dd;const ri=riverInfo(x,z);if(ri<6||ri>13)continue}
-      if(x<8||x>MAP_SIZE-8||z<8||z>MAP_SIZE-18||height(x,z)<.4||caveNear(x,z)||caveT(x,z)>=-.02||cp.some(p=>Math.hypot(p[0]-x,p[1]-z)<10))continue;
-      cp.push([x,z]);
-      {const k=2+Math.floor(Math.random()*4),sp=[]; // 한 지점에 2~5개 뭉침
-       for(let q=0,tr=0;q<k&&tr<40;tr++){const a=Math.random()*6.283,d=.5+Math.random()*1.7,qx=x+Math.cos(a)*d,qz=z+Math.sin(a)*d;
-         if(height(qx,qz)<.4||sp.some(p=>Math.hypot(p[0]-qx,p[1]-qz)<.9))continue;
-         sp.push([qx,qz]);caneAt(qx,qz);nodes[nodes.length-1].cc=[x,z];q++}}
+    for(let i=0;i<cnt;i++){
+      for(let tr=0;tr<80;tr++){
+        let r=(i+R(.15,.85))/cnt*tot,sg=segs[segs.length-1];
+        for(const q of segs){if(r<q[3]){sg=q;break}r-=q[3]}
+        const [a,b,hw,L,nx,nz]=sg,m=Math.min(6,L/2),d=Math.min(L-m,Math.max(m,r)),side=R(0,1)<.5?-1:1,off=hw+R(8,11);
+        const x=a[0]+(b[0]-a[0])*d/L+nx*side*off,z=a[1]+(b[1]-a[1])*d/L+nz*side*off;
+        if(x<8||x>MAP_SIZE-8||z<8||z>MAP_SIZE-18||height(x,z)<.4||caveNear(x,z)||caveT(x,z)>=-.02||cp.some(p=>Math.hypot(p[0]-x,p[1]-z)<10))continue;
+        cp.push([x,z]);
+        {const k=3+Math.floor(Math.random()*3),sp=[]; // 한 지점에 3~5개 뭉침
+         for(let q=0,t2=0;q<k&&t2<60;t2++){const an=Math.random()*6.283,dd=.5+Math.random()*1.7,qx=x+Math.cos(an)*dd,qz=z+Math.sin(an)*dd;
+           if(height(qx,qz)<.4||sp.some(p=>Math.hypot(p[0]-qx,p[1]-qz)<.9))continue;
+           sp.push([qx,qz]);caneAt(qx,qz);nodes[nodes.length-1].cc=[x,z];q++}}
+        break;
+      }
     }
   }
   // 티타늄 매장지 (탐지 → 발굴 → 채굴)
@@ -602,14 +607,14 @@ function buildWorld(){
   RS(12);
   // 동물 무리: 육지 3곣(W/M/E)마다 소·양·돼지 (숲 안쪽 제외)
   // 동물: 몸통이 다리 길이만큼 떠 있음 / 거미: 낮은 몸통 + 8개 막대 다리를 땅 위로 쭉 뻗음
-  const eyeBox=(g,x,y,z,w,h,d,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({color:c}));m.position.set(x,y,z);g.add(m)};
+  const eyeBox=(g,x,y,z,w,h,d,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({color:c}));m.position.set(x,y,z);m.userData.head=true;g.add(m)}; // 눈도 머리 판정
   const animalBody=(c,s,hc,ec)=>{
     const g=new THREE.Group(),lh=.55*s,mb=new THREE.MeshStandardMaterial({color:c}),ml=new THREE.MeshStandardMaterial({color:hc});
     const b=new THREE.Mesh(new THREE.BoxGeometry(1.4*s,.9*s,.7*s),mb);b.position.y=lh+.45*s;
-    const hd=new THREE.Mesh(new THREE.BoxGeometry(.5*s,.5*s,.5*s),ml);hd.position.set(.85*s,lh+.7*s,0);
+    const hd=new THREE.Mesh(new THREE.BoxGeometry(.5*s,.5*s,.5*s),ml);hd.position.set(.85*s,lh+.7*s,0);hd.userData.head=true;
     g.add(b,hd);
     for(const sd of [-1,1]){ // 눈: 가축은 흰자+눈동자, 적대 몹은 빛나는 눈
-      if(ec===undefined){eyeBox(g,1.1*s,lh+.78*s,sd*.14*s,.03*s,.11*s,.11*s,0xffffff);eyeBox(g,1.118*s,lh+.78*s,sd*.14*s,.03*s,.06*s,.06*s,0x111111)}
+      if(ec===undefined)eyeBox(g,.98*s,lh+.76*s,sd*.255*s,.1*s,.1*s,.03*s,0x111111); // 가축: 흰자 없이 머리 옆면에 검은 눈
       else eyeBox(g,1.11*s,lh+.78*s,sd*.14*s,.04*s,.09*s,.11*s,ec);
     }
     for(const lx of [-.5,.5])for(const lz of [-.22,.22]){
@@ -620,7 +625,7 @@ function buildWorld(){
   const spiderBody=(c,hc,s)=>{
     const g=new THREE.Group(),mb=new THREE.MeshStandardMaterial({color:c}),mh=new THREE.MeshStandardMaterial({color:hc}),ml=new THREE.MeshStandardMaterial({color:0x151515});
     const b=new THREE.Mesh(new THREE.BoxGeometry(.9*s,.35*s,.7*s),mb);b.position.y=.3*s;
-    const hd=new THREE.Mesh(new THREE.BoxGeometry(.4*s,.3*s,.4*s),mh);hd.position.set(.62*s,.3*s,0);
+    const hd=new THREE.Mesh(new THREE.BoxGeometry(.4*s,.3*s,.4*s),mh);hd.position.set(.62*s,.3*s,0);hd.userData.head=true;
     g.add(b,hd);
     for(const sd of [-1,1]){eyeBox(g,.83*s,.35*s,sd*.12*s,.04*s,.07*s,.07*s,0xff1744);eyeBox(g,.83*s,.26*s,sd*.06*s,.04*s,.04*s,.04*s,0xff1744)}
     const sx=[-.3,-.1,.1,.3],ex=[-1.0,-.55,.55,1.0];
@@ -631,7 +636,7 @@ function buildWorld(){
     }
     return g;
   };
-  const AN={cow:[0xf2f2f2,1.3,0x6b4a2b],sheep:[0xeeeeee,1,0x333333],pig:[0xf4a6b0,1,0xf4a6b0]};
+  const AN={cow:[0x8b5a2b,1.3,0x5e3b1e],sheep:[0xeeeeee,1,0x333333],pig:[0xf4a6b0,1,0xf4a6b0]};
   for(const rg of ['W','M','E','X'])for(const t in AN){
     let cx=0,cz=0,ok=false;
     for(let i=0;i<5000&&!ok;i++){cx=R(15,MAP_SIZE-15);cz=R(15,MAP_SIZE-30);ok=landOK(cx,cz)&&forestAmt(cx,cz)<.05&&caveT(cx,cz)<-.02&&(rg==='X'||regionOf(cx,cz)===rg)}
@@ -649,7 +654,7 @@ function buildWorld(){
   // 몬스터: 늑대(숲 가장자리) 곰(숲 깊은 곳) / 거미는 동굴 공간에만
   const MB={
     wolf:{c:0x777777,hc:0x555555,e:0xffee58,s:1,hp:18,spd:4.2,dmg:8,ag:24,n:30,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.3},
-    bear:{c:0x5a3a1a,hc:0x3a2410,e:0xffab40,s:1.7,hp:30,spd:3.36,dmg:18,ag:16,n:16,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.7},
+    bear:{c:0x5a3a1a,hc:0x3a2410,e:0xffab40,s:1.7,hp:70,spd:3.36,dmg:18,ag:16,n:16,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.7},
     spider:{c:0x222222,hc:0x992222,s:1.6,hp:12,spd:3.2,dmg:6,ag:14,n:14}
   };
   const mkMob=(t,x,z)=>{
@@ -681,7 +686,7 @@ function buildWorld(){
   // 밤 몬스터 풀(날씨 밤에만 플레이어 주변에 최대 4마리)
   for(let k=0;k<4;k++){
     const g=new THREE.Group(),gb=(w,h,d,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c}));m.position.set(x,y,z);return m};
-    g.add(gb(.7,1.3,.5,0x3a5a3a,0,.95,0),gb(.5,.5,.5,0x88aa66,0,1.9,0));
+    g.add(gb(.7,1.3,.5,0x3a5a3a,0,.95,0),gb(.5,.5,.5,0x88aa66,0,1.9,0));g.children[1].userData.head=true;
     for(const sd of [-1,1]){
       g.add(gb(.26,.32,.26,0x2e4a2e,0,.16,sd*.15)); // 다리
       const arm=new THREE.Group();arm.position.set(.3,1.5,sd*.36);arm.rotation.z=-.15;arm.add(gb(.6,.2,.2,0x6f8f55,.3,0,0));g.add(arm); // 앞으로 뻗은 팔
@@ -729,7 +734,7 @@ function buildWorld(){
       if(inCaveRoom(x,z)||Math.hypot(x-CAVE_SPAWN.x,z-CAVE_SPAWN.z)<14||cp.some(p=>Math.hypot(p[0]-x,p[1]-z)<6))continue;
       cp.push([x,z]);rock(x,z,n<5?'diamond':'gold');n++;
     }
-    RS(36);{const cnt=2+Math.floor(R(0,3)); // 유황: 동굴 빈 공간에 2~4개
+    RS(36);{const cnt=7+Math.floor(R(0,3)); // 유황: 동굴 빈 공간에 7~9개
       for(let i=0,n=0;i<30000&&n<cnt;i++){
         const x=R(Z.x0+16,Z.x0+Z.w-16),z=R(Z.z0+16,Z.z0+Z.h-30);
         if(inCaveRoom(x,z)||Math.hypot(x-CAVE_SPAWN.x,z-CAVE_SPAWN.z)<14||cp.some(p=>Math.hypot(p[0]-x,p[1]-z)<6))continue;
@@ -743,7 +748,8 @@ function buildWorld(){
     // 최심부 빈 공간(북동 100x100): 남쪽·서쪽을 돌벽으로 막음 — 동쪽 통로(x3150~3180)는 큰 바위로 막혀 있고, 서쪽 입구(x3116~3126, 폭 10m)로 돌아 들어감
     {
       const wm=new THREE.MeshStandardMaterial({color:0x5a5854,roughness:1}),WH=19,wy=Z.base+WH/2-.5;
-      const blob=(x,z,r)=>{const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),wm);m.position.set(x,height(x,z)+R(.3,4.5),z);m.scale.set(1,R(.8,1.6),1);m.rotation.set(R(0,3),R(0,3),R(0,3));AS(m);COL.push({x,z,r:r*.8})};
+      const blob=(x,z,r)=>{for(let q=0;q<2;q++){const bx2=x+R(-1.2,1.2),bz2=z+R(-1.2,1.2),m=new THREE.Mesh(new THREE.BoxGeometry(r*R(1,1.9),R(2.5,7),r*R(1,1.9)),wm); // 울퉁불퉁한 외벽: 각도가 제각각인 사각 돌덩이
+        m.position.set(bx2,height(bx2,bz2)+R(.3,4.5),bz2);m.rotation.set(R(-.5,.5),R(0,6.283),R(-.5,.5));AS(m)}COL.push({x,z,r:r*.8})};
       const seg=(x,z,w,d,hz)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,WH,d),wm);o.position.set(x,wy,z);AS(o)};
       const wallZ=(x,za,zb,t)=>{for(let z=za;z<zb;z+=5){const z2=Math.min(zb,z+5),tt=t*R(.85,1.5),ox=R(-1.3,1.3),zc=(z+z2)/2;
         seg(x+ox,zc,tt,z2-z+.6);for(let q=z;q<z2;q+=2.5)COL.push({x:x+ox,z:q,r:tt/2+.5});
@@ -789,7 +795,8 @@ function buildWorld(){
     for(const n of nodes){
       if(n.mob||n.animal||n.night)continue;
       const Zn=zoneOf(n.x,n.z);let g=null;
-      if(n.type==='wood')g=forestAmt(n.x,n.z)>.5?GEN.ftree:GEN.tree;
+      if(n.type==='wood'&&n.oak)g=()=>{const p=GEN.tree();return p&&forestAmt(p[0],p[1])<.5?p:null}; // 참나무는 숲 밖에서만 다시 자람
+      else if(n.type==='wood')g=forestAmt(n.x,n.z)>.5?GEN.ftree:GEN.tree;
       else if((n.type==='copper'||n.type==='iron')&&n.cl){const c=n.cl;g=()=>{const a=R(0,6.283),d=Math.sqrt(Math.random())*c.r,x=c.x+Math.cos(a)*d,z=c.z+Math.sin(a)*d;return okMain(x,z)?[x,z]:null}}
       else if(n.type==='copper')g=GEN.copper;
       else if(n.type==='iron')g=GEN.iron;
@@ -805,6 +812,7 @@ function buildWorld(){
 }
 /* ---------- 숲 구조물 (사원·전초기지·폐허 캠프) ---------- */
 const COL=[],SITES=[],SPIN=[];
+const STRUCT_CH=new Map(),CH_RESP=[],CH_MS=300000; // 구조물 상자: 생성 함수 / 부서진 뒤 대기 목록 / 리젠 5분
 const inSite=(x,z,m=0)=>SITES.some(s=>Math.hypot(s.x-x,s.z-z)<s.r+m);
 let _rbN=0;
 const inTemple=(x,z,m=0)=>SITES.some(s=>s.t==='temple'&&Math.hypot(s.x-x,s.z-z)<s.r+m);
@@ -841,12 +849,17 @@ function buildForestSites(R,landOK){
     const col=(lx,lz,r)=>{const [x,z]=wp(lx,lz);COL.push({x,z,r})};
     // 창고: 플레이어가 제작하는 창고와 같은 건물 (망치로 회수 가능, 리젠 없음)
     const chest=(lx,ly,lz,kind,cr)=>{
-      const [wx,wz]=wp(lx,lz);makeStruct('chest',wx,wz,0);
-      const s=placed[placed.length-1];
-      if(ly>0)s.mesh.position.y=base+ly;
-      s.mesh.rotation.y=ry+(cr||0);
-      s.gk='g'+Math.round(wx)+'_'+Math.round(wz); // 구조물 창고 식별키 (저장·로드용)
-      lootDrops(kind,Ri).forEach(([id,c],i)=>{s.items[i]={id,count:c}});
+      const [wx,wz]=wp(lx,lz),gk='g'+Math.round(wx)+'_'+Math.round(wz); // 구조물 창고 식별키 (저장·로드용)
+      const spawn=()=>{
+        makeStruct('chest',wx,wz,0);
+        const s=placed[placed.length-1];
+        if(ly>0)s.mesh.position.y=base+ly;
+        s.mesh.rotation.y=ry+(cr||0);
+        s.gk=gk;s.sg=true;s.lk=kind;
+        lootDrops(kind,Ri).forEach(([id,c],i)=>{s.items[i]={id,count:c}});
+        return s;
+      };
+      STRUCT_CH.set(gk,spawn);spawn();
     };
     const fire=(lx,lz)=>{ // 제작하는 모닥불과 같은 건물 (체력 회복·휴식 버프·고기 굽기, 망치로 회수 가능)
       const [wx,wz]=wp(lx,lz);makeStruct('campfire',wx,wz,0);
@@ -902,18 +915,22 @@ function reg(mesh,type,hp,x,z,r){
   nodes.push(n);return n;
 }
 let TS=null;
-function tree(x,z){
-  if(!TS)TS={tg:new THREE.CylinderGeometry(.4,.6,5),lg:new THREE.ConeGeometry(2.5,5,8),tm:new THREE.MeshStandardMaterial({color:0x3a2305}),lm:new THREE.MeshStandardMaterial({color:0x1b4d1e})};
+const oakAt=(x,z)=>forestAmt(x,z)<.5&&((Math.sin(x*12.9898+z*78.233)*43758.5453)%1+1)%1<.3; // 숲 밖에서만 약 30%가 참나무 (좌표 기반이라 시드 유지)
+function tree(x,z,oak){
+  if(!TS)TS={tg:new THREE.CylinderGeometry(.4,.6,5),lg:new THREE.ConeGeometry(2.5,5,8),tm:new THREE.MeshStandardMaterial({color:0x3a2305}),lm:new THREE.MeshStandardMaterial({color:0x1b4d1e}),og:new THREE.SphereGeometry(2.5,10,8),og2:new THREE.SphereGeometry(1.7,9,7),om:new THREE.MeshStandardMaterial({color:0x3f8f2e})};
   const g=new THREE.Group();
-  const t=new THREE.Mesh(TS.tg,TS.tm);t.position.y=2.5;
-  const l=new THREE.Mesh(TS.lg,TS.lm);l.position.y=6;
-  g.add(t,l);g.position.set(x,height(x,z),z);AS(g);
-  reg(g,'wood',6,x,z,.9);
+  const t=new THREE.Mesh(TS.tg,TS.tm);t.position.y=2.5;g.add(t);
+  if(oak){ // 참나무: 동그란 잎
+    const c=new THREE.Mesh(TS.og,TS.om);c.position.y=6.6;c.scale.y=.9;g.add(c);
+    for(const [dx,dy,dz] of [[1.7,5.8,.6],[-1.6,5.6,-.7],[.3,7.6,-1.3]]){const b=new THREE.Mesh(TS.og2,TS.om);b.position.set(dx,dy,dz);g.add(b)}
+  }else{const l=new THREE.Mesh(TS.lg,TS.lm);l.position.y=6;g.add(l)}
+  g.position.set(x,height(x,z),z);AS(g);
+  const nd=reg(g,'wood',6,x,z,.9);if(oak)nd.oak=true;
 }
 function rockMesh(type){
-  const OC={coal:0x151515,copper:0xd2691e,iron:0xe0c9a6,gold:0xffd54f,diamond:0x4dd0e1,titanium:0xb9bec3};
+  const OC={coal:0x151515,copper:0xd2691e,iron:0xe0c9a6,gold:0xffd54f,diamond:0x4dd0e1,titanium:0xb9bec3,sulfur:0x6b6b6b}; // 유황 = 금 광석의 색을 뒤집음 (금빛 본체 + 회색 조각)
   const g=new THREE.Group();
-  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,4),new THREE.MeshStandardMaterial({color:0x6b6b6b,roughness:1}));
+  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,4),new THREE.MeshStandardMaterial({color:type==='sulfur'?0xffd54f:0x6b6b6b,roughness:1}));
   big.position.y=.9;g.add(big);
   if(OC[type]){
     const mat=new THREE.MeshStandardMaterial({color:OC[type],roughness:type==='titanium'?.35:.5,emissive:type==='diamond'?0x0a4a55:0});
@@ -926,12 +943,8 @@ function rockMesh(type){
   }
   return g;
 }
-function sulfurAt(x,z){ // 유황: 노란 본체 + 회색 조약돌
-  const g=new THREE.Group();
-  const big=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,4),new THREE.MeshStandardMaterial({color:0xe8cf2a,roughness:.8}));big.position.y=.9;g.add(big);
-  const pm=new THREE.MeshStandardMaterial({color:0x8a8a8a,roughness:1});
-  for(let i=0;i<9;i++){const sz=.25+Math.random()*.25,m=new THREE.Mesh(new THREE.BoxGeometry(sz,sz*.8,sz),pm);
-    m.position.set((Math.random()-.5)*3.2,.1+Math.random()*.1,(Math.random()<.5?-1:1)*(2.05+Math.random()*.4));m.rotation.set(Math.random(),Math.random(),Math.random());g.add(m)}
+function sulfurAt(x,z){ // 유황: 금 광석 모양, 색만 뒤집음
+  const g=rockMesh('sulfur');
   g.position.set(x,height(x,z)-.2,z);g.rotation.y=Math.random()*Math.PI;AS(g);reg(g,'sulfur',6,x,z,2);
 }
 function rock(x,z,type){
@@ -953,11 +966,11 @@ function caneAt(x,z){const g=caneMesh();g.position.set(x,height(x,z)-.05,z);g.ro
 function setTi(n,st){ // 티타늄: 0=땅속(파란 돔, 탐지 시 표시) / 1=발굴 완료(다른 광석과 같은 모델)
   n.stage=st;n.dig=0;n.dome.visible=st===0;n.ore.visible=st===1;n.ore.position.y=-.2;n.r=st===1?1.6:0;if(st===1)n.hp=n.maxHp;
 }
-function digTi(n){
+function digTi(n,need=3){
   n.dig=(n.dig||0)+1;
-  if(n.dig>=3){setTi(n,1);n.ore.position.y=-.2;note('발굴 완료! 철 이상 곡괭이로 채굴하세요')}
-  else{n.dome.visible=false;n.ore.visible=true;n.ore.position.y=-.2-1.9*(1-n.dig/3); // 삽질마다 1/3씩 솟아오름
-    note(`발굴 중... (${n.dig}/3)`)}
+  if(n.dig>=need){setTi(n,1);n.ore.position.y=-.2;note('발굴 완료! 철 이상 곡괭이로 채굴하세요')}
+  else{n.dome.visible=false;n.ore.visible=true;n.ore.position.y=-.2-1.9*(1-n.dig/need); // 삽질마다 1/need씩 솟아오름
+    note(`발굴 중... (${n.dig}/${need})`)}
 }
 function cave(cx,cz){
   const m=new THREE.Mesh(new THREE.DodecahedronGeometry(18),new THREE.MeshStandardMaterial({color:0x222222,roughness:1}));
@@ -1034,6 +1047,32 @@ function shootArrow(D,n,dmg){ // 눈에 보이는 화살 발사 (도착하면 �
   m.position.copy(from);m.lookAt(to);scene.add(m);
   FLY.push({m,from,to,t:0,T:Math.max(.25,from.distanceTo(to)/55),n,dmg,tr});
 }
+const _dv=new THREE.Vector3(),_dq=new THREE.Quaternion();
+function updateDet(){ // 탐지기 원판을 땅에 닿게: 대각선 막대가 손 → 원판까지 이어지고, 원판은 항상 수평
+  const D=curDet;if(!D||!toolMesh.visible)return;const g=D.g;
+  camera.updateMatrixWorld(true);g.updateWorldMatrix(true,false);
+  let dy=-1.8;
+  for(let k=0;k<2;k++){
+    _dv.set(D.fx,dy,0);g.localToWorld(_dv);
+    _dv.y=height(_dv.x,_dv.z)+.03;g.worldToLocal(_dv);
+    dy=Math.max(-3.4,Math.min(.4,_dv.y));
+  }
+  D.disc.position.set(D.fx,dy,0);
+  g.getWorldQuaternion(_dq);D.disc.quaternion.copy(_dq).invert();
+  const vx=D.fx-D.sx,vy=dy-D.sy,L=Math.hypot(vx,vy);
+  D.rod.position.set(D.sx+vx/2,D.sy+vy/2,0);D.rod.scale.x=L;D.rod.rotation.z=Math.atan2(vy,vx);
+}
+function tickChests(){ // 구조물 상자 리젠: 부서진 상자는 5분 뒤 새로 생김 / 비어 있는 상자는 5분 뒤 다시 채워짐
+  const now=Date.now();
+  for(let i=CH_RESP.length-1;i>=0;i--){const r=CH_RESP[i];
+    if(now>=r.t){const f=STRUCT_CH.get(r.gk);if(f&&!placed.some(q=>q.gk===r.gk))f();CH_RESP.splice(i,1)}}
+  for(const q of placed){
+    if(!q.sg||!q.items||q===curChest)continue;
+    if(q.items.some(Boolean)){q.rt=0;continue}
+    if(!q.rt)q.rt=now+CH_MS;
+    else if(now>=q.rt){lootDrops(q.lk,(a,b)=>a+Math.floor(Math.random()*(b-a+1))).forEach(([id,c],k)=>{q.items[k]={id,count:c}});q.rt=0}
+  }
+}
 function updateArrows(dt){
   for(let i=FLY.length-1;i>=0;i--){
     const f=FLY[i];
@@ -1072,7 +1111,7 @@ function updateLighting(){
     let hm=hid?buildHeld(hid):null;const isB=!!hid&&ITEMS[hid].kind==='bow';if(isB)hm=buildBowRig();if(hm)toolMesh.add(hm);
     toolMesh.userData.hid=hid;
     const kd0=hid&&ITEMS[hid].type==='tool'?ITEMS[hid].kind:null;
-    curRig=(hm&&RIG[kd0])||null;curBow=isB?hm.userData.bow:null;curGun=(hm&&hm.userData.gun)||null;toolZ=(HELD_POS[hid]||[0,0,-.6])[2];
+    curRig=(hm&&RIG[kd0])||null;curBow=isB?hm.userData.bow:null;curGun=(hm&&hm.userData.gun)||null;curDet=(hm&&hm.userData.det)||null;toolZ=(HELD_POS[hid]||[0,0,-.6])[2];
     handMesh.visible=!(curRig||curBow||curGun); // 양손 도구는 자루 위에 두 손을 따로 표시
     if(curRig){for(const gy of curRig.hands){const h=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),new THREE.MeshBasicMaterial({color:0xffdbac}));h.position.set(0,gy,0);hm.add(h)}}
     else if(!curBow){const hp=HELD_POS[hid]||[.3,-.05,-.6];toolMesh.position.set(hp[0],hp[1],hp[2]);toolMesh.rotation.set(0,0,0)}
@@ -1146,7 +1185,6 @@ function place(){
   const chs=placed.filter(s=>s.id==='chest'),chh=ray(chs.map(s=>s.mesh),true)[0];
   if(chh&&chh.distance<6){let o=chh.object;while(o&&!chs.some(s=>s.mesh===o))o=o.parent;const cs=chs.find(s=>s.mesh===o);if(cs){openChest(cs);return}}
   if(AXEBOX){const ab=ray([AXEBOX.group],true)[0];if(ab&&ab.distance<6){takeEmergencyAxe();return}}
-  if(a&&a.id==='pork'&&nearCamp){a.count--;if(a.count<=0)inv[sel]=null;addItem('cooked_pork',1);renderInv();note('고기를 구웠습니다');return}
   if(a&&a.id==='cooked_pork'){a.count--;if(a.count<=0)inv[sel]=null;P.hp=Math.min(P.maxHp,P.hp+25);P.st=Math.min(P.maxSt,P.st+30);renderInv();note('체력 +25, 스테미나 +30');return}
   if(a&&(a.id==='bucket'||a.id==='sea_bucket'||a.id==='water_bucket')){bucketUse(a);return}
   if(!a||ITEMS[a.id].type!=='placeable')return;
@@ -1230,7 +1268,7 @@ function digGround(it){
   let n=null,bd=3;
   for(const q of nodes){if(q.type!=='titanium'||!q.active||q.stage!==0)continue;const d=Math.hypot(q.x-g.point.x,q.z-g.point.z);if(d<bd){bd=d;n=q}}
   if(!n){note('여기엔 아무것도 없습니다');return}
-  digTi(n);
+  digTi(n,it.tier>=4?2:3);
 }
 /* ---------- 활: 차징 (기본 사거리 20m·데미지 4 → 100% 차징 시 50m·데미지 10) ---------- */
 const BOW_MS=1500;let bowOn=false,bowT0=0,bowC=0;
@@ -1259,13 +1297,14 @@ function bowRelease(){
   lastAtk=now;swing=1;swingDur=.2;inv[ai].count--;if(inv[ai].count<=0)inv[ai]=null;renderInv();
   const st=bowStats(c);
   const l2=nc().an.filter(n=>n.active&&n.mesh.visible),h2=ray(l2.map(n=>n.mesh),true)[0],gh=ray(GR,false)[0];
-  let D=st.rng,tn=null;
+  let D=st.rng,tn=null,hs=false;
   if(gh&&gh.distance<D)D=gh.distance;
   if(h2&&h2.distance<st.rng&&(!gh||h2.distance<=gh.distance+.5)){
     let o=h2.object;while(o&&!l2.some(n=>n.mesh===o))o=o.parent;const n=l2.find(x=>x.mesh===o);
-    if(n){tn=n;D=h2.distance}
+    if(n){tn=n;D=h2.distance;hs=!!h2.object.userData.head}
   }
-  shootArrow(D,tn,st.dmg);
+  if(hs)note('헤드샷! x1.5');
+  shootArrow(D,tn,st.dmg*(hs?1.5:1));
 }
 function bowTick(){
   if(!bowOn)return;
@@ -1332,7 +1371,7 @@ function fireGun(now){
   let D=g?g.distance:rng;
   if(h&&(!g||h.distance<=g.distance+.5)){
     D=h.distance;let o=h.object;while(o&&!live.some(n=>n.mesh===o))o=o.parent;const n=live.find(x=>x.mesh===o);
-    if(n&&n.animal){n.hp-=GUN_DMG;hitFx(n);if(n.hp<=0)harvest(n,Date.now())}
+    if(n&&n.animal){const hs=!!h.object.userData.head;n.hp-=GUN_DMG*(hs?1.5:1);if(hs)note('헤드샷! x1.5');hitFx(n);if(n.hp<=0)harvest(n,Date.now())}
   }
   const A=cp.clone().addScaledVector(dir,.8).addScaledVector(right,.12).addScaledVector(up,-.12),E=cp.clone().addScaledVector(dir,D);
   const m=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,1),new THREE.MeshBasicMaterial({color:0xffe082,transparent:true,opacity:.8,depthWrite:false}));
@@ -1388,13 +1427,13 @@ const ARW=['↑','↗','→','↘','↓','↙','←','↖'];
 function dirIdx(x,z){const b=((-yaw*180/Math.PI)%360+360)%360,rel=((Math.atan2(x-camera.position.x,-(z-camera.position.z))*180/Math.PI-b)%360+360)%360;return Math.round(rel/45)%8} // 내 시선 기준 8방향
 function arrowTo(x,z){return ARW[dirIdx(x,z)]}
 function updateChem(){
-  const a=inv[sel],e=$('chem'),has=!!(a&&a.id==='detector'&&a.att&&a.att[1]&&a.att[1].id==='chem_detector'); // 금속탐지기 2번 슬롯
+  const a=inv[sel],e=$('chem'),has=!!(a&&a.id==='detector'&&hasAtt(a,'chem_detector')); // 금속탐지기 아무 슬롯
   e.style.display=has?'block':'none';if(!has)return;
   let b=null,bd=1e9;for(const n of nc().sl)if(n.active){const d=Math.hypot(n.x-camera.position.x,n.z-camera.position.z);if(d<bd){bd=d;b=n}}
   setT(e,b?`🧪 ${arrowTo(b.x,b.z)} 슬라임 ${dm(bd)}m`:'🧪 슬라임 없음');
 }
-/* ---------- 강공격 (전투도끼·검·창): 우클릭(모바일은 상호작용 버튼) 꾹 → 2초 차징 → 데미지 2배·사거리 1.3배·모션 빠르게 ---------- */
-const SG_MS=2000;let sgOn=false,sgT0=0,sgC=0;
+/* ---------- 강공격 (전투도끼·검·창): 우클릭(모바일은 상호작용 버튼) 꾹 → 1.5초 차징 → 데미지 2배·사거리 1.3배·모션 빠르게 ---------- */
+const SG_MS=1500;let sgOn=false,sgT0=0,sgC=0;
 const strongOK=()=>{const a=inv[sel];if(!a)return false;const k=ITEMS[a.id].kind;return a.id==='battle_axe'||k==='sword'||k==='spear'};
 function canInteract(){ // 창고·비상도끼함을 보고 있으면 우클릭은 열기 우선
   const chs=placed.filter(s=>s.id==='chest'&&s.mesh),h=ray(chs.map(s=>s.mesh),true)[0];
@@ -1436,6 +1475,10 @@ function attack(strong){
     const ps=placed.filter(s=>s.mesh),hh=ray(ps.map(s=>s.mesh),true)[0];
     if(hh&&hh.distance<6){let o=hh.object;while(o&&!ps.some(s=>s.mesh===o))o=o.parent;const s=ps.find(x=>x.mesh===o);
       if(s){
+        if(s.sg&&s.items&&s.items.some(Boolean)){note('상자에 아이템이 있어 부술 수 없습니다');return}
+        if(s.sg){ // 구조물 상자: 비어 있을 때만 부술 수 있고, 부수면 사라지고 5분 뒤 새 상자로 다시 생김
+          s.mesh.parent&&s.mesh.parent.remove(s.mesh);placed.splice(placed.indexOf(s),1);
+          CH_RESP.push({gk:s.gk,t:Date.now()+CH_MS});lastAtk=now;swing=1;swingDur=.2;note('상자를 부쉈습니다 (5분 뒤 다시 생김)');return}
         if(s.id==='chest'&&s.items&&s.items.some(Boolean)){note('창고에 아이템이 있어 회수할 수 없습니다');return}
         if(!addItem(s.id,1))return;
         s.mesh.parent&&s.mesh.parent.remove(s.mesh);if(s.light&&s.light.parent)s.light.parent.remove(s.light);
@@ -1459,7 +1502,7 @@ function attack(strong){
   const kind=it&&it.kind,tier=(it&&it.tier)||0;
   if(n.type==='titanium'&&n.stage===0){
     if(kind!=='shovel'||tier<3){note('철 이상 삽으로 발굴하세요');return}
-    digTi(n);return;
+    digTi(n,tier>=4?2:3);return; // 티타늄 삽은 2번에 발굴
   }
   const ore=ORE.includes(n.type)||n.type==='titanium';
   if(ore&&kind!=='pickaxe'){note('곡괭이가 필요합니다');return}
@@ -1471,6 +1514,7 @@ function attack(strong){
   const rk={rock:0,stone:0,coal:1,copper:2,sulfur:2,gold:2,iron:3,titanium:4,diamond:5}[n.type];
   let dm=(a&&a.id==='axe')?1:(a&&a.id==='craft_axe')?1.5:(a&&a.id==='battle_axe')?6.5:[1,1.25,1.5,2,3,3][tier]||1;
   if(good&&kind==='pickaxe'&&rk!==undefined&&tier-rk>=2)dm=99;
+  if(good&&kind==='shovel'&&(n.type==='clay'||n.type==='sand')){const hs=(n.type==='clay'?[4,4,3,2,1,1]:[5,5,4,3,2,2])[tier]||3;dm=n.maxHp/hs+1e-6} // 삽 단계가 높을수록 적은 타수 (점토 구리3·철2·티타늄1 / 모래 구리4·철3·티타늄2)
   n.hp-=(good?dm:(n.animal?wdmg(kind,tier,a):1))*(strong?2:1);hitFx(n);
   if(n.hp>0)return;
   harvest(n,now);
@@ -1579,18 +1623,19 @@ function updatePlayer(dt){
 }
 
 /* ---------- 탐지기 ---------- */
+const hasAtt=(a,id)=>!!(a&&a.att&&a.att.some(x=>x&&x.id===id));
 function updateDetector(){
   const a=inv[sel],holding=!!(a&&a.id==='detector'),el=$('det');
-  let best=1e9,bn=null;const radar=!!(holding&&a.att&&a.att[0]&&a.att[0].id==='metal_radar'),sec=radar?new Array(8).fill(1e9):null;
+  let best=1e9,bn=null;const amp=holding&&hasAtt(a,'detect_amp'),RNG=amp?300:100,radar=!!(holding&&(amp||hasAtt(a,'metal_radar'))),sec=radar?new Array(8).fill(1e9):null;
   for(const n of nc().ti){
     if(!n.active)continue;
     const d=Math.hypot(camera.position.x-n.x,camera.position.z-n.z);
-    if(n.stage===0){if(d<best){best=d;bn=n}if(sec&&d<=100){const k=dirIdx(n.x,n.z);if(d<sec[k])sec[k]=d}} // 아직 안 판 것 중 가장 가까운 티타늄
+    if(n.stage===0){if(d<best){best=d;bn=n}if(sec&&d<=RNG){const k=dirIdx(n.x,n.z);if(d<sec[k])sec[k]=d}} // 아직 안 판 것 중 가장 가까운 티타늄
     n.mesh.visible=!!(n.stage===1||n.dig>0||(holding&&d<6));
   }
   if(!holding||best>=1e9){el.style.display='none';$('radar').style.display='none';return}
   el.style.display='block';
-  if(best>100){el.textContent='티타늄 신호 없음 (50m 밖)';$('radar').style.display='none';return} // 탐지 범위 100(표기 50m)
+  if(best>RNG){el.textContent=`티타늄 신호 없음 (${dm(RNG)}m 밖)`;$('radar').style.display='none';return} // 탐지 범위 100(표기 50m)
   el.textContent=best<6?'티타늄 발견! 삽으로 발굴하세요':radar?`티타늄 ${arrowTo(bn.x,bn.z)} ${dm(best)}m`:`티타늄 신호 ${dm(best)}m`; // 레이더 없으면 거리만, 있으면 방향도
   const rd=$('radar');
   if(radar){const c=k=>ARW[k]+(sec[k]<1e9?String(dm(sec[k])):'-').padEnd(4);rd.style.display='block';setT(rd,`${c(7)}${c(0)}${c(1)}
@@ -1622,7 +1667,7 @@ function buildUI(){
 /* ---------- 아이템 모양 (아이콘 / 손에 든 모양) ---------- */
 const MATC={flint:'#8a8f98',wood:'#a1887f',copper:'#c8702a',gold:'#ffd54f',iron:'#cfd8dc',titanium:'#a3a8ad',diamond:'#4dd0e1'};
 const ICOL={log:'#6d4c41',branch:'#8d6e63',long_branch:'#8d6e63',vine:'#43a047',stick:'#8d6e63',long_stick:'#8d6e63',stake:'#8d6e63',rope:'#d7c49e',plank:'#c8a165',stone:'#9e9e9e',flint:'#5f6368',clay:'#b5651d',sugarcane:'#43a047',sugar:'#f5f5f5',coal:'#262626',copper:'#d2691e',iron:'#e0c9a6',gold:'#ffd54f',diamond:'#4dd0e1',titanium:'#78909c',hide:'#8d5a2b',wool:'#f5f5f5',cloth:'#eceff1',pork:'#f4a6b0',cooked_pork:'#a0522d',wire:'#d2691e',arrow:'#8d6e63',campfire:'#ff7043',furnace:'#757575',table:'#8d6e63',chest:'#8d5a2b',flag:'#d32f2f',lantern:'#ffd54f',clock:'#ffd54f',compass:'#ef5350',bag:'#8d6e63',big_bag:'#5d4037',torch:'#ff9800',detector:'#78909c',headlamp:'#ffe082',quiver:'#8d5a2b',util_table:'#4dd0e1',craft_axe:'#ffd54f',big_hide:'#6d4c41',wild_hide:'#9e8c6a',ruby:'#e53935'};
-Object.assign(ICOL,{sand:'#f0e0a0',sulfur:'#fdd835',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63'});
+Object.assign(ICOL,{sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63'});
 const _mat=id=>{const m=/^(copper|gold|iron|titanium|diamond|flint|wood)_(.+)$/.exec(id);return m?[m[1],m[2]]:[null,id]};
 const hx=c=>parseInt(c.slice(1),16);
 const _svgC={};
@@ -1652,7 +1697,7 @@ function iconBody(id){
   if(id==='bucket')return `<path d="M7 9 L25 9 L22 28 L10 28Z" fill="#9e9e9e" ${O}/><ellipse cx="16" cy="9" rx="9" ry="2.5" fill="#cfd8dc" ${O}/><path d="M7 9 Q16 -2 25 9" stroke="#607d8b" stroke-width="1.6" fill="none"/>`;
   if(id==='longbow')return `<path d="M8 1 Q31 16 8 31" stroke="#8d6e63" stroke-width="3" fill="none"/><line x1="8" y1="1" x2="8" y2="31" stroke="#eee" stroke-width="1"/><rect x="19" y="13" width="3" height="6" rx="1" fill="#5d3a1a"/>`;
   if(id==='sand')return `<polygon points="4,25 8,15 14,18 19,11 26,17 28,25" fill="#f0e0a0" ${O}/><circle cx="12" cy="22" r="1.1" fill="#d7c27a"/><circle cx="20" cy="21" r="1.1" fill="#d7c27a"/>`;
-  if(id==='sulfur')return `<polygon points="5,24 8,12 16,6 25,11 27,23 16,28" fill="#fdd835" ${O}/><polygon points="20,18 25,21 22,26 17,24" fill="#9e9e9e"/><polygon points="6,22 11,20 12,26 7,27" fill="#9e9e9e"/>`;
+  if(id==='sulfur')return `<polygon points="5,24 8,12 16,6 25,11 27,23 16,28" fill="#ffd54f" ${O}/><polygon points="20,18 25,21 22,26 17,24" fill="#9e9e9e"/><polygon points="6,22 11,20 12,26 7,27" fill="#9e9e9e"/>`;
   if(id==='coal_powder')return `<path d="M4 26 Q16 2 28 26Z" fill="#37474f" ${O}/><circle cx="14" cy="20" r="1.2" fill="#78909c"/><circle cx="19" cy="22" r="1.2" fill="#78909c"/>`;
   if(id==='gunpowder')return `<path d="M4 26 Q16 2 28 26Z" fill="#5a5a5a" ${O}/><circle cx="14" cy="20" r="1.3" fill="#bdbdbd"/><circle cx="19" cy="22" r="1.3" fill="#bdbdbd"/><circle cx="16" cy="16" r="1.1" fill="#bdbdbd"/>`;
   if(id==='glass')return `<rect x="7" y="5" width="18" height="22" rx="2" fill="#b3e5fc99" stroke="#81d4fa" stroke-width="1.4"/><line x1="11" y1="9" x2="11" y2="19" stroke="#fff" stroke-width="2"/>`;
@@ -1663,6 +1708,7 @@ function iconBody(id){
   if(id==='musket')return `<line x1="3" y1="7" x2="22" y2="18" stroke="#546e7a" stroke-width="3.2" stroke-linecap="round"/><polygon points="19,16 30,21 28,27 17,22" fill="#6d4c41" ${O}/><rect x="9" y="9" width="3" height="3" fill="#cfd8dc"/>`;
   if(id==='salt')return `<rect x="6" y="14" width="9" height="9" rx="1" fill="#f5fbff" ${O}/><rect x="16" y="11" width="9" height="9" rx="1" fill="#e3f2fd" ${O}/><rect x="12" y="19" width="9" height="8" rx="1" fill="#fff" ${O}/>`;
   if(id==='chemical')return `<path d="M13 4 H19 V12 L26 26 H6 L13 12Z" fill="#b2ff5999" stroke="#cfd8dc" stroke-width="1.4"/><circle cx="16" cy="21" r="2" fill="#76ff03"/>`;
+  if(id==='detect_amp')return `<circle cx="16" cy="16" r="12" fill="#37474f" ${O}/><circle cx="16" cy="16" r="8" fill="none" stroke="#ffb300" stroke-width="1.4"/><circle cx="16" cy="16" r="4" fill="none" stroke="#ffb300" stroke-width="1.4"/><path d="M16 2 V8 M16 24 V30 M2 16 H8 M24 16 H30" stroke="#ffb300" stroke-width="2"/><circle cx="22" cy="20" r="1.8" fill="#ff5252"/>`;
   if(id==='metal_radar')return `<circle cx="16" cy="16" r="12" fill="#37474f" ${O}/><circle cx="16" cy="16" r="8" fill="none" stroke="#66bb6a" stroke-width="1.2"/><circle cx="16" cy="16" r="4" fill="none" stroke="#66bb6a" stroke-width="1.2"/><line x1="16" y1="16" x2="24" y2="9" stroke="#a5d6a7" stroke-width="1.6"/><circle cx="22" cy="20" r="1.6" fill="#ffd54f"/>`;
   if(id==='lucky_charm')return `<circle cx="16" cy="16" r="11" fill="#ffd54f" ${O}/><polygon points="16,8 22,15 16,24 10,15" fill="#e53935"/><polygon points="16,8 19,15 16,24 13,15" fill="#ff8a80"/>`;
   if(id==='chem_detector')return `<rect x="12" y="3" width="8" height="19" rx="3" fill="#cfd8dc" ${O}/><rect x="12" y="13" width="8" height="9" fill="#76ff03"/><ellipse cx="16" cy="26" rx="10" ry="3.2" fill="#455a64" ${O}/>`;
@@ -1781,12 +1827,15 @@ function buildHeld(id){
   else if(!isHead&&it.type==='tool'&&kd==='sword'){B(.07,.5,.02,mt==='wood'?W:tcol,0,.2);B(.22,.04,.05,0x5d4037,0,-.06);B(.05,.16,.05,W,0,-.16)}
   else if(!isHead&&it.type==='tool'&&kd==='hammer'){B(.05,.6,.05,W);B(.38,.15,.15,0x9e9e9e,0,.3)}
   else if(it.kind==='bow'){const t=new THREE.Mesh(new THREE.TorusGeometry(.28,.018,6,14,Math.PI),ms(W));t.rotation.z=-Math.PI/2;g.add(t);B(.008,.56,.008,0xeeeeee)}
-  else if(it.kind==='detector'){ // 금속탐지기: 코일이 앞쪽(아래로 살짝), 손잡이·팔걸이가 손 쪽 (모델 +x = 앞)
-    B(.72,.03,.03,0xb0bec5,.06,0,0);
-    const c1=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.025,18),ms(0x455a64));c1.position.set(.44,-.05,0);g.add(c1);
-    const c2=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.03,18),ms(0x263238));c2.position.set(.44,-.05,0);g.add(c2);
+  else if(it.kind==='detector'){ // 금속탐지기: 손 쪽 손잡이·조작부 + 가운데 대각선 막대 + 수평 원판 (원판은 매 프레임 땅 높이에 닿게 맞춤, updateDet)
+    B(.4,.03,.03,0xb0bec5,.1,0,0);
     B(.09,.07,.06,0x37474f,-.05,.06,0);B(.02,.02,.02,0x66bb6a,-.05,.1,0);
     B(.14,.035,.035,0x6d4c41,-.2,-.03,0);B(.15,.02,.09,0x8d6e63,-.14,.02,0);
+    const rod=B(1,.03,.03,0xb0bec5,.6,-.5,0);
+    const disc=new THREE.Group();
+    const c1=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.03,20),ms(0x455a64)),c2=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.04,20),ms(0x263238));
+    disc.add(c1,c2);disc.position.set(2.4,-1.8,0);g.add(disc);
+    g.userData.det={g,rod,disc,sx:.3,sy:0,fx:2.4};
   }
   else if(it.part){
     const a=hx(MATC[mt]||'#9e9e9e');
@@ -2032,7 +2081,7 @@ function saveGame(){
     const nk={};for(const n of nodes)if(!n.active&&!n.night&&!n.slime)nk[n.k]=n.respawn===Infinity?-1:Math.max(1,n.respawn-Date.now());
     const ws0=jget(WK,[]),w0=CUR&&ws0.find(x=>x.id===CUR.id);if(w0){w0.last=Date.now();jset(WK,ws0)}
     localStorage.setItem(SAVE,JSON.stringify({ver:SAVE_VER,seed:worldSeed,zone,pos:[camera.position.x,camera.position.z],yaw,pitch,P,inv,sel,buffT,
-      gv:2,td:tutDone?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,gk:s.gk})),worldT,nk}));
+      gv:2,td:tutDone?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,gk:s.gk})),worldT,nk,chR:CH_RESP.map(r=>({gk:r.gk,left:Math.max(1,r.t-Date.now())}))}));
   }catch(e){}
 }
 function loadGame(){
@@ -2046,7 +2095,8 @@ function loadGame(){
     if(saved.gv){ // 구조물 창고: 저장본에 없으면 이미 회수된 것 → 제거, 있으면 내용물 복원
       const gk=new Map(saved.placed.filter(s=>s.gk).map(s=>[s.gk,s]));
       for(let i=placed.length-1;i>=0;i--){const g=placed[i];if(!g.gk)continue;const k=gk.get(g.gk);
-        if(k){if(k.items)g.items=k.items}else if(saved.gv>=2||g.id==='chest'){g.mesh.parent&&g.mesh.parent.remove(g.mesh);if(g.light&&g.light.parent)g.light.parent.remove(g.light);placed.splice(i,1)}}
+        if(k){if(k.items)g.items=k.items}else if(saved.gv>=2||g.id==='chest'){g.mesh.parent&&g.mesh.parent.remove(g.mesh);if(g.light&&g.light.parent)g.light.parent.remove(g.light);placed.splice(i,1);
+          if(g.sg){const cr=(saved.chR||[]).find(r=>r.gk===g.gk);CH_RESP.push({gk:g.gk,t:Date.now()+(cr?cr.left:CH_MS)})}}} // 부서진 구조물 상자는 남은 시간 뒤 다시 생김
     }
     saved.placed.forEach(s=>{if(s.gk)return;makeStruct(s.id,s.x,s.z,s.age||0);if(s.items)placed[placed.length-1].items=s.items});
     tutDone=!!saved.td;renderInv();selectSlot(saved.sel||0);return true;
@@ -2125,6 +2175,7 @@ function attClick(k){
   if(held!==null&&held!==attIdx&&inv[held]){
     const a=inv[held];
     if(!d[k].ok.includes(a.id)){note('이 칸에는 장착할 수 없는 아이템입니다');return}
+    if(host.att.some((x,j)=>j!==k&&x&&x.id===a.id)){note('이미 장착된 부착물입니다');return}
     if(cur&&!addItem(cur.id,1))return;
     host.att[k]={id:a.id};a.count--;if(a.count<=0)inv[held]=null;held=null;markHeld();renderInv();return;
   }
@@ -2166,6 +2217,16 @@ function moveItem(f,t){
   }
   renderInv();
 }
+function quickMove(i){ // 창고가 열려 있을 때: 창고 칸 → 인벤토리, 인벤토리/가방 칸 → 창고
+  const a=inv[i];if(!a)return false;
+  const inChest=i>=81&&i<126;
+  if(!inChest&&!(i<36||(i>=45&&i<45+bagN())))return false;
+  const targets=inChest?SL():Array.from({length:45},(_,k)=>81+k),d=ITEMS[a.id];
+  if(d.type!=='tool'&&!d.util&&!d.armor)for(const t of targets){const b=inv[t];if(b&&b.id===a.id&&b.count<99){const m=Math.min(a.count,99-b.count);b.count+=m;a.count-=m;if(a.count<=0)break}}
+  if(a.count<=0)inv[i]=null;
+  else{const e=targets.find(t=>!inv[t]);if(e===undefined)note('자리가 없습니다');else{inv[e]=a;inv[i]=null}}
+  renderInv();return true;
+}
 function markHeld(){
   document.querySelectorAll('.slot').forEach(e=>e.classList.remove('held'));
   if(held===null)return;
@@ -2195,6 +2256,7 @@ function bindInv(){
     if(d.lp){held=null;markHeld();return}
     const t=slotIdx(document.elementFromPoint(e.clientX,e.clientY));
     if(d.moved){if(t>=0)moveItem(d.i,t);held=null;markHeld();return}
+    if(shiftDown&&curChest&&quickMove(d.i)){held=null;markHeld();return} // 쉬프트+클릭: 창고 ↔ 인벤토리 바로 이동
     if(held===null&&mobile&&attIdx===d.i){closeAtt();return}
     if(held===null){if(inv[d.i])held=d.i}
     else{moveItem(held,d.i);held=null}
@@ -2413,7 +2475,7 @@ function animate(){
   if(curRig){applyRig(swing>0?1-swing:0);torchMesh.position.z=-.6}
   else if(curBow){updateBow(dt);torchMesh.position.z=-.6}
   else{const o=swing>0?Math.sin((1-swing)*Math.PI)*.25:0;handMesh.position.z=-.5-o;toolMesh.position.z=curGun?toolZ+o*.35:toolZ-o;torchMesh.position.z=-.6-o;if(curGun)updateGunAnim(dt)}
-  updateArrows(dt);
+  updateArrows(dt);if(curDet)updateDet();tickChests();
   for(const o of SPIN)o.rotation.y+=dt*.8;
   if(!isGun()||!active())gunAim=false;if(!isMag()||!active())magOn=false;
   gunT+=((gunAim&&!reloadT0?1:0)-gunT)*Math.min(1,dt*10);
@@ -2620,10 +2682,29 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v11.1.2';
+const SAVE_VER=7,GAME_VERSION='v11.3.4';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v11",t:"대규모 · 금속·총·요리",subs:[
+    {v:"11.3.4",d:'감지 증폭기·삽 타수·상자 편의',items:[
+      "수정: 강공격 차징 2초 → 1.5초",
+      "수정: 곰 체력 70 — 조총 몸 2방 또는 헤드 1방(75)에 처치",
+      "수정: 구조물 상자는 내용물이 있으면 부술 수 없음",
+      "추가: 창고를 연 상태에서 쉬프트+클릭으로 창고 ↔ 인벤토리 바로 이동",
+      "수정: 부착물 슬롯 4칸 어디든 장착 가능 (금속탐지기: 레이더·감지 증폭기·화학물탐지기, 같은 부착물 중복 불가)",
+      "수정: 소·양·돼지 눈 흰자 제거 + 머리 옆면에 눈 / 소 몸을 갈색으로",
+      "추가: 감지 증폭기(금속 레이더+루비+티타늄 합금4, 유틸리티 작업대) — 레이더 기능 포함, 탐지거리 150m",
+      "수정: 삽 단계가 높을수록 점토·모래·티타늄 발굴 타수 감소 (점토 구리3·철2·티타늄1 / 모래 구리4·철3·티타늄2 / 티타늄 발굴 철3·티타늄 삽2)"]},
+    {v:"11.2.3",d:'유황·참나무·상자 리젠·헤드샷',items:[
+      "수정: 유황 모양을 금 광석 모양에서 색만 뒤집음 (금빛 본체 + 회색 조각)",
+      "추가: 참나무(동그란 잎) — 숲 밖 나무 중 약 30%, 숲에는 기본 나무만",
+      "수정: 금속탐지기 — 막대가 대각선으로 내려가 수평 원판이 땅에 닿음",
+      "추가: 숲 구조물 상자 5분 리젠 (부수면 내용물과 함께 사라지고 5분 뒤 새 상자, 비어 있으면 5분 뒤 다시 채워짐)",
+      "수정: 모닥불에서 고기 굽기를 요리 탭으로 이동 (구운 고기, 모닥불 근처)",
+      "수정: 사탕수수 한 뭉치 3~5개, 강 전체에 고르게 분포",
+      "추가: 동굴 유황 +5 (7~9개) / 동굴 외벽을 각도가 다른 사각 돌덩이로 변경",
+      "추가: 금속탐지기·모든 총에 부착 슬롯 4개 (새 슬롯은 장착 가능 아이템 아직 없음)",
+      "추가: 활·총 헤드샷 (머리·눈 판정 시 데미지 1.5배, 몸 1배)"]},
     {v:"11.1.2",d:'손맛·조총·탐지기',items:[
       "수정: 손에 든 아이템을 손 위로 띄워 손에 묻히지 않게 변경",
       "수정: 조총을 양손으로 잡음 (한 손은 방아쇠 쪽, 한 손은 총 몸체 아래) + 레버액션 레버 추가, 쏘면 레버를 당기는 모션",
