@@ -131,6 +131,7 @@ body.mob #clock{top:70px;right:12px}
 <div id="cv"></div>
 <div id="cross" class="abs"></div>
 <div id="scopeO"><i></i></div><svg id="ironS" viewBox="0 0 200 200"><path d="M0 200 V128 H90 L93 142 H96 V200 Z" fill="#101010"/><path d="M200 200 V128 H110 L107 142 H104 V200 Z" fill="#101010"/><rect x="98" y="98" width="4" height="46" fill="#101010"/><rect x="96.5" y="96" width="7" height="4" fill="#101010"/></svg><div id="hurt"></div>
+<div id="fmap" onclick="if(event.target===this)closeForestMap()" style="display:none;position:fixed;inset:0;z-index:450;background:rgba(0,0,0,.85);justify-content:center;align-items:center;flex-direction:column;gap:8px;padding:10px"><div style="color:#ffe082;font-weight:700;font-size:16px">🗺 숲 지도</div><canvas id="fmapC" width="560" height="560" style="max-width:96vw;max-height:72vh;border:3px solid #8d6e63;border-radius:8px;background:#0d2a3a"></canvas><div id="fmapL" style="color:#ddd;font-size:12px"></div><button class="setbtn" onclick="closeForestMap()" style="margin:0">닫기 (M / E)</button></div>
 <div id="noti" class="abs msg"></div>
 <div id="bowg"><div class="bar"><div class="fill" id="bowf"></div></div><div class="txt" id="bowt"></div></div>
 <div id="det" class="abs msg"></div>
@@ -223,7 +224,7 @@ const ITEMS={
   util_table:{name:'유틸리티 작업대',type:'placeable'}
 };
 Object.assign(ITEMS,{
-  titanium_alloy:{name:'티타늄 합금'},alloy:{name:'합금'},metal_rod:{name:'금속봉'},metal_plate:{name:'금속판'},
+  titanium_alloy:{name:'티타늄 합금'},alloy:{name:'합금'},metal_rod:{name:'철봉'},metal_plate:{name:'철판'},copper_rod:{name:'구리봉'},gold_plate:{name:'금판'},gold_rod:{name:'금봉'},titanium_plate:{name:'티타늄판'},silencer:{name:'소음기'},power_crystal:{name:'힘의 결정'},forest_map:{name:'숲 지도',type:'map'},
   elastic_rope:{name:'탄성줄'},tension_string:{name:'장력줄'},long_arrow:{name:'긴 화살'},
   anvil:{name:'모루',type:'placeable'},foundry:{name:'주조소',type:'placeable'},gun_table:{name:'총 제작대',type:'placeable'},
   bucket:{name:'양동이',type:'tool',kind:'bucket',tier:0,cd:500},
@@ -243,7 +244,7 @@ Object.assign(ITEMS,{
 const MAG_ZOOM=[1.5,2,2.5,3,4]; // 돋보기 강화 단계별 배율 (inv 항목의 lv 0~4)
 const DET_ATT=['metal_radar','detect_amp','chem_detector']; // 금속탐지기에 달 수 있는 부착물 (4칸 중 아무 칸이나)
 ITEMS.detector.att=[1,2,3,4].map(i=>({l:'슬롯 '+i,ok:DET_ATT}));
-for(const k in ITEMS)if(ITEMS[k].kind==='gun')ITEMS[k].att=[1,2,3,4].map(i=>({l:'슬롯 '+i,ok:ITEMS[k].scopeOK?['scope']:[]})); // 모든 총: 부착물 슬롯 4개 (볼트액션은 스코프 장착 가능)
+for(const k in ITEMS)if(ITEMS[k].kind==='gun')ITEMS[k].att=[1,2,3,4].map(i=>({l:'슬롯 '+i,ok:ITEMS[k].scopeOK?['scope','silencer']:['silencer']})); // 모든 총: 부착물 슬롯 4개 (볼트액션은 스코프 장착 가능)
 ITEMS.scope.att=[{l:'앞 렌즈',ok:['magnifier']},{l:'뒤 렌즈',ok:['magnifier']}]; // 스코프 몸체: 돋보기 2개 (배율의 곱) // 부착물창: 슬롯 이름 / 장착 가능 아이템
 const TIERN=['','부싯돌','구리','철','티타늄','다이아'];
 const TN={pickaxe:'곡괭이',axe:'도끼',shovel:'삽',spear:'창',sword:'검'};
@@ -294,8 +295,12 @@ add('weapons','화살','arrow','화살 x4',{stick:1,flint:1},{yield:4});
 add('func',null,'flag','깃발',{stake:1,cloth:2});
 add('mat','주괴','alloy','합금',{iron:2,copper:2},{near:'foundry'});
 add('mat','주괴','titanium_alloy','티타늄 합금',{titanium:1,gold:1,coal:4},{near:'foundry'});
-add('mat','가공','metal_rod','금속봉 x2',{iron_ingot:1},{near:'anvil',yield:2});
-add('mat','가공','metal_plate','금속판',{iron_ingot:2},{near:'anvil'});
+add('mat','가공','metal_rod','철봉 x2',{iron_ingot:1},{near:'anvil',yield:2});
+add('mat','가공','metal_plate','철판',{iron_ingot:2},{near:'anvil'});
+add('mat','가공','copper_rod','구리봉 x2',{copper_ingot:1},{near:'anvil',yield:2});
+add('mat','가공','gold_plate','금판',{gold_ingot:2},{near:'anvil'});
+add('mat','가공','gold_rod','금봉 x2',{gold_ingot:1},{near:'anvil',yield:2});
+add('mat','가공','titanium_plate','티타늄판',{titanium_ingot:2},{near:'anvil'});
 add('mat','가공','tension_string','장력줄',{elastic_rope:2,wire:1});
 add('tools','기타','bucket','양동이',{metal_plate:3},{near:'anvil'});
 add('weapons','활','longbow','장궁',{long_stick:1,tension_string:1,metal_rod:2},{near:'table'});
@@ -318,6 +323,7 @@ add('weapons','화살','bullet','총알 x5',{copper_plate:1,gunpowder:2,copper_i
 add('weapons','활','musket','조총',{plank:2,metal_plate:4,alloy:4,iron_ingot:10,titanium_rod:4},{near:'gun_table'});
 add('weapons','활','bolt_rifle','볼트액션 소총',{plank:2,titanium_rod:4,wild_hide:2,metal_plate:8},{near:'gun_table'});
 add('weapons','활','scope','스코프 몸체',{magnifier:2,metal_plate:4},{near:'gun_table'});
+add('weapons','활','silencer','소음기 (총소리 80% 감소)',{metal_plate:4,metal_rod:1,wild_hide:3},{near:'gun_table'});
 add('cook',null,'cooked_pork','구운 고기',{pork:1},{near:'campfire'});
 add('cook',null,'flour','밀가루 x8',{wheat:1},{yield:8}); // 모닥불 없이 제작
 add('cook',null,'salt','소금 x4',{sea_bucket:1},{near:'campfire',yield:4,ret:{bucket:1}});
@@ -416,7 +422,8 @@ let titan=null,audio=null,lastBeep=0,notiT=null;
 let prevCamp=false,nearAnvil=false,nearFoundry=false,nearGun=false,prevAnvil=false,prevFoundry=false,prevGun=false;
 let mobile=false,started=false,saved=null,worldSeed=1,mouseMode=false,prevFurn=false,craftCat=null;let SAVE='';let worldT=0,ambL=null,sunL=null;
 const SKY_D=new THREE.Color(0x87ceeb),SKY_N=new THREE.Color(0x050a15),C_MN=new THREE.Color(0x88aaff),C_SD=new THREE.Color(0xfff2d0);let nearTable=false,prevTable=false,nearUtil=false,prevUtil=false,prevCN=0;
-function active(){return mobile?started&&!invOpen:(document.pointerLockElement===document.body||mouseMode)}
+let fmOn=false,fmBase=null,fmTimer=null;
+function active(){return mobile?started&&!invOpen&&!fmOn:(document.pointerLockElement===document.body||mouseMode)}
 
 function showErr(e){
   const d=document.createElement('div');
@@ -733,8 +740,17 @@ function buildWorld(){
   RS(17);for(const s of SITES){const need=s.t==='temple'?2:1;
     for(let i=0,n=0;i<400&&n<need;i++){const a=R(0,6.283),d=s.r+R(8,18),x=s.x+Math.cos(a)*d,z=s.z+Math.sin(a)*d;
       if(landOK(x,z)&&!inSite(x,z,2)){mkMob('bear',x,z);n++}}}
+  RS(22);for(const s of SITES){ // 약탈자 기지: 항상 12명 (활·조총 반반), 한 무리
+    if(s.t!=='raider')continue;
+    const pk={x:s.x,z:s.z,alert:0};
+    for(let k=0;k<12;k++){
+      let x=s.x,z=s.z;
+      for(let t=0;t<40;t++){const a=R(0,6.283),r=R(3,s.r*.8),qx=s.x+Math.cos(a)*r,qz=s.z+Math.sin(a)*r;if(height(qx,qz)>.6&&riverInfo(qx,qz)>3){x=qx;z=qz;break}}
+      mkBandit(x,z,k%2?'gun':'bow',pk,x-s.x,z-s.z);
+    }
+  }
   RS(21);for(const s of SITES){ // 산적: 전초기지·야영지 중 약 60%에만, 4~5명 (활·조총 섞임)
-    if(s.t==='temple'||R(0,1)>.6)continue;
+    if(s.t==='temple'||s.t==='raider'||R(0,1)>.6)continue;
     const pk={x:s.x,z:s.z,alert:0},sz=Math.floor(R(4,6));
     for(let k=0;k<sz;k++){
       let x=s.x,z=s.z;
@@ -886,7 +902,11 @@ function lootLive(pool,n){ // 풀에서 서로 다른 n종을 가중치대로 �
 const LOOT_TEMPLE=[['diamond',1,2],['diamond_ingot',1,1,.4],['titanium_alloy',1,2],['alloy',2,4],['metal_plate',2,4],['metal_rod',2,3],['titanium_rod',1,2],['wire',2,4],['copper_plate',2,3],['gunpowder',2,4],['bullet',4,8],['glass',2,4],['chemical',1,2],['compass',1,1,.6],['lantern',1,1,.6],['long_arrow',5,10],['elastic_rope',1,2],['tension_string',1,1],['big_hide',1,2],['hide',2,4],['sulfur',2,3],['coal_powder',2,4]];
 const LOOT_OUTPOST=[['rope',2,4],['cloth',2,4],['wire',1,3],['metal_plate',1,3],['metal_rod',1,2],['copper_ingot',2,4],['bullet',3,6],['gunpowder',1,3],['long_arrow',4,8],['torch',2,3],['bucket',1,1,.6],['hide',1,3],['wool',2,3],['coal',3,6],['flint',2,4],['stake',3,5]];
 const LOOT_CAMP=[['branch',3,6],['stick',2,4],['pork',1,3],['cooked_pork',1,2],['arrow',2,5],['cloth',1,2],['hide',1,2],['wild_hide',1,2],['wool',1,3],['sugar',1,3],['sugarcane',2,4],['salt',1,2],['rope',1,3],['torch',1,3],['flint',1,3],['coal',2,4],['vine',2,4],['bucket',1,1,.5],['stone',4,8],['plank',2,4]];
-function lootDrops(k,R){ // 구조물 창고 보상: 고정 몇 가지 + 풀에서 무작위 (R 인자는 호환용, 안 씀)
+const LOOT_RAIDER=[...LOOT_OUTPOST,...LOOT_CAMP.filter(e=>!LOOT_OUTPOST.some(o=>o[0]===e[0]))]; // 약탈자 잡상자: 전초기지+야영지 풀 합침
+const LOOT_TREASURE=[['diamond',1,3],['diamond_ingot',1,2,.6],['titanium_alloy',1,3],['alloy',2,4],['gold_plate',2,3],['titanium_plate',1,2],['titanium_rod',1,3],['compass',1,1,.6],['lantern',1,1,.6],['bullet',6,10],['wire',2,4]];
+function lootDrops(k,R){
+  if(k==='raider')return lootLive(LOOT_RAIDER,LQ(4,6));
+  if(k==='treasure')return [['gold_ingot',LQ(4,8)],['titanium_ingot',LQ(2,4)],['ruby',1],...lootLive(LOOT_TREASURE,LQ(3,4)),...(LR()<.1?[['power_crystal',1]]:[]),...(LR()<.25?[['forest_map',1]]:[])]; // 루비 1개 · 힘의 결정 10% · 숲 지도 25% // 구조물 창고 보상: 고정 몇 가지 + 풀에서 무작위 (R 인자는 호환용, 안 씀)
   if(k==='temple')return [['gold_ingot',LQ(2,4)],['titanium_ingot',LQ(1,2)],...lootLive(LOOT_TEMPLE,LQ(3,4)),...(LR()<.1?[['ruby',1]]:[])]; // 루비 10% (상자가 새로 채워질 때마다)
   if(k==='outpost')return [['iron_ingot',LQ(2,4)],['arrow',LQ(6,12)],...lootLive(LOOT_OUTPOST,LQ(2,3))];
   return lootLive(LOOT_CAMP,LQ(3,4));
@@ -905,6 +925,15 @@ function buildForestSites(R,landOK){
     const z=R(60,840),x=R(fEdge(z)+(t==='temple'?90:60),MAP_SIZE-45);
     if(forestAmt(x,z)<.9||!landOK(x,z)||picks.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+rad+60))continue;
     picks.push({t,x,z,r:rad});break;
+  }
+  { // 약탈자 기지(큰 구조물): 숲 안 한 곳 — 기존 난수를 쓰지 않아 기존 구조물 위치·상자 키는 그대로
+    const rr=i=>{let h=Math.imul((worldSeed|0)^0x5bd1e995,0x9E3779B1)+Math.imul(i+1,0x85ebca6b)|0;h^=h>>>15;h=Math.imul(h,0x2c1b3c6d);h^=h>>>12;h=Math.imul(h,0x297a2d39);h^=h>>>15;return(h>>>0)/4294967296},rad=28;
+    for(let i=0;i<6000;i++){
+      const z=60+rad+rr(i*2)*(800-60-rad),x0=fEdge(z)+70+rad,x=x0+rr(i*2+1)*Math.max(1,MAP_SIZE-45-rad-x0);
+      let ok=forestAmt(x,z)>=(i>3000?.7:.9)&&landOK(x,z)&&!picks.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+rad+60);
+      for(let k=0;ok&&k<8;k++)ok=landOK(x+Math.cos(k*.785)*rad,z+Math.sin(k*.785)*rad);
+      if(ok){picks.push({t:'raider',x,z,r:rad});break}
+    }
   }
   for(const p of picks){
     const rad=p.r,ry=R(0,6.283),cs=Math.cos(ry),sn=Math.sin(ry);
@@ -925,6 +954,10 @@ function buildForestSites(R,landOK){
         const s=placed[placed.length-1];
         if(ly>0)s.mesh.position.y=base+ly;
         s.mesh.rotation.y=ry+(cr||0);
+        if(kind==='treasure'){ // 보물상자: 금장식 + 조금 더 큼
+          const [c1,c2]=s.mesh.children;if(c1&&c1.material)c1.material.color.set(0x7a4b12);if(c2&&c2.material)c2.material.color.set(0xffc107);
+          const lk=new THREE.Mesh(new THREE.BoxGeometry(.25,.25,.1),new THREE.MeshStandardMaterial({color:0xffd54f,emissive:0x7a5a00}));lk.position.set(0,.85,.55);s.mesh.add(lk);s.mesh.scale.setScalar(1.15);
+        }
         s.gk=gk;s.sg=true;s.lk=kind;
         lootDrops(kind,Ri).forEach(([id,c],i)=>{s.items[i]={id,count:c}});
         return s;
@@ -969,6 +1002,47 @@ function buildForestSites(R,landOK){
       bx(g,3.2,1.2,2,mDark,0,1.5,0);col(0,0,2);
       const cr=new THREE.Mesh(new THREE.OctahedronGeometry(.7),mGlow);cr.position.y=3.4;g.add(cr);SPIN.push(cr);
       chest(-3.4,.9,0,'temple',1.5708);chest(3.4,.9,0,'temple',1.5708);
+    }else if(p.t==='raider'){
+      // 약탈자 기지: 큰 말뚝 울타리(입구 +z) · 망루 4개 · 긴 막사 · 천막 4개 · 모닥불 2개 · 잡상자 5개 · 뒤쪽 두목 천막의 보물상자
+      const N=64,RR=24;
+      for(let i=0;i<N;i++){
+        const a=i/N*6.283185;
+        if(Math.abs(a-1.5708)<.26||Math.random()<.08)continue; // 입구 + 부서진 곳
+        const x=Math.cos(a)*RR,z=Math.sin(a)*RR,h=Math.random()<.15?R(1.8,2.8):R(4.2,5.6),[wx,wz]=wp(x,z),dy=height(wx,wz)-base; // 지형을 따라 말뚝을 세움
+        cy(g,.3,.36,h+1,mWood,x,dy+(h-1)/2,z,6);cy(g,.02,.32,.8,mWood,x,dy+h+.35,z,6);col(x,z,.6);
+      }
+      const tower=(tx,tz)=>{
+        for(const sx of [-1,1])for(const sz of [-1,1]){cy(g,.3,.36,10.6,mWood,tx+sx*1.8,5,tz+sz*1.8,6);col(tx+sx*1.8,tz+sz*1.8,.7)}
+        bx(g,5,.4,5,mPlank,tx,7.2,tz);
+        for(const s of [-1,1]){bx(g,5,.9,.15,mWood,tx,7.85,tz+s*2.4);bx(g,.15,.9,5,mWood,tx+s*2.4,7.85,tz)}
+        const rf=new THREE.Mesh(new THREE.ConeGeometry(3.8,2.2,4),mDark);rf.position.set(tx,11.6,tz);rf.rotation.y=Math.PI/4;g.add(rf);
+        bx(g,.14,3,.14,mWood,tx,12.9,tz);bx(g,.05,1.4,.9,mRed,tx,13.2,tz+.5);
+      };
+      tower(-15,-15);tower(15,-15);tower(-15,15);tower(15,15);
+      // 긴 막사
+      bx(g,12,5.2,7,mPlank,0,1.6,-6);
+      {const lg=new THREE.ConeGeometry(9.2,3.2,4);lg.rotateY(Math.PI/4);const lr=new THREE.Mesh(lg,mDark);lr.position.set(0,5.8,-6);lr.scale.set(1,1,.62);g.add(lr)}
+      bx(g,2,3,.2,mDark,0,1.5,-2.45);
+      for(const s of [-1,1])for(const z of [-2.5,-9.5])bx(g,.5,4.8,.5,mWood,s*6,2.1,z);
+      col(-4.5,-6,3.2);col(0,-6,3.2);col(4.5,-6,3.2);
+      // 두목 천막 (뒤쪽, 앞이 열려 있음) + 보물상자
+      bx(g,8.4,3.6,.3,mCloth,0,1.8,-20.2);
+      for(const s of [-1,1])bx(g,.3,3.6,5.2,mCloth,s*4.1,1.8,-17.6);
+      {const tr=new THREE.Mesh(new THREE.BoxGeometry(9,.25,6),mRed);tr.position.set(0,3.7,-17.6);tr.rotation.x=.12;g.add(tr)}
+      for(const [x,z] of [[-4.1,-15],[4.1,-15],[-4.1,-20.2],[4.1,-20.2]])bx(g,.3,4,.3,mWood,x,2,z);
+      col(-4.1,-17.6,1.8);col(4.1,-17.6,1.8);col(0,-20.2,3);
+      chest(0,0,-18.3,'treasure',0);
+      // 일반 천막 4개
+      for(const [x,z] of [[-12,10],[12,10],[-15,-3],[15,-3]]){
+        const t=new THREE.Mesh(new THREE.ConeGeometry(2.5,2.3,4),mCloth);t.position.set(x,1.15,z);t.rotation.y=.785;g.add(t);col(x,z,1.9)}
+      // 모닥불 2개
+      fire(0,9);fire(-11,-4);
+      for(let k=0;k<8;k++)bx(g,.5,.35,.5,mStone,Math.cos(k*.785)*1.1,.15,9+Math.sin(k*.785)*1.1);
+      // 잡다한 상자 5개
+      chest(-8,0,5,'raider',.3);chest(8,0,4,'raider',-.4);chest(-17,0,-10,'raider',.9);chest(16,0,-11,'raider',-.9);chest(5,0,16,'raider',1.2);
+      // 입구: 붉은 깃발 + 가시 방책
+      for(const s of [-1,1]){bx(g,.14,4,.14,mWood,s*7.5,2,24.5);bx(g,.05,1.6,1,mRed,s*7.5,3.2,25)}
+      for(const sx of [-3.5,3.5]){for(const r of [.7,-.7]){const b=bx(g,3,.22,.22,mWood,sx,.8,21);b.rotation.z=r}col(sx,21,1.3)}
     }else{
       const t=new THREE.Mesh(new THREE.ConeGeometry(2.2,2,4),mCloth);t.position.set(4,.9,1);t.rotation.set(0,.7,.35);g.add(t);col(4,1,1.8);
       cy(g,.9,.9,.1,mDark,0,.05,0,10);
@@ -1237,9 +1311,9 @@ function bindEvents(){
     if(mobile)return;
     const on=document.pointerLockElement===document.body;
     if(on)$('blocker').style.display='none';
-    else if(!invOpen&&!mouseMode)$('blocker').style.display='flex';
+    else if(!invOpen&&!mouseMode&&!fmOn)$('blocker').style.display='flex';
   });
-  document.addEventListener('pointerlockerror',()=>{if(!invOpen)$('blocker').style.display='flex'});
+  document.addEventListener('pointerlockerror',()=>{if(!invOpen&&!fmOn)$('blocker').style.display='flex'});
   document.addEventListener('mousemove',e=>{
     if(mobile||document.pointerLockElement!==document.body)return;
     const sn=.002/Math.max(1,camera.zoom); // 확대할수록 시점 이동 둔하게
@@ -1248,6 +1322,7 @@ function bindEvents(){
     camera.rotation.set(pitch,yaw,0);
   });
   addEventListener('keydown',e=>{
+    if(fmOn){if(e.code==='Escape'||e.code==='KeyM'||e.code==='KeyE'||e.code==='Tab'){e.preventDefault();closeForestMap()}return}
     if(e.code==='Tab'){e.preventDefault();toggleInv();return}
     if(e.code==='KeyE'&&!mobile){toggleMouse();return}
     if(invOpen)return;
@@ -1294,6 +1369,7 @@ function place(){
   if(chh&&chh.distance<6){let o=chh.object;while(o&&!chs.some(s=>s.mesh===o))o=o.parent;const cs=chs.find(s=>s.mesh===o);if(cs){openChest(cs);return}}
   if(AXEBOX){const ab=ray([AXEBOX.group],true)[0];if(ab&&ab.distance<6){takeEmergencyAxe();return}}
   if(a&&a.id==='cooked_pork'){a.count--;if(a.count<=0)inv[sel]=null;P.hp=Math.min(P.maxHp,P.hp+25);P.st=Math.min(P.maxSt,P.st+30);renderInv();note('체력 +25, 스테미나 +30');return}
+  if(a&&a.id==='forest_map'){openForestMap();return}
   if(a&&(a.id==='bucket'||a.id==='sea_bucket'||a.id==='water_bucket')){bucketUse(a);return}
   if(!a||ITEMS[a.id].type!=='placeable')return;
   const hit=ray(GR,false)[0];
@@ -1301,6 +1377,47 @@ function place(){
   makeStruct(a.id,hit.point.x,hit.point.z,0);
   a.count--;if(a.count<=0)inv[sel]=null;
   renderInv();
+}
+/* ---------- 숲 지도: 우클릭으로 열면 숲 구조물 위치가 표시됨 ---------- */
+function fmBuild(){
+  const N=140,c=document.createElement('canvas');c.width=c.height=560;const x=c.getContext('2d'),cs=560/N;
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const wx=(i+.5)/N*MAP_SIZE,wz=(j+.5)/N*MAP_SIZE;let col='#1d4f6e';
+    try{const h=height(wx,wz);
+      if(h>.6){if(riverInfo(wx,wz)<=3)col='#2f7fb0';else{const f=forestAmt(wx,wz);col=f>.5?'#2e6b34':f>.1?'#5c8f3c':'#8fae5a'}}
+      else if(h>-.3)col='#d9c88f';
+    }catch(e){}
+    x.fillStyle=col;x.fillRect(i*cs,j*cs,cs+.6,cs+.6);
+  }
+  return c;
+}
+const FM_SYM={temple:['#ce93d8','사원'],outpost:['#ffb74d','전초기지'],camp:['#81d4fa','야영지'],raider:['#ef5350','약탈자 기지']};
+function drawForestMap(){
+  const cv=$('fmapC'),x=cv.getContext('2d'),W=cv.width,k=W/MAP_SIZE;
+  if(!fmBase)fmBase=fmBuild();
+  x.drawImage(fmBase,0,0);
+  x.textAlign='center';x.font='bold 13px sans-serif';x.lineJoin='round';
+  for(const s of SITES){
+    const q=FM_SYM[s.t]||['#fff',s.t],px=s.x*k,pz=s.z*k;
+    x.fillStyle=q[0]+'44';x.beginPath();x.arc(px,pz,Math.max(7,s.r*k),0,6.283);x.fill();
+    x.fillStyle=q[0];x.beginPath();x.arc(px,pz,6,0,6.283);x.fill();x.lineWidth=1.5;x.strokeStyle='#000';x.stroke();
+    x.lineWidth=3;x.strokeStyle='#000';x.strokeText(q[1],px,pz-11);x.fillStyle='#fff';x.fillText(q[1],px,pz-11);
+  }
+  if(zone==='main'){ // 내 위치(삼각형 = 바라보는 방향)
+    const px=camera.position.x*k,pz=camera.position.z*k,fx=-Math.sin(yaw),fz=-Math.cos(yaw);
+    x.fillStyle='#fff';x.strokeStyle='#000';x.lineWidth=2;x.beginPath();
+    x.moveTo(px+fx*10,pz+fz*10);x.lineTo(px-fx*6-fz*6,pz-fz*6+fx*6);x.lineTo(px-fx*6+fz*6,pz-fz*6-fx*6);x.closePath();x.fill();x.stroke();
+  }
+  $('fmapL').innerHTML=Object.values(FM_SYM).map(q=>`<span style="color:${q[0]}">●</span> ${q[1]}`).join('　')+'　<span style="color:#fff">▲</span> 내 위치';
+}
+function openForestMap(){
+  if(fmOn||invOpen)return;
+  fmOn=true;mouseMode=false;for(const k in keys)keys[k]=0;gunAim=false;
+  document.exitPointerLock();$('fmap').style.display='flex';drawForestMap();fmTimer=setInterval(drawForestMap,300);
+}
+function closeForestMap(){
+  if(!fmOn)return;fmOn=false;clearInterval(fmTimer);$('fmap').style.display='none';
+  if(!mobile)try{document.body.requestPointerLock()}catch(e){}
 }
 function waterAim(){ // 바라보는 곳이 6m 안의 물이면 'river'/'sea'
   const d=new THREE.Vector3();camera.getWorldDirection(d);const cp=camera.position;
@@ -1425,7 +1542,7 @@ function bowTick(){
 /* ---------- 조총·돋보기 ---------- */
 const GUN_DMG=50,GUN_MAG=5,GUN_RELOAD=2000,GUN_RNG_HIP=100,GUN_RNG_AIM=400; // 데미지 = 활 최대(10)의 5배
 let gunAim=false,magOn=false,reloadT0=0,gunT=0,_gh='';const TRC=[];
-const GUNDEF={musket:{nm:'조총',dmg:50,mag:5,hip:100,aim:400,fire:.45},bolt_rifle:{nm:'볼트액션 소총',dmg:60,mag:5,hip:MAP_SIZE*.5,aim:MAP_SIZE*.5,fire:.3,bolt:true}}; // 볼트액션: 사거리 맵의 절반, 공속 0.3초
+const GUNDEF={musket:{nm:'조총',dmg:50,mag:8,hip:100,aim:400,fire:.45},bolt_rifle:{nm:'볼트액션 소총',dmg:60,mag:5,hip:MAP_SIZE*.5,aim:MAP_SIZE*.5,fire:.3,bolt:true}}; // 볼트액션: 사거리 맵의 절반, 공속 0.3초
 const gd=()=>GUNDEF[(inv[sel]||{}).id]||GUNDEF.musket;
 let RGL=.3,RPER=.34,reloadClip=false; // 장전 시간 (조총: 레버 .3 + 탄당 .34 / 볼트액션: 볼트 .4 + 탄당 .5, 빈 총은 클립 한 번에 1.6초)
 const GL=.3,PER_B=.34;let reloadTotal=0,reloadNeed=0,reloadDone=0,gunFire=0; // 레버 당김 0.3초 + 탄 1발당 0.34초 (5발=2초, 남은 탄이 있으면 그만큼 짧아짐)
@@ -1476,11 +1593,16 @@ function updateGunAnim(dt){ // 레버 당기기(발사 후) · 장전(레버 →
     else{const tx=-.2-.1*Math.cos(lev)+.14*Math.sin(lev),ty=-.03-.1*Math.sin(lev)-.14*Math.cos(lev);hx+=(tx-hx)*b;hy+=(ty-hy)*b}} // 오른손이 레버 끝을 따라감
   G.hR.position.set(hx,hy,hz);G.bul.visible=bv;if(bv)G.bul.position.set(hx+.04,hy+.04,hz);
 }
+const GUN_HEAR=300,SIL_CUT=.8; // 총소리가 들리는 거리(월드 단위 300 = 150m) · 소음기 감소율 80% (→ 30m)
+function gunNoise(sil){ // 구조물의 산적·약탈자는 총소리를 듣고 무리 전체가 발각 상태가 됨
+  const rg=GUN_HEAR*(sil?1-SIL_CUT:1),t=performance.now(),cp=camera.position;
+  for(const n of nc().an)if(n.bandit&&n.active&&n.pack&&Math.hypot(n.x-cp.x,n.z-cp.z)<rg)n.pack.alert=Math.max(n.pack.alert,t+12000);
+}
 function fireGun(now){
   const a=inv[sel];
   if(reloadT0)return;
   if(!a.mag){note(bulletCount()>0?'R키로 장전하세요':'총알이 없습니다');return}
-  const df=gd();lastAtk=now;a.mag--;swing=1;swingDur=.2;gunFire=df.fire;
+  const df=gd(),sil=hasAtt(a,'silencer');lastAtk=now;a.mag--;swing=1;swingDur=.2;gunFire=df.fire;gunNoise(sil);
   const cp=camera.getWorldPosition(new THREE.Vector3()),dir=new THREE.Vector3();camera.getWorldDirection(dir);
   const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
   if(!gunAim){const r=.01*Math.sqrt(Math.random()),ph=Math.random()*6.283;dir.addScaledVector(right,r*Math.cos(ph)).addScaledVector(up,r*Math.sin(ph)).normalize()} // 그냥 조준: 10m당 반지름 0.1m 원 안 임의 지점
@@ -1495,7 +1617,7 @@ function fireGun(now){
   const m=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,1),new THREE.MeshBasicMaterial({color:0xffe082,transparent:true,opacity:.8,depthWrite:false}));
   m.position.copy(A).lerp(E,.5);m.scale.set(Math.max(1,D/40),Math.max(1,D/40),A.distanceTo(E));m.lookAt(E);scene.add(m);TRC.push({m,t:.12});
   pitch=Math.min(1.5,pitch+.025);camera.rotation.set(pitch,yaw,0); // 반동
-  if(audio){try{const o=audio.createOscillator(),gn=audio.createGain(),T=audio.currentTime;o.type='sawtooth';o.frequency.setValueAtTime(160,T);o.frequency.exponentialRampToValueAtTime(40,T+.15);gn.gain.setValueAtTime(.12,T);gn.gain.exponentialRampToValueAtTime(.001,T+.18);o.connect(gn);gn.connect(audio.destination);o.start();o.stop(T+.2)}catch(e){}}
+  if(audio){try{const o=audio.createOscillator(),gn=audio.createGain(),T=audio.currentTime;o.type='sawtooth';o.frequency.setValueAtTime(160,T);o.frequency.exponentialRampToValueAtTime(40,T+.15);gn.gain.setValueAtTime(.12*(sil?1-SIL_CUT:1),T);gn.gain.exponentialRampToValueAtTime(.001,T+.18);o.connect(gn);gn.connect(audio.destination);o.start();o.stop(T+.2)}catch(e){}}
 }
 function updateTracers(dt){for(let i=TRC.length-1;i>=0;i--){const t=TRC[i];t.t-=dt;t.m.material.opacity=Math.max(0,t.t/.12)*.8;if(t.t<=0){scene.remove(t.m);TRC.splice(i,1)}}}
 const hasScopeOn=a=>!!(a&&a.att&&a.att.some(x=>x&&x.id==='scope'));
@@ -1512,6 +1634,7 @@ function adsTick(){ // 정조준 화면: 스코프(원형 마스크+십자선) /
   $('cross').style.visibility=ads?'hidden':'';
   if(ads){toolMesh.visible=false;adsHid=true}else if(adsHid){adsHid=false;toolMesh.visible=toolMesh.children.length>0}
   if(curGun&&curGun.scope)curGun.scope.visible=hasScopeOn(a);
+  if(curGun&&curGun.sil)curGun.sil.visible=hasAtt(a,'silencer');
 }
 function gunHud(){
   const e=$('gunh'),a=inv[sel];let t='';
@@ -1800,7 +1923,7 @@ function buildUI(){
 /* ---------- 아이템 모양 (아이콘 / 손에 든 모양) ---------- */
 const MATC={flint:'#8a8f98',wood:'#a1887f',copper:'#c8702a',gold:'#ffd54f',iron:'#cfd8dc',titanium:'#a3a8ad',diamond:'#4dd0e1'};
 const ICOL={log:'#6d4c41',branch:'#8d6e63',long_branch:'#8d6e63',vine:'#43a047',stick:'#8d6e63',long_stick:'#8d6e63',stake:'#8d6e63',rope:'#d7c49e',plank:'#c8a165',stone:'#9e9e9e',flint:'#5f6368',clay:'#b5651d',sugarcane:'#43a047',sugar:'#f5f5f5',coal:'#262626',copper:'#d2691e',iron:'#e0c9a6',gold:'#ffd54f',diamond:'#4dd0e1',titanium:'#78909c',hide:'#8d5a2b',wool:'#f5f5f5',cloth:'#eceff1',pork:'#f4a6b0',cooked_pork:'#a0522d',wire:'#d2691e',arrow:'#8d6e63',campfire:'#ff7043',furnace:'#757575',table:'#8d6e63',chest:'#8d5a2b',flag:'#d32f2f',lantern:'#ffd54f',clock:'#ffd54f',compass:'#ef5350',bag:'#8d6e63',big_bag:'#5d4037',torch:'#ff9800',detector:'#78909c',headlamp:'#ffe082',quiver:'#8d5a2b',util_table:'#4dd0e1',big_hide:'#6d4c41',wild_hide:'#9e8c6a',ruby:'#e53935'};
-Object.assign(ICOL,{sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',wheat:'#d9b44a',flour:'#f5efe0',bolt_rifle:'#6d4c41',scope:'#263238',wild_cloak:'#8d6e63',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63'});
+Object.assign(ICOL,{sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',wheat:'#d9b44a',flour:'#f5efe0',bolt_rifle:'#6d4c41',scope:'#263238',wild_cloak:'#8d6e63',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63',copper_rod:'#c8702a',gold_plate:'#ffd54f',gold_rod:'#ffd54f',titanium_plate:'#a3a8ad',silencer:'#455a64',power_crystal:'#ff5252',forest_map:'#e8d9a8'});
 const _mat=id=>{const m=/^(copper|gold|iron|titanium|diamond|flint|wood)_(.+)$/.exec(id);return m?[m[1],m[2]]:[null,id]};
 const hx=c=>parseInt(c.slice(1),16);
 const _svgC={};
@@ -1815,6 +1938,13 @@ const PELT=(f,d)=>`<path d="M7 8 L12 6 L16 8 L20 6 L25 8 L24 13 L28 16 L24 20 L2
 function iconBody(id){
   const it=ITEMS[id]||{},[mt,rest]=_mat(id),H='#8d6e63',O='stroke="#0006" stroke-width=".8"';
   const tc=mt?MATC[mt]:MATC.iron,c=mt?MATC[mt]:(ICOL[id]||'#9e9e9e');
+  {const pm=/^(copper|gold|titanium)_(plate|rod)$/.exec(id);
+   if(pm){const cc=MATC[pm[1]];
+     return pm[2]==='rod'?`<line x1="5" y1="27" x2="27" y2="5" stroke="${cc}" stroke-width="4.4" stroke-linecap="round"/><line x1="5" y1="27" x2="27" y2="5" stroke="#fff8" stroke-width="1.6" stroke-linecap="round"/>`
+     :`<rect x="4" y="8" width="24" height="16" rx="1.5" fill="${cc}" ${O}/><rect x="4" y="8" width="24" height="4" fill="#fff4"/><circle cx="8" cy="12" r="1.3" fill="#0004"/><circle cx="24" cy="12" r="1.3" fill="#0004"/><circle cx="8" cy="20" r="1.3" fill="#0004"/><circle cx="24" cy="20" r="1.3" fill="#0004"/>`}}
+  if(id==='silencer')return `<rect x="3" y="12" width="26" height="9" rx="3" fill="#455a64" ${O}/><rect x="3" y="12" width="26" height="3" rx="1.5" fill="#fff3"/><line x1="9" y1="12" x2="9" y2="21" stroke="#263238"/><line x1="15" y1="12" x2="15" y2="21" stroke="#263238"/><line x1="21" y1="12" x2="21" y2="21" stroke="#263238"/><circle cx="29" cy="16.5" r="1.8" fill="#111"/>`;
+  if(id==='power_crystal')return `<polygon points="16,2 25,10 22,28 10,28 7,10" fill="#ff5252" ${O}/><polygon points="16,2 20,10 16,28 12,10" fill="#ff9e9e"/><polygon points="7,10 16,2 12,10" fill="#ffcdd2"/>`;
+  if(id==='forest_map')return `<rect x="4" y="6" width="24" height="20" rx="2" fill="#e8d9a8" ${O}/><path d="M8 21 L13 12 L17 17 L21 10 L25 18" stroke="#2e7d32" fill="none" stroke-width="2"/><circle cx="21" cy="22" r="2" fill="#c62828"/><circle cx="10" cy="10" r="1.6" fill="#6a1b9a"/>`;
   if(id==='big_hide')return PELT('#6d4c41','#4e342e');if(id==='wild_hide')return PELT('#9e8c6a','#6b5d43');
   if(id==='ruby')return `<polygon points="16,4 27,12 16,28 5,12" fill="#e53935" ${O}/><polygon points="16,4 21,12 16,28 11,12" fill="#ff8a80"/>`;
   if(id==='titanium_alloy')return `<polygon points="5,23 10,11 22,11 27,23" fill="#90a4ae" ${O}/><polygon points="10,11 22,11 20,15 12,15" fill="#fff5"/><circle cx="16" cy="19" r="2.4" fill="#ffd54f"/>`;
@@ -2010,8 +2140,11 @@ function buildHeld(id){
       B(.17,.15,.12,0x9e9e9e,0,-.09,0);
       B(.14,.006,.09,id==='bucket'?0x000000:id==='sea_bucket'?0x0277bd:0x29b6f6,0,-.012,0);
       B(.012,.1,.012,0x607d8b,.085,.04,0);B(.012,.1,.012,0x607d8b,-.085,.04,0);B(.18,.012,.012,0x607d8b,0,.09,0);break}
-    case 'metal_rod':case 'long_arrow':Cy(.012,.45,col);break;
-    case 'metal_plate':B(.22,.02,.16,col);break;
+    case 'metal_rod':case 'copper_rod':case 'gold_rod':case 'titanium_rod':case 'long_arrow':Cy(.012,.45,col);break;
+    case 'metal_plate':case 'copper_plate':case 'gold_plate':case 'titanium_plate':B(.22,.02,.16,col);break;
+    case 'silencer':{const t=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.35,10),ms(0x455a64));t.rotation.z=Math.PI/2;g.add(t);break}
+    case 'forest_map':B(.28,.02,.2,0xe8d9a8);break;
+    case 'power_crystal':{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.08),ms(0xff5252));g.add(o);break}
     case 'furnace':B(.24,.24,.2,0x757575);B(.1,.08,.02,0xff6a10,0,-.03,.11);break;
     case 'table':B(.3,.04,.2,0x8d6e63,0,.06);B(.03,.12,.03,W,-.12,-.02,-.07);B(.03,.12,.03,W,.12,-.02,.07);break;
     case 'chest':B(.26,.16,.18,0x8d5a2b);B(.27,.04,.19,0x5d3a1a,0,.1);break;
@@ -2023,7 +2156,8 @@ function buildHeld(id){
       const lev=new THREE.Group();lev.position.set(-.2,-.03,0);const lm=ms(0x90a4ae),lb=(w,h,x,y)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.025),lm);m.position.set(x,y,0);lev.add(m)};
       lb(.02,.14,-.01,-.07);lb(.2,.02,-.1,-.14);lb(.02,.12,-.2,-.08);g.add(lev); // 레버 고리
       const bul=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.06,6),ms(0xd4a017));bul.rotation.z=Math.PI/2;bul.visible=false;g.add(bul);
-      g.userData.gun={lev,bul,hR:hand(-.36,-.1,0),hL:hand(.22,-.07,0)};break}
+      const sil=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.28,10),ms(0x455a64));sil.rotation.z=Math.PI/2;sil.position.set(.73,.06,0);sil.visible=false;g.add(sil);
+      g.userData.gun={lev,bul,sil,hR:hand(-.36,-.1,0),hL:hand(.22,-.07,0)};break}
     case 'bolt_rifle':{ // 볼트액션: 모델 +x = 총구, 개머리판에 야생가죽
       const sk=new THREE.MeshBasicMaterial({color:0xffdbac}),hand=(x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),sk);m.position.set(x,y,z);g.add(m);return m};
       B(1.15,.032,.032,0x37474f,.22,.07,0);B(.3,.075,.065,0x546e7a,-.04,.05,0);B(.5,.095,.055,0x6d4c41,-.42,.0,0);
@@ -2037,7 +2171,8 @@ function buildHeld(id){
        for(const px of [-.1,.1]){const r=new THREE.Mesh(new THREE.BoxGeometry(.03,.05,.03),sm);r.position.set(px,-.045,0);sc.add(r)}}
       sc.visible=false;g.add(sc);
       const lev=new THREE.Group(),bul=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.06,6),ms(0xd4a017));bul.rotation.z=Math.PI/2;bul.visible=false;g.add(bul);
-      g.userData.gun={lev,bul,bolt,scope:sc,hR:hand(-.4,-.1,0),hL:hand(.3,-.07,0)};break}
+      const sil=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.3,10),ms(0x455a64));sil.rotation.z=Math.PI/2;sil.position.set(.95,.07,0);sil.visible=false;g.add(sil);
+      g.userData.gun={lev,bul,bolt,sil,scope:sc,hR:hand(-.4,-.1,0),hL:hand(.3,-.07,0)};break}
     case 'scope':{const sm=ms(0x263238),t=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.36,10),sm);t.rotation.z=Math.PI/2;t.position.y=.1;g.add(t);for(const px of [-.19,.19]){const o=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.06,10),ms(0x37474f));o.rotation.z=Math.PI/2;o.position.set(px,.1,0);g.add(o)}break}
     case 'magnifier':{const r=new THREE.Mesh(new THREE.TorusGeometry(.1,.014,6,18),ms(0x78909c));r.position.y=.2;r.rotation.y=Math.PI/2;g.add(r);const gl=new THREE.Mesh(new THREE.CylinderGeometry(.095,.095,.006,18),new THREE.MeshStandardMaterial({color:0xb3e5fc,transparent:true,opacity:.45}));gl.position.y=.2;gl.rotation.z=Math.PI/2;g.add(gl);Cy(.014,.26,W,0,.03,0);break}
     case 'lantern':B(.12,.18,.12,0x455a64);B(.08,.12,.08,0xffe082);break;
@@ -2882,10 +3017,18 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v11.6.7';
+const SAVE_VER=7,GAME_VERSION='v11.7.8';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v11",t:"대규모 · 금속·총·요리",subs:[
+    {v:"11.7.8",d:'약탈자 기지·소음기·금속판봉',items:[
+      "추가: 총소리 — 구조물의 산적·약탈자가 150m 안의 총소리를 들으면 무리 전체가 발각 상태가 됨",
+      "추가: 소음기(철판4+철봉1+야생가죽3, 총 제작대) — 모든 총 부착 슬롯에 장착, 총소리 80% 감소(들리는 거리 150m → 30m, 발사음도 작아짐)",
+      "추가: 금속판·봉 전 종류 — 구리봉·금판·금봉·티타늄판 (모루). 기존 '금속판'은 '철판', '금속봉'은 '철봉'으로 이름 변경",
+      "추가: 약탈자 기지 — 숲 속 큰 구조물(울타리·망루 4·긴 막사·천막·모닥불). 약탈자 12명, 잡상자 5개, 뒤쪽 천막에 보물상자 1개",
+      "추가: 보물상자 — 귀중품(금·티타늄·다이아·합금 등) + 루비 1개 + 힘의 결정 10% + 숲 지도 25%",
+      "추가: 숲 지도 — 들고 우클릭하면 숲 구조물(사원·전초기지·야영지·약탈자 기지) 위치와 내 위치가 표시됨 (닫기: M / E / Esc)",
+      "수정: 레버액션 총(조총) 장탄수 5발 → 8발"]},
     {v:"11.6.7",d:'볼트액션·스코프·밀·풀',items:[
       "추가: 볼트액션 소총(판자2+티타늄봉4+야생가죽2+금속판8, 총 제작대) — 사거리 맵 절반, 공속 0.3초, 데미지 60, 쏘면 볼트를 당김, 슬롯 4칸. 빈 총은 클립장전(1.6초), 탄이 남으면 한 발씩 장전. 총알은 조총과 동일. 정조준 시 가늠쇠·가늠자",
       "추가: 스코프 몸체(돋보기2+금속판4, 총 제작대) — 돋보기 2개 슬롯(앞·뒤), 배율은 두 돋보기 배율의 곱(2배+2배=4배). 인벤토리에서 우클릭으로 렌즈를 끼운 뒤 소총 슬롯에 장착. 별도 창 없이 전체 화면 스코프 화면",
