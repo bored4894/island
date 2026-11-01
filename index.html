@@ -51,8 +51,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Se
 .slot svg{width:82%;height:82%;pointer-events:none}
 .ric{width:30px;height:30px;flex:none;background:rgba(0,0,0,.35);border-radius:4px}.ric svg{width:100%;height:100%}
 .slot i{position:absolute;bottom:1px;right:4px;font-size:11px;font-style:normal;text-shadow:1px 1px 2px #000}
-#inv{position:absolute;inset:0;background:rgba(0,0,0,.85);display:none;justify-content:center;align-items:center;z-index:50}
-#win{width:min(720px,96%);background:#222;border:3px solid #555;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+#inv{position:absolute;inset:0;background:rgba(0,0,0,.85);display:none;justify-content:center;align-items:flex-start;z-index:50;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding:8px 0 40px} /* 인벤토리가 길면 위·아래로 스크롤 */
+#win{margin:auto;flex:none;width:min(720px,96%);background:#222;border:3px solid #555;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
 #tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:2px solid #444;padding-bottom:10px}
 .tab{padding:8px 14px;background:#333;border:1px solid #555;color:#ccc;cursor:pointer;border-radius:4px;font-weight:700}
 .tab.on{background:#4CAF50;color:#fff;border-color:#81C784}
@@ -83,6 +83,8 @@ body.mob #craft{top:96px;left:8px;transform:scale(.85);transform-origin:top left
 #rlist .sub.on{background:#4CAF50;border-color:#81C784}
 .slot.held{border-color:#ff9800;box-shadow:0 0 8px #ff9800}
 #grid .slot,#cgrid .slot,#hotbar .slot{touch-action:none}
+@media (pointer:coarse){#inv #grid .slot,#inv #cgrid .slot,#inv .slot{touch-action:pan-y}} /* 터치: 슬롯 위에서도 상하 드래그로 스크롤 (아이템 이동은 탭→탭) */
+body.mob #inv .slot{touch-action:pan-y}
 #ghost{position:fixed;z-index:200;pointer-events:none;background:rgba(0,0,0,.8);border:1px solid #fff;border-radius:4px;padding:4px 8px;font-size:12px;font-weight:700}
 #util{display:grid;grid-template-columns:repeat(2,48px);gap:6px}
 #util .slot{border-color:#26a69a}
