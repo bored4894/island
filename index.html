@@ -125,7 +125,7 @@ body.mob #clock{top:70px;right:12px}
 #newBtn{width:100%;background:#2e7d32;margin-top:4px}
 #tut{position:fixed;right:10px;top:136px;max-width:150px;z-index:30;display:none;pointer-events:none;font-size:12px;line-height:1.4;color:#ffe082;text-shadow:0 0 3px #000,0 0 3px #000;background:rgba(0,0,0,.35);padding:4px 8px;border-radius:6px;text-align:right}
 </style>
-<div id="roadmap"><div id="rmBox"><h2>📜 업데이트 로드맵</h2><div class="rn">대규모 업데이트를 누르면 소규모 업데이트가 펼쳐집니다.</div><div id="rmList"></div><button id="rmClose" onclick="closeRoadmap()">닫기</button></div></div>
+<div id="roadmap" onclick="if(event.target===this)closeRoadmap()"><div id="rmBox"><h2>📜 업데이트 로드맵</h2><div class="rn">대규모 업데이트를 누르면 소규모 업데이트가 펼쳐집니다.</div><div id="rmList"></div><button id="rmClose" onclick="closeRoadmap()">닫기</button></div></div>
 <script src="three.min.js"></script>
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 </head>
@@ -3055,11 +3055,11 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v11.8.0';
+const SAVE_VER=7,GAME_VERSION='v11.8.10';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v11",t:"대규모 · 금속·총·요리",subs:[
-    {v:"11.8.0",d:'힘의 조각·라이플탄·정렬',items:[
+    {v:"11.8.10",d:'힘의 조각·라이플탄·정렬',items:[
       "수정: 약탈자·산적에게 맞으면 오류가 나고 체력이 안 닳던 버그",
       "추가: 힘의 조각 슬롯 — 곡괭이·칼·창·도끼·활·장궁·삽에 1칸 (총은 기존 슬롯 사용). 힘의 결정을 끼우면 모든 데미지 1.5배",
       "추가: 고품질 화약(화약6+화학물질4+유황2 → 4개), 화살촉(합금1 → 4개), 라이플탄(고품질 화약+철판2+티타늄 합금2 → 8개)",
