@@ -705,7 +705,7 @@ function buildWorld(){
   RS(20);buildCrash(R);
   // 몬스터: 늑대(숲 가장자리) 곰(숲 깊은 곳) / 거미는 동굴 공간에만
   const MB={
-    wolf:{c:0x777777,hc:0x555555,e:0xffee58,s:1,hp:18,spd:20,dmg:8,ag:36,n:30,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.3},
+    wolf:{c:0x777777,hc:0x555555,e:0xffee58,s:1,hp:18,spd:17,dmg:8,ag:36,n:30,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.3},
     bear:{c:0x5a3a1a,hc:0x3a2410,e:0xffab40,s:1.7,hp:70,spd:3.36,dmg:18,ag:24,n:16,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.7},
     spider:{c:0x222222,hc:0x992222,s:1.6,hp:12,spd:3.2,dmg:6,ag:14,n:14}
   };
@@ -777,7 +777,7 @@ function buildWorld(){
       let bx2=s.x,bz2=s.z-13;if(!(height(bx2,bz2)>.6)){bx2=s.x+6;bz2=s.z-12}
       const bn=mkBandit(bx2,bz2,'boss',pk,bx2-s.x,bz2-s.z);
       bn.minions=[]; // 부하 풀 12마리: 보스가 싸울 때 10초마다 3마리씩 불러냄
-      for(let k=0;k<12;k++){const m=mkBandit(s.x,s.z,['axe','bow','longbow','musket','bolt'][k%5],pk,0,0);m.minion=true;m.active=false;m.mesh.visible=false;m.respawn=Infinity;bn.minions.push(m)}
+      for(let k=0;k<12;k++){const m=mkBandit(s.x,s.z,['axe','bow','longbow','musket','bolt'][k%5],pk,0,0);m.minion=true;m.maxHp=30;m.hp=30;m._hp=30;m.active=false;m.mesh.visible=false;m.respawn=Infinity;bn.minions.push(m)}
     }
   }
   RS(21);for(const s of SITES){ // 산적: 전초기지·야영지 중 약 60%에만, 4~5명 (도끼·활·장궁·조총·볼트액션 섞임)
@@ -1791,7 +1791,7 @@ function canInteract(){ // 창고·비상도끼함을 보고 있으면 우클릭
 }
 function sgStart(){if(sgOn||!strongOK())return;sgOn=true;sgT0=Date.now();sgC=0;$('bowg').style.display='block'}
 function sgCancel(){sgOn=false;$('bowg').style.display='none'}
-function sgRelease(){if(!sgOn)return;const c=sgC;sgCancel();if(c>=1)attack(true);else if(c>=.1)attack(false,c)} // 덜 차징돼도 발동: 데미지 1배(10%) → 2배(100%)로 게이지에 비례
+function sgRelease(){if(!sgOn)return;const c=sgC;sgCancel();if(c>=1)attack(true);else if(c>=.1)attack(false,c,true)} // 덜 차징돼도 발동: 데미지 1배(10%) → 2배(100%)로 게이지에 비례
 function sgTick(){
   if(!sgOn)return;
   if(!strongOK()||!active()){sgCancel();return}
@@ -1799,7 +1799,7 @@ function sgTick(){
   $('bowf').style.width=(sgC*100)+'%';
   $('bowt').textContent=sgC>=1?'강공격 준비 완료! 놓으면 발동':`강공격 차징 ${Math.round(sgC*100)}%`;
 }
-function aoeHit(a,it,now){ // 강공격 범위 피해 (몹·동물·슬라임): 도끼=앞쪽 부채꼴(±70°), 창=사거리 9의 일직선(폭 2)
+function aoeHit(a,it,now,mult=2){ // 강공격 범위 피해 (몹·동물·슬라임): 도끼=앞쪽 부채꼴(±70°), 창=사거리 9의 일직선(폭 2)
   const spear=it.kind==='spear',reach=spear?9:5.2,cp=camera.position,fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw),tier=it.tier||0;
   let hit=0;
   for(const n of nc().an){
@@ -1807,11 +1807,11 @@ function aoeHit(a,it,now){ // 강공격 범위 피해 (몹·동물·슬라임): 
     const dx=n.x-cp.x,dz=n.z-cp.z,u=dx*fx+dz*fz,w=dx*rx+dz*rz,r=n.r||.8;
     const inside=spear?(u>0&&u<reach+r&&Math.abs(w)<1+r*.5):(u>0&&Math.hypot(u,w)<reach+r&&Math.atan2(Math.abs(w),u)<1.22);
     if(!inside)continue;
-    n.hp-=wdmg(it.kind,tier,a)*2;hitFx(n);hit++;if(n.hp<=0)harvest(n,now);
+    n.hp-=wdmg(it.kind,tier,a)*mult;hitFx(n);hit++;if(n.hp<=0)harvest(n,now);
   }
   return hit>0;
 }
-function attack(strong,part){
+function attack(strong,part,mot){ // mot: 덜 차징돼도 강공격 모션(데미지는 게이지 비례)
   const now=Date.now(),a=inv[sel],it=a&&ITEMS[a.id];
   if(it&&it.kind==='bow')return; // 활은 차징 후 발사(bowStart/bowRelease)
   if(now-lastAtk<((it&&it.cd)||150))return;
@@ -1835,10 +1835,11 @@ function attack(strong,part){
     return;
   }
   lastAtk=now;P.st-=cost;lastStUse=now;swing=1;swingAlt++;swingDur=curRig&&it&&it.kind==='axe'?.3:curRig?Math.min(.6,Math.max(.22,((it&&it.cd)||400)/1000*.9)):.2;
-  if(strong)swingDur*=.6; // 강공격은 모션이 더 빠름
-  swingS=!!(strong&&a&&a.id==='battle_axe');
+  const sm=strong||mot;
+  if(sm)swingDur*=.6; // 강공격은 모션이 더 빠름
+  swingS=!!(sm&&a&&a.id==='battle_axe');
   if(swingS){swingDur=.5;lastAtk=now+500-((it&&it.cd)||150)} // 도끼 강공격: 공속 0.5초
-  if(strong&&it&&(swingS||it.kind==='spear')&&aoeHit(a,it,now))return; // 도끼: 부채꼴 휩쓸기 / 창: 일직선 관통
+  if(sm&&it&&(swingS||it.kind==='spear')&&aoeHit(a,it,now,strong?2:1+(part||0)))return; // 도끼: 부채꼴 휩쓸기 / 창: 일직선 관통
   const live=nodes.filter(n=>n.active&&n.mesh.visible&&Math.abs(n.x-camera.position.x)<12&&Math.abs(n.z-camera.position.z)<12); // 가까운 것만 검사
   const hit=ray(live.map(n=>n.mesh),true)[0];
   const reach=(it&&it.kind==='spear'?6:it&&it.kind==='sword'?3.5:4)*(strong?(it&&it.kind==='spear'?1.5:1.3):1);
@@ -3070,6 +3071,7 @@ function banditTick(n,dt,now){ // 산적 AI: 전방 ±45° · 30m 안이면 발�
   n._hp=n.hp;
   const RNG=hasCloak()?30:60;
   if(zone==='main'&&d<RNG&&(dx*Math.cos(n.face)+dz*Math.sin(n.face))/d>.7071)pk.alert=Math.max(pk.alert,now+12000);
+  if(n.weapon==='boss'&&zone==='main'&&pk.alert>now&&d<110){bbShow=true;bbN=n} // 전투 중이면 이름·체력바 표시
   if(n.weapon==='boss'&&n.minions){ // 중간보스: 전투 중 10초마다 부하 3마리 소환
     if(pk.alert>now&&zone==='main'){
       n.sumT=(n.sumT===undefined?10:n.sumT)-dt;
@@ -3108,7 +3110,16 @@ function banditTick(n,dt,now){ // 산적 AI: 전방 ±45° · 30m 안이면 발�
   n.mesh.rotation.y=-n.face;
   n.mesh.position.set(n.x+lx,Math.max(height(n.x,n.z),fl0(n.x,n.z)+.2),n.z+lz);
 }
+let BB=null,BBT=null,BBF=null,bbShow=false,bbN=null; // 약탈자 두목 체력바
+function bbApply(){
+  if(!BB){if(!bbShow)return;BB=document.createElement('div');BB.style.cssText='position:fixed;top:10px;left:50%;transform:translateX(-50%);width:min(72vw,440px);z-index:60;pointer-events:none;display:none;text-align:center;color:#fff;font:700 13px sans-serif;text-shadow:0 1px 3px #000';
+    BBT=document.createElement('div');BBT.style.marginBottom='3px';const o=document.createElement('div');o.style.cssText='height:12px;background:#000a;border:2px solid #222;border-radius:3px;overflow:hidden';
+    BBF=document.createElement('div');BBF.style.cssText='height:100%;width:100%;background:#c62828';o.appendChild(BBF);BB.append(BBT,o);document.body.appendChild(BB)}
+  const on=bbShow&&bbN&&bbN.active;BB.style.display=on?'block':'none';
+  if(on){BBT.textContent='약탈자 두목';BBF.style.width=Math.max(0,bbN.hp/bbN.maxHp*100)+'%'}
+}
 function updateMobs(dt,now){
+  bbShow=false;
   const cx=camera.position.x,cz=camera.position.z,cf=hasCloak()?.5:1; // 야생망토: 발견거리 절반
   nightT-=dt;
   const night=dayAmount(worldT)<.2,nm=nc().nm;
@@ -3148,6 +3159,7 @@ function updateMobs(dt,now){
     n.mesh.position.set(n.x+lx,Math.max(height(n.x,n.z),fl0(n.x,n.z)+.2),n.z+lz);
     if(!lost&&d<2.2&&now>(n.hitAt||0)){n.hitAt=now+(wv?800:1200);n.atk=.4;hurtPlayer(n.dmg*(wv?1.5:1))}
   }
+  bbApply();
 }
 function updateCompass(){
   const e=$('comp'),has=hasU('compass');
@@ -3448,10 +3460,15 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v12.3.1';
+const SAVE_VER=7,GAME_VERSION='v12.3.2';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v12",t:"대규모 · 동굴 보스",subs:[
+    {v:"12.3.2",d:'버그픽스',items:[
+      "수정: 강공격을 차징 도중에 놓아도 강공격 모션이 나오도록 (데미지는 게이지 비례)",
+      "추가: 약탈자 두목(중간보스) 이름·체력바 표시",
+      "변경: 보스 부하 체력 조정 — 전투도끼 강공격 2방이면 사망",
+      "변경: 늑대 이동속도 85%로 감소"]},
     {v:"12.3.1",d:'소규모 + 버그픽스',items:[
       "추가: 골렘의 핵 아이콘(사각뿔 두 개를 위아래로 붙인 녹색 보석)",
       "변경: 곡괭이를 든 위치를 화면 오른쪽 가장자리로 이동해 시야 가림 감소",
