@@ -706,7 +706,7 @@ function buildWorld(){
   // 몬스터: 늑대(숲 가장자리) 곰(숲 깊은 곳) / 거미는 동굴 공간에만
   const MB={
     wolf:{c:0x777777,hc:0x555555,e:0xffee58,s:1,hp:18,spd:17,dmg:8,ag:36,n:30,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.3},
-    bear:{c:0x5a3a1a,hc:0x3a2410,e:0xffab40,s:1.7,hp:70,spd:3.36,dmg:18,ag:24,n:16,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.7},
+    bear:{c:0x5a3a1a,hc:0x3a2410,e:0xffab40,s:1.7,hp:70,spd:3.36,dmg:18,ag:24,n:4,ok:(x,z)=>landOK(x,z)&&forestAmt(x,z)>.7},
     spider:{c:0x222222,hc:0x992222,s:1.6,hp:12,spd:3.2,dmg:6,ag:14,n:14}
   };
   const mkMob=(t,x,z)=>{
@@ -761,8 +761,8 @@ function buildWorld(){
     if(!m.ok(x,z)||Math.hypot(x-START.x,z-START.z)<40||inTemple(x,z,6))continue;
     mkMob('bear',x,z);n++;
   }}
-  // 구조물 근처 곰 (사원 2마리, 그 외 1마리 — 구조물 밖 8~18m)
-  RS(17);for(const s of SITES){const need=s.t==='temple'?2:1;
+  // 구조물 근처 곰: 구조물마다 0~2마리 (없을 수도 있음) — 구조물 밖 8~18m
+  RS(17);for(const s of SITES){const need=Math.floor(R(0,3));
     for(let i=0,n=0;i<400&&n<need;i++){const a=R(0,6.283),d=s.r+R(8,18),x=s.x+Math.cos(a)*d,z=s.z+Math.sin(a)*d;
       if(landOK(x,z)&&!inSite(x,z,2)){mkMob('bear',x,z);n++}}}
   RS(22);for(const s of SITES){ // 약탈자 기지: 5명 — 티타늄 도끼·활·장궁·조총·볼트액션 각 1명, 한 무리
@@ -775,7 +775,7 @@ function buildWorld(){
     }
     { // 중간보스: 긴 막사 뒤·두목 천막 앞
       let bx2=s.x,bz2=s.z-13;if(!(height(bx2,bz2)>.6)){bx2=s.x+6;bz2=s.z-12}
-      const bn=mkBandit(bx2,bz2,'boss',pk,bx2-s.x,bz2-s.z);
+      const bn=mkBandit(bx2,bz2,'boss',pk,bx2-s.x,bz2-s.z);bn.maxHp=Math.round(bn.maxHp/2);bn.hp=bn.maxHp;bn._hp=bn.hp; // 두목 체력 절반
       bn.minions=[]; // 부하 풀 12마리: 보스가 싸울 때 10초마다 3마리씩 불러냄
       for(let k=0;k<12;k++){const m=mkBandit(s.x,s.z,['axe','bow','longbow','musket','bolt'][k%5],pk,0,0);m.minion=true;m.maxHp=30;m.hp=30;m._hp=30;m.active=false;m.mesh.visible=false;m.respawn=Infinity;bn.minions.push(m)}
     }
@@ -1680,8 +1680,8 @@ const GUN_HEAR=300,SIL_CUT=.8; // 총소리가 들리는 거리(월드 단위 30
 function gunNoise(sil){ // 구조물의 산적·약탈자는 총소리를 듣고 무리 전체가 발각 상태가 됨
   const rg=GUN_HEAR*(sil?1-SIL_CUT:1),t=performance.now(),cp=camera.position;
   for(const n of nc().an)if(n.bandit&&n.active&&n.pack&&Math.hypot(n.x-cp.x,n.z-cp.z)<rg)n.pack.alert=Math.max(n.pack.alert,t+12000);
-  const ra=rg*1.5; // 곰·늑대: 약탈자의 1.5배 거리에서 듣고, 거리에 맞춰 추적
-  for(const n of nc().an)if(n.active&&n.mob&&!n.bandit&&!n.night&&(n.type==='bear'||n.type==='wolf')){const d=Math.hypot(n.x-cp.x,n.z-cp.z);if(d<ra)n.hear=Math.max(n.hear||0,t+Math.min(150,d/n.spd+8)*1000)}
+  const ra=rg*.75; // 곰만 총소리를 들음 (약탈자의 0.75배 거리), 거리에 맞춰 추적 / 늑대는 못 들음
+  for(const n of nc().an)if(n.active&&n.mob&&!n.bandit&&!n.night&&n.type==='bear'){const d=Math.hypot(n.x-cp.x,n.z-cp.z);if(d<ra)n.hear=Math.max(n.hear||0,t+Math.min(150,d/n.spd+8)*1000)}
 }
 function fireGun(now){
   const a=inv[sel];
@@ -3072,15 +3072,15 @@ function banditTick(n,dt,now){ // 산적 AI: 전방 ±45° · 30m 안이면 발�
   const RNG=hasCloak()?30:60;
   if(zone==='main'&&d<RNG&&(dx*Math.cos(n.face)+dz*Math.sin(n.face))/d>.7071)pk.alert=Math.max(pk.alert,now+12000);
   if(n.weapon==='boss'&&zone==='main'&&pk.alert>now&&d<110){bbShow=true;bbN=n} // 전투 중이면 이름·체력바 표시
-  if(n.weapon==='boss'&&n.minions){ // 중간보스: 전투 중 10초마다 부하 3마리 소환
+  if(n.weapon==='boss'&&n.minions){ // 중간보스: 전투 중 20초마다 부하 3마리 소환
     if(pk.alert>now&&zone==='main'){
-      n.sumT=(n.sumT===undefined?10:n.sumT)-dt;
-      if(n.sumT<=0){n.sumT=10;let c=0;
+      n.sumT=(n.sumT===undefined?20:n.sumT)-dt;
+      if(n.sumT<=0){n.sumT=20;let c=0;
         for(const m of n.minions){if(c>=3)break;if(m.active)continue;
           let x=n.x,z=n.z;for(let t=0;t<12;t++){const a=Math.random()*6.283,r=4+Math.random()*4,qx=n.x+Math.cos(a)*r,qz=n.z+Math.sin(a)*r;if(height(qx,qz)>.6&&riverInfo(qx,qz)>3){x=qx;z=qz;break}}
           m.x=x;m.z=z;m.hx=x;m.hz=z;m.hp=m.maxHp;m._hp=m.hp;m.cd=undefined;m.active=true;m.mesh.visible=true;m.respawn=Infinity;c++}
         }
-    }else n.sumT=10;
+    }else n.sumT=20;
   }
   if(pk.alert>now&&zone==='main'){
     if(d<RNG*1.6)pk.alert=Math.max(pk.alert,now+3000);
