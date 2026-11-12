@@ -83,7 +83,7 @@ button.setbtn.mobOnly{display:none}body.mob button.setbtn.mobOnly{display:inline
 #noteTop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 8px 30px;background:#efe2bd;border-bottom:2px solid #c9a96b}
 #noteTitle{flex:1;text-align:center;font-weight:800;font-size:15px;color:#6b3f1d}
 .nArr{width:38px;height:38px;border-radius:50%;border:2px solid #8d6e63;background:#fff8e1;color:#5d4037;font-size:18px;font-weight:900;cursor:pointer;padding:0}.nArr:disabled{opacity:.25;cursor:default}
-#noteBody{box-sizing:border-box;flex:1;overflow-y:auto;padding:0 16px 14px 56px;line-height:28px;min-height:260px;max-height:62vh;background:linear-gradient(90deg,transparent 46px,#e57373 46px,#e57373 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,#b9d3e0 27px 28px);background-attachment:local}
+#noteBody{box-sizing:border-box;flex:none;overflow-y:auto;padding:0 16px 14px 56px;line-height:28px;min-height:260px;max-height:62vh;background:linear-gradient(90deg,transparent 46px,#e57373 46px,#e57373 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,#b9d3e0 27px 28px);background-attachment:local}
 #noteBody p{margin:0 0 28px}#noteBody b.h{color:#b23a48;font-size:16px}#noteBody .ck{color:#2e7d32;font-weight:800}#noteBody .nk{color:#8a7a5a}
 #noteFoot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px 6px 30px;background:#efe2bd;border-top:2px solid #c9a96b;font-size:12px;color:#7a6446}
 #noteFoot button{border:1px solid #8d6e63;background:#fff8e1;color:#5d4037;border-radius:6px;padding:3px 10px;cursor:pointer;font-weight:700}
@@ -2156,6 +2156,7 @@ function harvest(n,now){
   if(n.golem&&n.phase===1){golemBreak(n);return} // 골렘 1페이즈: 죽지 않고 갑옷 파괴 → 2페이즈
   if(n.cracks){n.cracks.forEach(c=>n.mesh.remove(c));n.cracks=null}
   n.active=false;n.mesh.visible=false;
+  if(n.golem)ACH['k:golem']=1;if(n.weapon==='boss')ACH['k:boss']=1;if(n.type==='diamond')ACH['m:diamond']=1;
   if(n.weapon==='boss'&&n.minions)for(const m of n.minions){m.active=false;m.mesh.visible=false;m.respawn=Infinity} // 보스가 죽으면 부하도 사라짐
   n.respawn=now+(n.animal?(n.bandit?300000:60000):n.type==='sand'?120000:(ORE.includes(n.type)&&n.type!=='rock')||n.type==='titanium'?300000:30000); // 몹 1분 / 광물 5분 / 그 외 30초
   if(n.golem){n.respawn=now+1200000;golemDown(n)} // 바위 골렘: 하루(20분) 뒤 부활
@@ -2848,7 +2849,7 @@ function loadGame(){
           if(g.sg){const cr=(saved.chR||[]).find(r=>r.gk===g.gk);CH_RESP.push({gk:g.gk,t:Date.now()+(cr?cr.left:CH_MS)})}}} // 부서진 구조물 상자는 남은 시간 뒤 다시 생김
     }
     loadPlaced(saved.placed.filter(s=>!s.gk),!!saved.gq);
-    tutDone=!!saved.td;noteSeen=!!saved.ns;ACH=saved.ach||{};renderInv();selectSlot(saved.sel||0);return true;
+    tutDone=!!saved.td;noteSeen=!!saved.ns;ACH=saved.ach||{};try{achSync()}catch(e){}renderInv();selectSlot(saved.sel||0);return true;
   }catch(e){return false}
 }
 function setMobile(v){
@@ -3719,7 +3720,30 @@ moveItem=function(f,t){
 };
 addEventListener('wheel',e=>{if(!toolMesh||invOpen||mobile||(e.target.closest&&e.target.closest('#craft')))return;selectSlot(((sel+(e.deltaY>0?1:-1))%9+9)%9)},{passive:true});
 /* ---------- 해변에 추락한 비행기 + 비상용 도끼함 ---------- */
-const ACH_LIST=[['g:axe','비상용 도끼 챙기기'],['c:flint_pickaxe','부싯돌 곡괭이 제작'],['p:campfire','모닥불 설치'],['c:furnace','화로 제작'],['g:iron_ingot','철 주괴 얻기'],['c:chest','창고 제작'],['c:bow','활 제작'],['c:detector','금속탐지기 제작'],['g:titanium','티타늄 광석 발굴'],['g:diamond','다이아 얻기'],['p:floor','바닥 설치'],['p:wall','벽 설치'],['p:door','문 설치'],['p:window','창문 설치'],['p:shelf','상자 선반 설치']];
+const ACH_LIST=[ // [키, 이름, 달성 방법(눌러야 보임), 이전 기록용 보유 아이템(선택)]
+['m:diamond','💎 다이아 사냥꾼','동굴에서 다이아 광석을 곡괭이로 캔다.',['diamond']],
+['g:ruby','❤ 붉은 보석','루비를 얻는다. (보물 상자 등에서 나와요)'],
+['g:power_crystal','🔴 힘의 결정','힘의 결정을 얻는다. (바위 골렘·보물 상자가 드랍)'],
+['c:lucky_charm','🍀 행운의 부적','유틸리티 작업대 근처에서 행운의 부적을 제작한다.'],
+['k:golem','🗿 골렘 슬레이어','동굴 최심부의 바위 골렘을 완전히 쓰러뜨린다. (1·2페이즈)',['golem_core']],
+['g:golem_core','💠 골렘의 핵','바위 골렘을 처치해 골렘 핵을 얻는다.'],
+['k:boss','☠ 약탈자 두목 처치','약탈자 기지의 중간보스(두목)를 처치한다.',['lmg_part']],
+['g:titanium','🔩 티타늄 발굴','금속탐지기로 찾은 티타늄 광석을 삽으로 발굴한다.'],
+['g:titanium_alloy','⚙ 티타늄 합금','티타늄 합금을 얻는다.'],
+['g:gold_ingot','🥇 금 주괴','금 주괴를 얻는다.'],
+['g:axe','🪓 비상용 도끼','해변의 비행기에서 비상용 도끼를 챙긴다.'],
+['p:campfire','🔥 첫 불씨','모닥불을 설치한다.'],
+['c:furnace','🏭 화로 제작','화로를 제작한다.'],
+['c:chest','📦 창고 제작','창고를 제작한다.'],
+['p:floor','🏠 첫 건축','바닥을 설치한다.']];
+const achHave=id=>inv.some(s=>s&&s.id===id)||placed.some(q=>q.items&&q.items.some(s=>s&&s.id===id));
+function achSync(){ // 도전과제가 생기기 전에 이미 달성한 것도 인정 (보유 아이템·설치물 기준)
+  try{for(const a of ACH_LIST){if(ACH[a[0]])continue;const [pf,id]=a[0].split(':');
+    if((pf==='g'||pf==='c')&&achHave(id))ACH[a[0]]=1;
+    else if(pf==='p'&&placed.some(q=>q.id===id))ACH[a[0]]=1;
+    else if(a[3]&&a[3].some(achHave))ACH[a[0]]=1}}catch(e){}
+}
+function achToggle(el){const d=el.nextElementSibling;d.style.display=d.style.display==='block'?'none':'block'}
 const NOTE_PAGES=[
 {t:'📖 시작 · 조작',h:()=>`<p><b class="h">조작</b><br>이동 WASD · 달리기 Shift · 앉기 C · 점프 Space · 가방 Tab · 마우스 해제 E · 격자 G · 설치 회전 R · 노트 T · 슬롯 1~9</p><p><b class="h">시작</b><br>해변의 비행기에서 비상용 도끼를 챙기세요. 나무를 베어 막대·밧줄을 만들고, 땅의 돌을 도끼로 부싯돌로 가공해 부싯돌 곡괭이를 만드세요.</p><p><b class="h">저장</b><br>자동 저장돼요. 모바일은 인벤토리의 💾 저장 · ⏏ 종료 버튼을 쓰세요.</p>`},
 {t:'🔨 제작',h:()=>`<p><b class="h">제작창</b><br>화면 왼쪽 제작창에서 탭을 고르세요. 재료가 부족하면 주황색 재료 이름을 눌러 부족한 만큼만 바로 만들 수 있어요.</p><p><b class="h">한꺼번에</b><br>Ctrl+클릭은 5개, Shift+클릭은 가능한 만큼 제작합니다. 근처 창고(50m)의 재료도 자동으로 쓰입니다.</p><p><b class="h">작업대</b><br>제작대 · 화로 · 모루 · 주조소 · 유틸리티 · 총 · 화학 작업대 근처에서만 만들 수 있는 것들이 있어요.</p>`},
@@ -3727,7 +3751,7 @@ const NOTE_PAGES=[
 {t:'🏠 건축',h:()=>`<p><b class="h">조각</b><br>제작창 건물 → 건축 탭: 바닥 x2 · 벽 x2 · 문 · 창문 x2. 기능 탭의 상자 선반도 건축용이에요.</p><p><b class="h">설치</b><br>바닥은 2m 칸 위에 놓이고 걸어 다닐 수 있어요. 벽·문·창문은 바라보는 칸의 가까운 경계에 붙어요. 문은 우클릭으로 열고 닫아요(조각을 들고 있으면 설치가 우선).</p><p><b class="h">상자 선반</b><br>작업대처럼 다리 4개 + 판이에요. 맨땅에 놓고, 다리 사이(1층)와 판 위(2층)에 상자를 하나씩 놓아요. 상자만 있는 칸에 선반을 덧씌우면 그 상자는 1층이 돼요. 선반이 없으면 칸당 상자는 1개예요.</p><p><b class="h">철거</b><br>망치로 부수면 아이템이 돌아와요. 격자 G · 회전 R.</p>`},
 {t:'🔥 생존',h:()=>`<p><b class="h">회복</b><br>모닥불 근처에서 체력이 회복돼요(피격 5초 뒤부터).</p><p><b class="h">밤</b><br>밤에는 몬스터가 나오니 불과 무기를 준비하세요.</p><p><b class="h">위험 지역</b><br>숲에는 늑대·곰이 있고, 동굴 깊은 곳에는 보스가 있습니다.</p>`},
 {t:'🎒 인벤토리',h:()=>`<p><b class="h">옮기기</b><br>Shift+클릭: 인벤토리·창고 아이템을 핫바 빈칸으로, 창고가 열려 있으면 인벤토리↔창고로 옮겨요.</p><p><b class="h">부착물</b><br>우클릭(모바일은 꾹 누르기)으로 부착물창을 엽니다.</p><p><b class="h">정렬</b><br>인벤 정렬 · 창고 정렬 버튼으로 정리할 수 있어요.</p>`},
-{t:'🏆 도전과제',h:()=>{const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p><b class="h">달성 ${n} / ${ACH_LIST.length}</b></p>`+ACH_LIST.map(a=>ACH[a[0]]?`<p class="ck" style="margin:0">✔ ${a[1]}</p>`:`<p class="nk" style="margin:0">☐ ${a[1]}</p>`).join('')}}
+{t:'🏆 도전과제',h:()=>{achSync();const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p style="margin:0 0 28px"><b class="h">달성 ${n} / ${ACH_LIST.length}</b> <span class="nk" style="font-size:12px">이름을 누르면 달성 방법이 보여요</span></p>`+ACH_LIST.map(a=>`<div class="${ACH[a[0]]?'ck':'nk'}" style="cursor:pointer;margin:0" onclick="achToggle(this)">${ACH[a[0]]?'✔':'☐'} ${a[1]}</div><div class="nk" style="display:none;font-size:12px;padding-left:22px;line-height:20px;margin-bottom:8px">${a[2]}</div>`).join('')}},
 ];
 let notePg=0,_noteMM=false;
 function fitNote(){ // 모든 장의 높이를 가장 큰 장에 맞춤 (내용이 적으면 빈 줄 노트)
@@ -3926,10 +3950,14 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v13.5.5';
+const SAVE_VER=7,GAME_VERSION='v13.6.5';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v13",t:"대규모 · 건축",subs:[
+    {v:"13.6.5",d:'도전과제 개편·노트 크기 수정',items:[
+      "변경: 도전과제를 귀중품 위주로 개편 — 다이아·루비·힘의 결정·행운의 부적·골렘·골렘 핵·약탈자 두목·티타늄 등 15개 / 이름만 보이고 눌러야 달성 방법이 나옴",
+      "수정: 도전과제가 생기기 전에 이미 달성한 것(보유 아이템·설치물 기준)도 인정",
+      "수정: 노트 크기가 장마다 달라지던 문제 — 가장 긴 장에 맞춰 모두 같은 크기"]},
     {v:"13.5.5",d:'드릴 광물별 채굴 간격',items:[
       "변경: 드릴 채굴 간격을 광물별로 — 석탄 30초 · 구리 48초 · 철 60초 · 금·유황 90초 · 티타늄 120초 · 다이아 180초 (필터마다 따로 계산)"]},
     {v:"13.5.4",d:'동굴 드릴·돌 생성',items:[
