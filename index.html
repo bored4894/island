@@ -83,7 +83,7 @@ button.setbtn.mobOnly{display:none}body.mob button.setbtn.mobOnly{display:inline
 #noteTop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 8px 30px;background:#efe2bd;border-bottom:2px solid #c9a96b}
 #noteTitle{flex:1;text-align:center;font-weight:800;font-size:15px;color:#6b3f1d}
 .nArr{width:38px;height:38px;border-radius:50%;border:2px solid #8d6e63;background:#fff8e1;color:#5d4037;font-size:18px;font-weight:900;cursor:pointer;padding:0}.nArr:disabled{opacity:.25;cursor:default}
-#noteBody{flex:1;overflow-y:auto;padding:0 16px 14px 56px;line-height:28px;min-height:260px;max-height:62vh;background:linear-gradient(90deg,transparent 46px,#e57373 46px,#e57373 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,#b9d3e0 27px 28px);background-attachment:local}
+#noteBody{box-sizing:border-box;flex:1;overflow-y:auto;padding:0 16px 14px 56px;line-height:28px;min-height:260px;max-height:62vh;background:linear-gradient(90deg,transparent 46px,#e57373 46px,#e57373 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,#b9d3e0 27px 28px);background-attachment:local}
 #noteBody p{margin:0 0 28px}#noteBody b.h{color:#b23a48;font-size:16px}#noteBody .ck{color:#2e7d32;font-weight:800}#noteBody .nk{color:#8a7a5a}
 #noteFoot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px 6px 30px;background:#efe2bd;border-top:2px solid #c9a96b;font-size:12px;color:#7a6446}
 #noteFoot button{border:1px solid #8d6e63;background:#fff8e1;color:#5d4037;border-radius:6px;padding:3px 10px;cursor:pointer;font-weight:700}
@@ -169,6 +169,7 @@ body.mob #clock{top:70px;right:12px}
 <input id="wname" maxlength="20" placeholder="월드 이름 (비우면 자동)">
 <input id="wseed" maxlength="20" placeholder="시드 (비우면 랜덤)">
 <button class="setbtn" id="newBtn">＋ 새 월드 만들기</button>
+<button class="setbtn" id="quitBtn" style="display:block;margin:14px auto 0;background:#b71c1c">🚪 나가기</button>
 </div></div>
 <div id="blocker"><div id="ins">
 <h1>3D 무인도 생존 게임</h1>
@@ -207,7 +208,7 @@ body.mob #clock{top:70px;right:12px}
 <div id="attWin"><div id="attT"></div><div id="attS"></div></div>
 <div id="inv"><div id="win">
 <h2>인벤토리 <small style="font-size:12px;color:#aaa;font-weight:400">드래그 또는 탭→탭으로 이동</small></h2>
-<button class="setbtn" id="mobBtn2" style="margin:0">모바일 모드: 끔</button> <button class="setbtn" id="sortBtn" style="margin:0 0 0 6px">↕ 인벤 정렬</button> <button class="setbtn mobOnly" id="saveBtn2" style="margin:0 0 0 6px">💾 저장</button><button class="setbtn mobOnly" id="exitBtn2" style="margin:0 0 0 6px">⏏ 종료</button>
+<button class="setbtn" id="mobBtn2" style="margin:0">모바일 모드: 끔</button> <button class="setbtn" id="sortBtn" style="margin:0 0 0 6px">↕ 인벤 정렬</button> <button class="setbtn mobOnly" id="exitBtn2" style="margin:0 0 0 6px">💾 저장 및 종료</button>
 <div id="chestWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px;display:flex;align-items:center;gap:8px">창고 (45칸) <button class="setbtn" id="chestSortBtn" style="margin:0">↕ 창고 정렬</button><button class="setbtn" id="chestTakeBtn" style="margin:0">⬇ 모두 가져가기</button><button class="setbtn" id="chestPutBtn" style="margin:0">⬆ 모두 넣기</button></div><div id="cgrid"></div></div>
 <div id="drillWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">드릴 — 보관 5칸 (캔 아이템) · 업그레이드 4칸 (필터) <button class="setbtn" id="drillTakeBtn" style="margin:0">⬇ 모두 가져가기</button></div><div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px"><div><div style="font-size:12px;color:#aaa;margin-bottom:4px">보관</div><div id="dgrid"></div></div><div><div style="font-size:12px;color:#aaa;margin-bottom:4px">업그레이드</div><div id="ugrid"></div></div></div></div>
 <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:12px"><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">장비</div><div id="equip"></div></div><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">유틸리티 (8칸)</div><div id="util"></div></div><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">화살</div><div id="qv"></div></div></div><div style="flex:1 1 420px;min-width:0"><div style="font-size:13px;color:#aaa;margin-bottom:6px">인벤토리 (36칸)</div><div id="grid"></div></div></div>
@@ -236,7 +237,7 @@ const ITEMS={
   torch:{name:'횃불',type:'placeable'},lantern:{name:'랜턴',type:'passive',util:true},clock:{name:'시계',type:'passive',util:true},
   campfire:{name:'모닥불',type:'placeable'},furnace:{name:'화로',type:'placeable'},table:{name:'제작대',type:'placeable'},
   hide:{name:'가죽'},big_hide:{name:'큰 가죽'},wild_hide:{name:'야생 가죽'},ruby:{name:'루비'},wool:{name:'양털'},cloth:{name:'천'},pork:{name:'생고기'},cooked_pork:{name:'구운 고기'},wire:{name:'전선'},arrow:{name:'화살'},diamond_ingot:{name:'다이아 주괴'},
-  bow:{name:'활',type:'tool',kind:'bow',tier:0,cd:700},flag:{name:'깃발',type:'placeable'},compass:{name:'나침반',type:'passive',util:true},bag:{name:'가방',type:'passive',util:true},big_bag:{name:'큰 가방',type:'passive',util:true},chest:{name:'창고',type:'placeable'},shelf:{name:'상자 선반',type:'placeable'},drill:{name:'드릴',type:'placeable'},filter_coal:{name:'석탄 필터',filter:'coal'},filter_copper:{name:'구리 필터',filter:'copper'},filter_iron:{name:'철 필터',filter:'iron'},filter_gold:{name:'금 필터',filter:'gold'},filter_titanium:{name:'티타늄 필터',filter:'titanium'},filter_diamond:{name:'다이아 필터',filter:'diamond'},hammer:{name:'망치',type:'tool',kind:'hammer',tier:0,cd:500},
+  bow:{name:'활',type:'tool',kind:'bow',tier:0,cd:700},flag:{name:'깃발',type:'placeable'},compass:{name:'나침반',type:'passive',util:true},bag:{name:'가방',type:'passive',util:true},big_bag:{name:'큰 가방',type:'passive',util:true},chest:{name:'창고',type:'placeable'},shelf:{name:'상자 선반',type:'placeable'},drill:{name:'드릴',type:'placeable'},filter_coal:{name:'석탄 필터',filter:'coal'},filter_copper:{name:'구리 필터',filter:'copper'},filter_iron:{name:'철 필터',filter:'iron'},filter_gold:{name:'금 필터',filter:'gold'},filter_titanium:{name:'티타늄 필터',filter:'titanium'},filter_diamond:{name:'다이아 필터',filter:'diamond'},filter_sulfur:{name:'유황 필터',filter:'sulfur'},hammer:{name:'망치',type:'tool',kind:'hammer',tier:0,cd:500},
   diamond_spear:{name:'다이아 창',type:'tool',kind:'spear',tier:5,cd:350},
   headlamp:{name:'헤드랜턴',type:'passive',part:'accessory',def:.03},wild_cloak:{name:'큰 야생망토',type:'passive',part:'cape'},
   quiver:{name:'화살통',type:'passive',util:true},
@@ -310,7 +311,7 @@ add('weapons','창','diamond_spear','다이아 창',{diamond:1,long_stick:1},{ne
 add('func',null,'chest','창고 (45칸)',{plank:12,rope:4});
 add('func',null,'shelf','상자 선반',{plank:8,long_stick:10,rope:6});
 add('func',null,'drill','드릴',{iron_ingot:20,metal_plate:10,titanium_alloy:5,spring:4},{near:'util_table'});
-for(const [o,n] of [['coal','석탄'],['copper','구리'],['iron','철'],['gold','금'],['titanium','티타늄'],['diamond','다이아']])add('mat','필터','filter_'+o,n+' 필터',{[o]:100,titanium_alloy:10,titanium_plate:10});
+for(const [o,n] of [['coal','석탄'],['copper','구리'],['iron','철'],['gold','금'],['titanium','티타늄'],['diamond','다이아'],['sulfur','유황']])add('mat','필터','filter_'+o,n+' 필터',{[o]:100,titanium_alloy:10,titanium_plate:10});
 add('tools','기타','hammer','망치',{iron_ingot:6,long_stick:1});
 for(const [m,mn,mu] of [['gold','금',10],['copper','구리',20],['iron','철',30],['titanium','티타늄',40],['talloy','티타늄 합금',50]])
   for(const [p,pn,bs,cs] of [['helmet','헬멧',.2,5],['chest','갑옷',.4,8],['legs','바지',.3,7],['boots','신발',.1,4]]){
@@ -1596,7 +1597,7 @@ function planPlace(id){
 /* 설치 미리보기(반투명 + 칸 색: 초록=가능/빨강=불가) · R 회전 */
 let ghostMesh=null,ghostId=null,ghostPl=null,_gT=0,_pl=null,_gId=null,_gR=0,_dT=0,_gS='';
 function updateGhost(){
-  const a=inv[sel],id=(a&&ITEMS[a.id]&&ITEMS[a.id].type==='placeable'&&active()&&zone==='main'&&!invOpen)?a.id:null;
+  const a=inv[sel],id=(a&&ITEMS[a.id]&&ITEMS[a.id].type==='placeable'&&active()&&(zone==='main'||(zone==='cave'&&a.id==='drill'))&&!invOpen)?a.id:null;
   if(!id){if(ghostMesh){scene.remove(ghostMesh);scene.remove(ghostPl);ghostMesh=ghostPl=ghostId=null}_pl=null;return}
   if(ghostId!==id||!ghostMesh){
     if(ghostMesh){scene.remove(ghostMesh);scene.remove(ghostPl)}
@@ -1615,7 +1616,7 @@ function updateGhost(){
 /* 망치 철거 모드: 건물이 있는 칸만 반투명 빨간 블록 */
 const demoPool=[];
 function updateDemo(){
-  const a=inv[sel],on=!!(a&&ITEMS[a.id]&&ITEMS[a.id].kind==='hammer'&&active()&&zone==='main'&&!invOpen);
+  const a=inv[sel],on=!!(a&&ITEMS[a.id]&&ITEMS[a.id].kind==='hammer'&&active()&&(zone==='main'||zone==='cave')&&!invOpen);
   if(!on){for(const m of demoPool)m.visible=false;return}
   { const nt=performance.now();if(nt-_dT<100)return;_dT=nt } // 0.1초마다 갱신
   const cp=camera.position,ps=placed.filter(q=>q.mesh),hh=ray(ps.map(q=>q.mesh),true)[0];let tgt=null,k=0;
@@ -1662,6 +1663,7 @@ function place(){
   if(a&&a.id==='forest_map'){openForestMap();return}
   if(a&&(a.id==='bucket'||a.id==='sea_bucket'||a.id==='water_bucket')){bucketUse(a);return}
   if(!a||ITEMS[a.id].type!=='placeable')return;
+  if(zone==='cave'&&a.id!=='drill'){note('동굴에서는 드릴만 설치할 수 있어요');return}
   const pl=planPlace(a.id);
   if(!pl.ok){note(pl.why);return}
   const sp=pl.sp;
@@ -2426,7 +2428,7 @@ function iconBody(id){
     case 'big_bag':return `<path d="M8 10 Q16 3 24 10 L29 26 Q16 32 3 26Z" fill="#5d4037" ${O}/><path d="M8 10 Q16 15 24 10" stroke="#ffd54f" stroke-width="2.2" fill="none"/><rect x="13" y="19" width="6" height="5" rx="1" fill="#ffd54f"/>`;
     case 'flag':return `<rect x="8" y="3" width="2.4" height="27" fill="#8d6e63"/><polygon points="10.4,4 27,9 10.4,15" fill="#d32f2f" ${O}/>`;
     case 'drill':return `<rect x="6" y="14" width="20" height="12" rx="2" fill="#546e7a" ${O}/><rect x="6" y="10" width="20" height="4" fill="#ffc107" ${O}/><polygon points="16,30 11,22 21,22" fill="#b0bec5" ${O}/><rect x="13" y="4" width="6" height="6" fill="#37474f" ${O}/>`;
-    case 'filter_coal':case 'filter_copper':case 'filter_iron':case 'filter_gold':case 'filter_titanium':case 'filter_diamond':{const fc={filter_coal:'#424242',filter_copper:'#c77d4b',filter_iron:'#b0bec5',filter_gold:'#ffd54f',filter_titanium:'#80cbc4',filter_diamond:'#4dd0e1'}[id];return `<rect x="5" y="6" width="22" height="20" rx="2" fill="#607d8b" ${O}/><rect x="9" y="10" width="14" height="12" fill="${fc}" ${O}/><path d="M9 14 H23 M9 18 H23" stroke="#263238" stroke-width="1.2"/>`}
+    case 'filter_coal':case 'filter_copper':case 'filter_iron':case 'filter_gold':case 'filter_titanium':case 'filter_diamond':case 'filter_sulfur':{const fc={filter_sulfur:'#ffd54f',filter_coal:'#424242',filter_copper:'#c77d4b',filter_iron:'#b0bec5',filter_gold:'#ffd54f',filter_titanium:'#80cbc4',filter_diamond:'#4dd0e1'}[id];return `<rect x="5" y="6" width="22" height="20" rx="2" fill="#607d8b" ${O}/><rect x="9" y="10" width="14" height="12" fill="${fc}" ${O}/><path d="M9 14 H23 M9 18 H23" stroke="#263238" stroke-width="1.2"/>`}
     case 'shelf':return `<rect x="5" y="8" width="22" height="3" fill="#a1887f" ${O}/><rect x="6" y="11" width="3" height="16" fill="#6d4c2a" ${O}/><rect x="23" y="11" width="3" height="16" fill="#6d4c2a" ${O}/><rect x="9" y="17" width="14" height="2" fill="#8d6e63"/>`;
     case 'chest':return `<rect x="4" y="12" width="24" height="15" rx="2" fill="#8d5a2b" ${O}/><rect x="4" y="9" width="24" height="6" rx="2" fill="#5d3a1a"/><rect x="14" y="14" width="4" height="5" fill="#ffd54f"/>`;
     case 'campfire':return `<rect x="4" y="24" width="24" height="4" rx="2" fill="#5d4037" transform="rotate(-8 16 26)"/><rect x="4" y="24" width="24" height="4" rx="2" fill="#6d4c41" transform="rotate(8 16 26)"/><path d="M16 3 Q25 14 16 24 Q7 14 16 3Z" fill="#ff7043"/><path d="M16 11 Q20 17 16 23 Q12 17 16 11Z" fill="#ffee58"/>`;
@@ -2891,8 +2893,8 @@ function bindMobile(){
   document.querySelectorAll('#hotbar .slot').forEach((s,i)=>s.addEventListener('pointerdown',()=>{if(mobile||mouseMode)selectSlot(i)}));
   $('mobBtn1').addEventListener('click',e=>{e.stopPropagation();setMobile(!mobile)});
   $('mobBtn2').addEventListener('click',()=>setMobile(!mobile));
+  $('quitBtn').addEventListener('click',()=>{if(!confirm('게임을 종료할까요?'))return;window.close();setTimeout(()=>{document.body.innerHTML='<div style="color:#fff;font:18px sans-serif;text-align:center;padding-top:40vh;background:#000;height:100vh">게임을 종료했습니다.<br>이 탭을 닫아주세요.</div>'},200)});
   $('exitBtn1').addEventListener('click',e=>{e.stopPropagation();exitToMenu()});
-  $('saveBtn2').addEventListener('click',()=>{saveGame();note('저장했습니다')});
   $('exitBtn2').addEventListener('click',()=>{if(confirm('저장하고 메인 메뉴로 나갈까요?'))exitToMenu()});
   $('noteL').addEventListener('click',()=>notePage(-1));$('noteR').addEventListener('click',()=>notePage(1));$('noteX').addEventListener('click',()=>{if(noteOn)toggleNote()});
   
@@ -3027,7 +3029,7 @@ function quickMove(i){ // 창고가 열려 있을 때: 창고 칸 → 인벤토�
 function drillQuick(i){ // 드릴 창: 보관칸·업그레이드칸 → 인벤토리, 필터 → 빈 업그레이드칸
   const a=inv[i];if(!a)return false;
   if(i>=140&&i<149){const e=SL().find(t=>!inv[t]);if(e===undefined){note('자리가 없습니다');return true}inv[e]=a;inv[i]=null;renderInv();return true}
-  if(i<36||(i>=45&&i<45+bagN())){if(!ITEMS[a.id].filter)return false;const e=[145,146,147,148].find(t=>!inv[t]);if(e===undefined){note('업그레이드칸이 가득 찼어요');return true}inv[e]=a;inv[i]=null;renderInv();return true}
+  if(i<36||(i>=45&&i<45+bagN())){if(!ITEMS[a.id].filter)return false;const e=[145,146,147,148].find(t=>!inv[t]);if(e===undefined){note('업그레이드칸이 가득 찼어요');return true}inv[e]=a;inv[i]=null;if(['gold','diamond','sulfur'].includes(ITEMS[a.id].filter)&&curDrill&&curDrill.pos.x<2900)note('금·유황·다이아는 동굴에 설치한 드릴만 채굴해요');renderInv();return true}
   return false;
 }
 function bulkMove(mode){ // 창고: 모두 가져가기(창고→인벤) / 모두 넣기(인벤 9~35·가방→창고, 단축키 칸 제외) / 드릴: 보관칸 모두 가져가기
@@ -3681,20 +3683,24 @@ addEventListener('keydown',e=>{if(e.key==='Shift')shiftDown=true;if(e.key==='Con
 addEventListener('keyup',e=>{if(e.key==='Shift')shiftDown=false;if(e.key==='Control')ctrlHeld=false});
 addEventListener('blur',()=>{shiftDown=false;ctrlHeld=false});
 let curChest=null,curDrill=null;
-const DRILL_SEC=5; // 필터 1개당 광물 1개 채굴 간격(초)
+const DRILL_SEC={coal:30,copper:48,iron:60,titanium:120,gold:90,sulfur:90,diamond:180}; // 광물별 채굴 간격(초)
 function openDrill(s){if(invOpen)return;curDrill=s;for(let i=0;i<9;i++)inv[140+i]=(s.items[i]&&ITEMS[s.items[i].id])?s.items[i]:null;toggleInv();$('drillWrap').style.display='block';renderInv()}
 function closeDrill(){if(curDrill)for(let i=0;i<9;i++){curDrill.items[i]=inv[140+i]||null;inv[140+i]=null}curDrill=null;$('drillWrap').style.display='none'}
 function drillTick(dt){
   for(const q of placed){
     if(q.id!=='drill'||!q.items)continue;
     const g=i=>q===curDrill?inv[140+i]:q.items[i],st=(i,v)=>{if(q===curDrill)inv[140+i]=v;else q.items[i]=v};
-    const fl=[];for(let i=5;i<9;i++){const f=g(i);if(f&&ITEMS[f.id]&&ITEMS[f.id].filter)fl.push(ITEMS[f.id].filter)}
-    if(!fl.length){q.dt=0;continue}
-    q.dt=(q.dt||0)+dt;
-    while(q.dt>=DRILL_SEC){q.dt-=DRILL_SEC;
-      for(const o of fl){let k=-1;for(let i=0;i<5;i++){const c=g(i);if(c&&c.id===o&&c.count<99){k=i;break}}
-        if(k<0)for(let i=0;i<5;i++)if(!g(i)){k=i;break}
-        if(k<0)continue;const c=g(k);if(c)c.count++;else st(k,{id:o,count:1});if(q===curDrill)renderInv()}}
+    const cave=q.pos.x>=2900,CAVE_ORE=['gold','diamond','sulfur'];
+    const fl=[];for(let i=5;i<9;i++){const f=g(i);if(f&&ITEMS[f.id]&&ITEMS[f.id].filter&&(cave||!CAVE_ORE.includes(ITEMS[f.id].filter)))fl.push(ITEMS[f.id].filter)}
+    const put=o=>{let k=-1;for(let i=0;i<5;i++){const c=g(i);if(c&&c.id===o&&c.count<99){k=i;break}}
+      if(k<0)for(let i=0;i<5;i++)if(!g(i)){k=i;break}
+      if(k<0)return;const c=g(k);if(c)c.count++;else st(k,{id:o,count:1});if(q===curDrill)renderInv()};
+    if(!fl.length){ // 쓸 수 있는 필터가 없으면 돌 30초당 1개
+      q.dt=0;q.sdt=(q.sdt||0)+dt;
+      while(q.sdt>=30){q.sdt-=30;put('stone')}
+      continue}
+    q.sdt=0;q.ot=q.ot||{};
+    for(const o of fl){const T=DRILL_SEC[o]||30;q.ot[o]=(q.ot[o]||0)+dt;while(q.ot[o]>=T){q.ot[o]-=T;put(o)}}
   }
 }
 function openChest(s){if(invOpen)return;curChest=s;for(let i=0;i<45;i++)inv[81+i]=(s.items[i]&&ITEMS[s.items[i].id])?s.items[i]:null;toggleInv();$('chestWrap').style.display='block';renderInv()}
@@ -3724,6 +3730,11 @@ const NOTE_PAGES=[
 {t:'🏆 도전과제',h:()=>{const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p><b class="h">달성 ${n} / ${ACH_LIST.length}</b></p>`+ACH_LIST.map(a=>ACH[a[0]]?`<p class="ck" style="margin:0">✔ ${a[1]}</p>`:`<p class="nk" style="margin:0">☐ ${a[1]}</p>`).join('')}}
 ];
 let notePg=0,_noteMM=false;
+function fitNote(){ // 모든 장의 높이를 가장 큰 장에 맞춤 (내용이 적으면 빈 줄 노트)
+  const b=$('noteBody');b.style.height='auto';let mx=260;
+  NOTE_PAGES.forEach(q=>{b.innerHTML=q.h();mx=Math.max(mx,b.scrollHeight)});
+  b.style.height=mx+'px';
+}
 function renderNote(){
   const p=NOTE_PAGES[notePg];
   $('noteTitle').textContent=`${p.t} (${notePg+1}/${NOTE_PAGES.length})`;
@@ -3734,7 +3745,7 @@ function renderNote(){
 function notePage(d){const n=Math.max(0,Math.min(NOTE_PAGES.length-1,notePg+d));if(n!==notePg){notePg=n;renderNote()}}
 function toggleNote(){
   noteOn=!noteOn;
-  if(noteOn){noteSeen=true;renderNote();if(!mobile&&!invOpen&&!mouseMode){_noteMM=true;mouseMode=true;document.exitPointerLock()}} // 화살표를 누를 수 있게 마우스 해제
+  if(noteOn){noteSeen=true;$('noteWin').style.display='flex';fitNote();renderNote();if(!mobile&&!invOpen&&!mouseMode){_noteMM=true;mouseMode=true;document.exitPointerLock()}} // 화살표를 누를 수 있게 마우스 해제
   else if(_noteMM){_noteMM=false;mouseMode=false;if(!invOpen)try{document.body.requestPointerLock()}catch(e){}}
   $('noteWin').style.display=noteOn?'flex':'none';
 }
@@ -3915,10 +3926,21 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v13.3.2';
+const SAVE_VER=7,GAME_VERSION='v13.5.5';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v13",t:"대규모 · 건축",subs:[
+    {v:"13.5.5",d:'드릴 광물별 채굴 간격',items:[
+      "변경: 드릴 채굴 간격을 광물별로 — 석탄 30초 · 구리 48초 · 철 60초 · 금·유황 90초 · 티타늄 120초 · 다이아 180초 (필터마다 따로 계산)"]},
+    {v:"13.5.4",d:'동굴 드릴·돌 생성',items:[
+      "변경: 금·유황·다이아 필터는 동굴에 설치한 드릴에서만 채굴 / 동굴에서도 드릴 설치·철거 가능(드릴만)",
+      "추가: 쓸 수 있는 필터가 없는 드릴은 돌을 30초에 1개 생성"]},
+    {v:"13.4.3",d:'노트·메뉴·드릴 개선',items:[
+      "변경: 생존 노트 크기 통일 — 가장 긴 장에 맞춰 모든 장이 같은 크기, 내용이 적으면 빈 줄 노트로 남김",
+      "변경: 모바일 인벤토리의 저장·종료 버튼을 '💾 저장 및 종료' 하나로 되돌림",
+      "추가: 메인 화면에 🚪 나가기 버튼",
+      "추가: 유황 필터(유황100+티타늄 합금10+티타늄판10)",
+    ]},
     {v:"13.3.2",d:'부족한 재료 바로 제작 개선',items:[
       "변경: 부족한 재료를 눌러 바로 제작할 때 재료가 모자라면 해당 재료의 제작 탭으로 이동하고, 그 제작법을 강조 표시 / 무엇이 얼마나 부족한지(재료·틀·도끼) 안내"]},
     {v:"13.2.2",d:'제작창·광석 조정',items:[
