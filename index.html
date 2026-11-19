@@ -250,7 +250,7 @@ const ITEMS={
   diamond_spear:{name:'다이아 창',type:'tool',kind:'spear',tier:5,cd:350},
   headlamp:{name:'헤드랜턴',type:'passive',part:'accessory',def:.03},wild_cloak:{name:'큰 야생망토',type:'passive',part:'cape'},
   quiver:{name:'화살통',type:'passive',util:true},
-  util_table:{name:'고급 유틸리티 작업대',type:'placeable'},adv_table:{name:'고급작업대',type:'placeable'}
+  util_table:{name:'고급 유틸리티 작업대',type:'placeable'},adv_table:{name:'고급작업대',type:'placeable'},dis_table:{name:'해체 제작대',type:'placeable'}
 };
 Object.assign(ITEMS,{
   titanium_alloy:{name:'티타늄 합금'},alloy:{name:'합금'},metal_rod:{name:'철봉'},metal_plate:{name:'철판'},copper_rod:{name:'구리봉'},gold_plate:{name:'금판'},gold_rod:{name:'금봉'},titanium_plate:{name:'티타늄판'},silencer:{name:'소음기'},power_crystal:{name:'힘의 결정'},speed_crystal:{name:'속도의 결정',dcrystal:true},energy_crystal:{name:'기력의 결정',dcrystal:true},golem_core:{name:'골렘의 핵'},hq_gunpowder:{name:'고품질 화약'},arrowhead:{name:'화살촉'},rifle_bullet:{name:'라이플탄'},forest_map:{name:'숲 지도',type:'map'},chem_table:{name:'화학 작업대',type:'placeable'},oil_bucket:{name:'기름',type:'tool',kind:'bucket',tier:0,cd:500},
@@ -264,7 +264,7 @@ Object.assign(ITEMS,{
   copper_plate:{name:'구리판'},titanium_rod:{name:'티타늄봉'},bullet:{name:'탄약'},salt:{name:'소금'},chemical:{name:'화학물질'},
   metal_radar:{name:'금속 레이더'},detect_amp:{name:'감지 증폭기'},
   magnifier:{name:'돋보기',type:'tool',kind:'magnifier',tier:0,cd:300},
-  musket:{name:'레버액션 라이플',type:'tool',kind:'gun',tier:0,cd:650,scopeOK:true},lmg:{name:'경기관총',type:'tool',kind:'gun',tier:0,cd:90},lmg_part:{name:'경기관총 부품'},spring:{name:'스프링'},ext_mag:{name:'연사 확장탄창'},bandolier:{name:'탄띠'},bolt_rifle:{name:'볼트액션 소총',type:'tool',kind:'gun',tier:0,cd:1200,scopeOK:true},scope:{name:'스코프 몸체',type:'tool',kind:'scope',tier:0,cd:300},wheat:{name:'밀'},flour:{name:'밀가루'},
+  musket:{name:'레버액션 라이플',type:'tool',kind:'gun',tier:0,cd:650,scopeOK:true},lmg:{name:'경기관총',type:'tool',kind:'gun',tier:0,cd:90},lmg_part:{name:'경기관총 부품'},spring:{name:'스프링'},ext_mag:{name:'연사 확장탄창'},bandolier:{name:'탄띠'},bolt_rifle:{name:'볼트액션 소총',type:'tool',kind:'gun',tier:0,cd:1200,scopeOK:true},scope:{name:'스코프 몸체',type:'tool',kind:'scope',tier:0,cd:300},wheat:{name:'밀'},flour:{name:'밀가루'},bread_dough:{name:'빵 반죽'},bread:{name:'빵'},
   lucky_charm:{name:'행운의 부적',type:'passive',util:true},energy_charm:{name:'기력의 부적',type:'passive',util:true},
   chem_detector:{name:'화학물탐지기'},
   sea_bucket:{name:'바닷물 양동이',type:'tool',kind:'bucket',tier:0,cd:500},
@@ -379,6 +379,8 @@ add('weapons','장착물','scope','스코프 몸체',{metal_plate:4},{near:'gun_
 add('weapons','장착물','silencer','소음기 (총소리 80% 감소)',{metal_plate:4,metal_rod:1,wild_hide:3},{near:'gun_table'});
 add('cook',null,'cooked_pork','구운 고기',{pork:1},{near:'campfire'});
 add('cook',null,'flour','밀가루 x8',{wheat:1},{yield:8}); // 모닥불 없이 제작
+add('cook',null,'bread_dough','빵 반죽 x3',{flour:4,water_bucket:1},{yield:3,ret:{bucket:1}}); // 물 양동이는 빈 양동이로 돌아옴
+add('cook',null,'bread','빵',{bread_dough:1},{near:'campfire'});
 add('cook',null,'salt','소금 x4',{sea_bucket:1},{near:'campfire',yield:4,ret:{bucket:1}});
 add('util',null,'chem_detector','화학물탐지기',{diamond:3,wire:2,gold_ingot:2});
 add('util',null,'metal_radar','금속 레이더',{compass:1,diamond:3,wire:3},{near:'util_table'});
@@ -387,6 +389,7 @@ add('util',null,'lucky_charm','행운의 부적',{ruby:1,titanium_alloy:4,diamon
 add('util',null,'energy_charm','기력의 부적',{gold:30,energy_crystal:1,titanium_alloy:5},{near:'util_table'});
 add('func',null,'table','제작대',{plank:6,rope:2});
 add('func',null,'adv_table','고급작업대',{plank:10,metal_plate:6,rope:4}); // 2티어 작업대: 근처에서 기존 제작대 레시피도 가능
+add('func',null,'dis_table','해체 제작대',{plank:10,metal_plate:6,rope:4,iron_ingot:10,gold_ingot:10}); // 아이템을 해체해 제작 재료를 돌려받음 (제작창 '해체' 탭)
 add('func',null,'furnace','화로',{stone:20});
 add('func',null,'campfire','모닥불',{stone:8,branch:10});
 add('mat','가공','stick','막대',{branch:1});
@@ -481,7 +484,7 @@ const setT=(e,t)=>{if(e._t!==t){e._t=t;e.textContent=t}};
 let titan=null,audio=null,lastBeep=0,notiT=null;
 let prevCamp=false,nearAnvil=false,nearFoundry=false,nearGun=false,prevAnvil=false,prevFoundry=false,prevGun=false;
 let mobile=false,started=false,saved=null,worldSeed=1,mouseMode=false,prevFurn=false,craftCat=null;let SAVE='';let worldT=0,ambL=null,sunL=null;
-const SKY_D=new THREE.Color(0x87ceeb),SKY_N=new THREE.Color(0x050a15),C_MN=new THREE.Color(0x88aaff),C_SD=new THREE.Color(0xfff2d0);let nearTable=false,prevTable=false,nearUtil=false,prevUtil=false,prevCN=0,nearChemT=false,prevChemT=false,nearAdv=false,prevAdv=false;
+const SKY_D=new THREE.Color(0x87ceeb),SKY_N=new THREE.Color(0x050a15),C_MN=new THREE.Color(0x88aaff),C_SD=new THREE.Color(0xfff2d0);let nearDis=false,prevDis=false,nearTable=false,prevTable=false,nearUtil=false,prevUtil=false,prevCN=0,nearChemT=false,prevChemT=false,nearAdv=false,prevAdv=false;
 let fmOn=false,fmBase=null,fmTimer=null,ghWave={day:-1,on:false}; // ghWave: 구울 웨이브(밤마다 10%)
 function active(){return mobile?started&&!invOpen&&!fmOn:(document.pointerLockElement===document.body||mouseMode)}
 
@@ -520,6 +523,7 @@ function init2(){
   headSpot=new THREE.SpotLight(0xfff1c9,0,20,Math.PI/6,.25,HL_OK?7:1.5);
   headSpot.position.set(0,0,0);headSpot.target.position.set(0,0,-1);
   camera.add(headSpot);camera.add(headSpot.target);
+  if(!LPOOL.length)for(let i=0;i<5;i++){const l=new THREE.PointLight(0xffaa00,0,12);scene.add(l);LPOOL.push(l)} // 설치 조명 풀 (항상 씬에 둠)
 
   buildUI();bindEvents();bindMobile();bindInv();initGrid();
   if(!loadGame()){ // 새 월드: 맨손 시작, 추락한 비행기 쪽을 바라봄
@@ -827,7 +831,7 @@ function buildWorld(){
   RS(22);for(const s of SITES){ // 약탈자 기지: 5명 — 티타늄 도끼·활·장궁·조총·볼트액션 각 1명, 한 무리
     if(s.t!=='raider')continue;
     const pk={x:s.x,z:s.z,alert:0};
-    const tw=(s.towers||[]).slice();
+    const tw=[]; // 망루는 보초 저격수 4명이 차지함 (기존 약탈자 5명은 기지 안쪽 땅에 배치)
     for(const [k,w] of ['axe','bow','longbow','musket','bolt'].entries()){
       let x=s.x,z=s.z,fy;
       if(w!=='axe'&&tw.length&&R(0,1)<.45){const t=tw.splice(Math.floor(R(0,tw.length)),1)[0];x=t[0]+R(-1.5,1.5);z=t[1]+R(-1.5,1.5);fy=t[2]}
@@ -837,6 +841,7 @@ function buildWorld(){
     { // 중간보스: 긴 막사 뒤·두목 천막 앞
       let bx2=s.x,bz2=s.z-13;if(!(height(bx2,bz2)>.6)){bx2=s.x+6;bz2=s.z-12}
       const bn=mkBandit(bx2,bz2,'boss',pk,bx2-s.x,bz2-s.z);bn.maxHp=Math.round(bn.maxHp/2);bn.hp=bn.maxHp;bn._hp=bn.hp; // 두목 체력 절반
+      bn.sentries=[];for(const t of (s.towers||[])){const sn=mkBandit(t[0],t[1],'bolt',pk,t[0]-s.x,t[1]-s.z);sn.fy=t[2];sn.fixed=true;sn.mesh.position.y=t[2];sn.sentry=true;sn.boss=bn;bn.sentries.push(sn)} // 보초: 망루마다 볼트액션 저격수 1명 (히트스캔)
       bn.minions=[]; // 부하 풀 12마리(레버 8 · 볼트 4): 보스가 싸울 때 18초마다 3마리씩 불러냄 (동시에 최대 6마리 · 전투가 끝나면 사라짐)
       for(let k=0;k<12;k++){const m=mkBandit(s.x,s.z,['musket','musket','bolt'][k%3],pk,0,0);m.minion=true;m.maxHp=30;m.hp=30;m._hp=30;m.active=false;m.mesh.visible=false;m.respawn=Infinity;bn.minions.push(m)}
     }
@@ -1409,7 +1414,7 @@ function updateArrows(dt){
             const hhs=f.rc.intersectObjects(live.map(n=>n.mesh),true),hh=hhs[0];
             if(hh){
               let o=hh.object;while(o&&!live.some(n=>n.mesh===o))o=o.parent;const n=live.find(q=>q.mesh===o);
-              if(n){const po=hitPart(hh,hhs,n.mesh),wk=!!po.userData.weak&&n.phase===2,hs=!!po.userData.head||wk;if(hs)ding();n.hp-=f.dmg*(wk?3:hs?1.5:1);hitFx(n);if(n.hp<=0)harvest(n,Date.now());scene.remove(f.m);FLY.splice(i,1);gone=true;f.removed=true;break}
+              if(n){const po=hitPart(hh,hhs,n.mesh),wk=!!po.userData.weak&&n.phase===2,hs=!!po.userData.head||wk;if(hs)ding();if(n.golem&&n.phase===2&&po.userData.gem){golemGemFx(po);n._gem=true}n.hp-=f.dmg*(wk?3:hs?1.5:1);hitFx(n);if(n.hp<=0)harvest(n,Date.now());scene.remove(f.m);FLY.splice(i,1);gone=true;f.removed=true;break}
             }
           }
         }
@@ -1534,14 +1539,19 @@ function ray(objs,rec){
 const STK={chest:1,shelf:1},PASS_ST={flag:1,campfire:1,chest:1,torch:1,floor:1}; // 쌓기 가능 / 기능건물(통과 가능)
 const stackable=q=>!!STK[q.id]&&!q.gk;
 let placeRot=0;
-const EDGE={wall:1,door:1,window:1},FLOOR_H=.15; // 벽·문: 칸 경계(rot 0=가로 / 1=세로)에 설치 · 바닥: 칸 위 얇은 판(걸어 다닐 수 있음)
+const LPOOL=[],mkSL=(c,i,d)=>{const o=new THREE.Object3D();o.intensity=i;o.userData.c=c;o.userData.d=d;return o}; // 설치 조명: 가짜 조명(위치·세기만) — 실제 PointLight는 고정 5개를 돌려 씀 (조명 개수가 바뀌면 전체 셰이더가 재컴파일돼 렉이 걸림)
+const EDGE={wall:1,door:1,window:1},FLOOR_H=.1; // 벽·문: 칸 경계(rot 0=가로 / 1=세로)에 설치 · 바닥: 칸 위 얇은 판(걸어 다닐 수 있음)
 const cellPlane=(i,j)=>{ // 격자의 윗면: 지형이 걸친 격자 층의 윗면 (월드 y가 GRID 배수) — 같은 격자의 바닥은 모두 같은 높이
   const x0=i*GRID,z0=j*GRID;let m=-1e9;
   for(const [a,b] of [[.5,.5],[0,0],[1,0],[0,1],[1,1]])m=Math.max(m,height(x0+a*GRID,z0+b*GRID));
   return Math.ceil((m-.02)/GRID)*GRID;
 };
-function floorAt(x,z){const i=Math.floor(x/GRID),j=Math.floor(z/GRID);for(const q of placed)if(q.id==='floor'&&Math.floor(q.pos.x/GRID)===i&&Math.floor(q.pos.z/GRID)===j)return q;return null}
-const floorTop=(x,z)=>{const q=floorAt(x,z);return q?q.pos.y+FLOOR_H:null};
+function floorAt(x,z){const i=Math.floor(x/GRID),j=Math.floor(z/GRID);for(const q of placed)if(q.id==='floor'&&!q.lv&&Math.floor(q.pos.x/GRID)===i&&Math.floor(q.pos.z/GRID)===j)return q;return null}
+const floorTop=(x,z,feet)=>{ // 발이 닿을 수 있는 가장 높은 바닥 윗면 (땅 바닥 + 천장 바닥)
+  const i=Math.floor(x/GRID),j=Math.floor(z/GRID);let b=null;
+  for(const q of placed){if(q.id!=='floor'||Math.floor(q.pos.x/GRID)!==i||Math.floor(q.pos.z/GRID)!==j)continue;const t=q.pos.y+FLOOR_H;if(feet!==undefined&&t>feet+.7)continue;if(b===null||t>b)b=t}
+  return b;
+};
 const groundY=(x,z)=>{const q=floorAt(x,z);return q?q.pos.y+FLOOR_H:height(x,z)}; // 건물이 놓이는 면: 바닥 윗면, 없으면 지형
 const cellTop=(i,j)=>{const q=floorAt((i+.5)*GRID,(j+.5)*GRID);return q?q.pos.y+FLOOR_H:cellPlane(i,j)};
 const edgeBase=(x,z,o)=>{ // 벽·문·창문: 양옆 칸 중 낮은 쪽 격자 윗면에 세움 (높이 2칸)
@@ -1563,9 +1573,9 @@ function groundHit(maxD=6.5){ // 지형 메시 레이캐스트(느림) 대신 he
   }
   return null;
 }
-function placeHit(){ // 지면 + 가까운 바닥(건축) 중 먼저 닿는 곳
+function placeHit(){ // 지면 + 가까운 바닥(건축) 중 먼저 닿는 곳 (천장 바닥 제외)
   const g=groundHit(),cp=camera.position,fl=[];
-  for(const q of placed)if(q.id==='floor'&&q.mesh&&Math.abs(q.pos.x-cp.x)<12&&Math.abs(q.pos.z-cp.z)<12)fl.push(q.mesh);
+  for(const q of placed)if(q.id==='floor'&&!q.lv&&q.mesh&&Math.abs(q.pos.x-cp.x)<12&&Math.abs(q.pos.z-cp.z)<12)fl.push(q.mesh);
   const f=fl.length?ray(fl,true)[0]:null;
   return f&&(!g||f.distance<=g.distance+.3)?{point:f.point,distance:f.distance}:g;
 }
@@ -1613,16 +1623,42 @@ function planEdge(id){ // 벽·문: 바라보는 칸의 가장 가까운 경계�
   if(placed.some(q=>EDGE[q.id]&&(q.rot%2)===o&&Math.abs(q.pos.x-x)<.05&&Math.abs(q.pos.z-z)<.05))return{...base,ok:false,why:'이미 설치된 곳입니다'};
   return{...base,ok:true,why:''};
 }
+const edgeNear=(i,j)=>placed.some(q=>EDGE[q.id]&&(q.rot%2===0?(Math.abs(q.pos.x-(i+.5)*GRID)<.05&&(Math.abs(q.pos.z-j*GRID)<.05||Math.abs(q.pos.z-(j+1)*GRID)<.05)):(Math.abs(q.pos.z-(j+.5)*GRID)<.05&&(Math.abs(q.pos.x-i*GRID)<.05||Math.abs(q.pos.x-(i+1)*GRID)<.05))));
+const ceilNear=(i,j,l)=>placed.some(q=>q.id==='floor'&&(q.lv||0)===l&&Math.abs(Math.floor(q.pos.x/GRID)-i)+Math.abs(Math.floor(q.pos.z/GRID)-j)===1);
+function floorTarget(){ // 바닥 설치 위치·층: 벽 윗부분이나 천장을 보면 천장(lv1), 아니면 땅 바닥(lv0)
+  const cp=camera.position,ws=placed.filter(q=>q.mesh&&(EDGE[q.id]||(q.id==='floor'&&(q.lv||0)>=1))&&Math.abs(q.pos.x-cp.x)<14&&Math.abs(q.pos.z-cp.z)<14);
+  const h=ws.length?ray(ws.map(q=>q.mesh),true)[0]:null,g=placeHit();
+  if(h&&h.distance<6&&h.face&&(!g||h.distance<=g.distance+.3)){
+    let o=h.object;while(o&&!ws.some(q=>q.mesh===o))o=o.parent;const q=ws.find(s=>s.mesh===o);
+    if(q){
+      const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);
+      if(EDGE[q.id]){
+        if(h.point.y>q.pos.y+2){ // 벽 윗부분을 봄 → 벽 높이의 천장
+          let nx=n.x,nz=n.z;if(Math.abs(n.y)>.5||Math.hypot(nx,nz)<.3){nx=cp.x-h.point.x;nz=cp.z-h.point.z;const l=Math.hypot(nx,nz)||1;nx/=l;nz/=l}
+          return{x:h.point.x+nx*.5,z:h.point.z+nz*.5,lv:1,d:h.distance};
+        }
+      }else{ // 기존 천장을 봄 → 가장 가까운 가장자리 쪽 이웃 칸에 이어 붙임
+        const i=Math.floor(h.point.x/GRID),j=Math.floor(h.point.z/GRID),u=h.point.x/GRID-i,v=h.point.z/GRID-j,m=Math.min(u,1-u,v,1-v);
+        let ni=i,nj=j;if(m===v)nj=j-1;else if(m===1-v)nj=j+1;else if(m===u)ni=i-1;else ni=i+1;
+        return{x:(ni+.5)*GRID,z:(nj+.5)*GRID,lv:q.lv,d:h.distance};
+      }
+    }
+  }
+  return g?{x:g.point.x,z:g.point.z,lv:0,d:g.distance}:null;
+}
 function planPlace(id){
   if(EDGE[id])return planEdge(id);
   const rot=placeRot%4;let tx,tz;
   if(STK[id]){const bs=placed.filter(q=>q.mesh&&stackable(q)),h=ray(bs.map(q=>q.mesh),true)[0];
     if(h&&h.distance<6){let o=h.object;while(o&&!bs.some(q=>q.mesh===o))o=o.parent;const b=bs.find(q=>q.mesh===o);if(b){tx=b.pos.x;tz=b.pos.z}}}
-  if(tx===undefined){const hit=placeHit();if(!hit||hit.distance>6)return{ok:false,why:'바닥을 보고 설치하세요'};tx=hit.point.x;tz=hit.point.z}
+  let fl=0;
+  if(id==='floor'){const ft=floorTarget();if(!ft||ft.d>6)return{ok:false,why:'바닥을 보고 설치하세요'};tx=ft.x;tz=ft.z;fl=ft.lv||0}
+  else if(tx===undefined){const hit=placeHit();if(!hit||hit.distance>6)return{ok:false,why:'바닥을 보고 설치하세요'};tx=hit.point.x;tz=hit.point.z}
   const sp=snapPlace(id,tx,tz,rot);
   if(sp.x<2900){const bad=sp.cells.map(([i,j])=>cellInfo(i,j)).find(c=>!c.ok);if(bad)return{ok:false,why:'건축 불가: '+bad.why,sp,rot,lv:0,y:height(sp.x,sp.z)}}
-  const occ=placed.filter(q=>(id==='floor'?q.id==='floor':q.id!=='floor')&&stCells(q).some(([i,j])=>sp.cells.some(([a,b])=>a===i&&b===j))); // 바닥 위에는 다른 건물을 설치할 수 있음
-  let lv=0,ok=true,why='';
+  const occ=placed.filter(q=>(id==='floor'?(q.id==='floor'&&(q.lv||0)===fl):q.id!=='floor')&&stCells(q).some(([i,j])=>sp.cells.some(([a,b])=>a===i&&b===j))); // 바닥 위에는 다른 건물을 설치할 수 있음
+  let lv=fl,ok=true,why='';
+  if(fl>=1&&sp.x<2900&&!edgeNear(sp.cells[0][0],sp.cells[0][1])&&!ceilNear(sp.cells[0][0],sp.cells[0][1],fl)){ok=false;why='천장은 벽 근처 격자에만 설치할 수 있어요'}
   const stk=occ.filter(stackable),chs=stk.filter(q=>q.id==='chest'),nsh=stk.filter(q=>q.id==='shelf').length;
   if(occ.length){
     if(STK[id]&&sp.cells.length===1&&occ.every(stackable)){
@@ -1635,10 +1671,19 @@ function planPlace(id){
     }else{ok=false;why='이미 설치된 칸입니다'}
   }
   const cg=Math.floor(chs.length/2); // 상자가 놓일 선반 층
-  return{ok,why,sp,rot,lv,y:id==='floor'?cellPlane(sp.cells[0][0],sp.cells[0][1])-FLOOR_H:groundY(sp.x,sp.z)+(id==='shelf'?nsh*2:id==='chest'?cg*2+(chs.length%2?(nsh>cg?1.1:.9):0):0)};
+  return{ok,why,sp,rot,lv,y:id==='floor'?cellPlane(sp.cells[0][0],sp.cells[0][1])+4*fl-FLOOR_H:groundY(sp.x,sp.z)+(id==='shelf'?nsh*2:id==='chest'?cg*2+(chs.length%2?(nsh>cg?1.1:.9):0):0)};
 }
 /* 설치 미리보기(반투명 + 칸 색: 초록=가능/빨강=불가) · R 회전 */
 let ghostMesh=null,ghostId=null,ghostPl=null,_gT=0,_pl=null,_gId=null,_gR=0,_dT=0,_gS='';
+function updateLights(){ // 가까운(60m 안) 켜진 설치 조명 5개만 실제 조명에 배정
+  const cp=camera.position,c=[];
+  for(const s of placed){const l=s.light;if(!l||!(l.intensity>.01)||!s.mesh||!s.mesh.parent)continue;const dx=s.pos.x-cp.x,dz=s.pos.z-cp.z,d2=dx*dx+dz*dz;if(d2<3600)c.push([d2,s])}
+  if(c.length>LPOOL.length)c.sort((a,b)=>a[0]-b[0]);
+  for(let i=0;i<LPOOL.length;i++){const pl=LPOOL[i],e=c[i];
+    if(!e){pl.intensity=0;continue}
+    const l=e[1].light;l.getWorldPosition(pl.position);pl.color.setHex(l.userData.c);pl.distance=l.userData.d;pl.intensity=l.intensity;
+  }
+}
 function updateGhost(){
   const a=inv[sel],id=(a&&ITEMS[a.id]&&ITEMS[a.id].type==='placeable'&&active()&&(zone==='main'||(zone==='cave'&&(a.id==='drill'||a.id==='oil_tank')))&&!invOpen)?a.id:null;
   if(!id){if(ghostMesh){scene.remove(ghostMesh);scene.remove(ghostPl);ghostMesh=ghostPl=ghostId=null}_pl=null;return}
@@ -1704,6 +1749,7 @@ function place(){
   {const ds=placed.filter(s=>(s.id==='drill'||s.id==='oil_tank')&&s.mesh),dh=ray(ds.map(s=>s.mesh),true)[0];if(dh&&dh.distance<6){let o=dh.object;while(o&&!ds.some(s=>s.mesh===o))o=o.parent;const dr=ds.find(s=>s.mesh===o);if(dr){openDrill(dr);return}}}
   if(AXEBOX){const ab=ray([AXEBOX.group],true)[0];if(ab&&ab.distance<6){takeEmergencyAxe();return}}
   if(a&&a.id==='cooked_pork'){a.count--;if(a.count<=0)inv[sel]=null;P.hp=Math.min(P.maxHp,P.hp+25);P.st=Math.min(P.maxSt,P.st+30);renderInv();return}
+  if(a&&a.id==='bread'){a.count--;if(a.count<=0)inv[sel]=null;P.hp=Math.min(P.maxHp,P.hp+30);P.st=Math.min(P.maxSt,P.st+50);renderInv();return}
   if(a&&a.id==='forest_map'){openForestMap();return}
   if(a&&(a.id==='bucket'||a.id==='sea_bucket'||a.id==='water_bucket')){bucketUse(a);return}
   if(!a||ITEMS[a.id].type!=='placeable')return;
@@ -1774,7 +1820,7 @@ function bucketUse(a){
     bkSwap(a,w==='sea'?'sea_bucket':'water_bucket',w==='sea'?'바닷물을 펐습니다':'물을 펐습니다');
   }else bkSwap(a,'bucket','물을 버렸습니다');
 }
-const WIDE_ST={table:1.77,util_table:1.77,gun_table:1.62,chem_table:1.77,adv_table:1.77}; // 가로 2칸(4m) 구조물
+const WIDE_ST={table:1.77,util_table:1.77,gun_table:1.62,chem_table:1.77,adv_table:1.77,dis_table:1.77}; // 가로 2칸(4m) 구조물
 function makeStruct(id,px,pz,age,rot,lv,ghost){
   const a={id};let stick=null,flame=null,furn=null,panel=null;
   const g=new THREE.Group();let light=null;
@@ -1783,11 +1829,11 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
   if(a.id==='torch'){
     const s=M(new THREE.CylinderGeometry(.05,.05,.8),0x8b4513);s.position.y=.4;
     const f=M(new B(.1,.1,.1),0xffaa00,1);f.position.y=.8;
-    light=new THREE.PointLight(0xffaa00,1,15);light.position.y=1;g.add(s,f,light);stick=s;flame=f;
+    light=mkSL(0xffaa00,1,15);light.position.y=1;g.add(s,f,light);stick=s;flame=f;
   }else if(a.id==='campfire'){
     const l=M(new B(1.2,.2,1.2),0x3a2305);l.position.y=.1;
     const f=M(new B(.6,.5,.6),0xff5500,1);f.position.y=.4;
-    light=new THREE.PointLight(0xff7700,3,25);light.position.y=1;g.add(l,f,light);
+    light=mkSL(0xff7700,3,25);light.position.y=1;g.add(l,f,light);
   }else if(a.id==='table'){
     const t=M(new B(2,.9,1.2),0x8d6e63);t.position.y=.45;
     const l=M(new B(2.2,.15,1.4),0xa1887f);l.position.y=.95;g.add(t,l);
@@ -1799,6 +1845,11 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
     const t=M(new B(2,.9,1.2),0x6d4c41);t.position.y=.45;
     const l=M(new B(2.2,.15,1.4),0x90a4ae);l.position.y=.95;
     const gm=M(new B(.5,.3,.5),0xcfd8dc);gm.position.set(.5,1.17,0);g.add(t,l,gm);
+  }else if(a.id==='dis_table'){ // 해체 제작대: 어두운 몸체 + 붉은 상판 + 톱날
+    const t=M(new B(2,.9,1.2),0x3e2723);t.position.y=.45;
+    const l=M(new B(2.2,.15,1.4),0xc62828);l.position.y=.95;
+    const sw=M(new THREE.CylinderGeometry(.32,.32,.06,16),0xcfd8dc);sw.position.set(.5,1.06,0);sw.rotation.x=Math.PI/2;sw.position.y=1.38;
+    const hb=M(new B(.1,.4,.1),0x90a4ae);hb.position.set(.5,1.2,0);g.add(t,l,hb,sw);
   }else if(a.id==='chem_table'){
     const t=M(new B(2,.9,1.2),0x37474f);t.position.y=.45;
     const l=M(new B(2.2,.15,1.4),0x558b2f);l.position.y=.95;
@@ -1816,7 +1867,7 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
     const b=M(new B(2,2.4,2),0x2b2b2b);b.position.y=1.2;
     const ch=M(new B(.5,1.2,.5),0x1a1a1a);ch.position.set(.5,2.9,-.5);
     const h=M(new B(1.2,.9,.1),0x111111,1);h.position.set(0,.9,1.02);
-    light=new THREE.PointLight(0xff6a20,0,10);light.position.set(0,1.2,1.5);
+    light=mkSL(0xff6a20,0,10);light.position.set(0,1.2,1.5);
     g.add(b,ch,h,light);furn=h;
   }else if(a.id==='gun_table'){
     const t=M(new B(2.2,.9,1.2),0x5d4037);t.position.y=.45;
@@ -1849,8 +1900,8 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
     const p=M(new THREE.CylinderGeometry(.05,.05,3),0x8b4513);p.position.y=1.5;
     const f=M(new B(1,.6,.05),0xd32f2f);f.position.set(.5,2.6,0);g.add(p,f);
   }else if(a.id==='floor'){
-    const f=M(new B(2,1.2,2),0xa1887f);f.position.y=-.45; // 윗면 +0.15, 아래는 땅속에 묻혀 경사 틈을 가림
-    g.add(f);for(const px of [-.5,0,.5]){const l=M(new B(.04,.01,2),0x6d4c41);l.position.set(px,.156,0);g.add(l)}
+    const f=M(new B(2,.12,2),0xa1887f);f.position.y=.04; // 얇은 판 (윗면 +FLOOR_H)
+    g.add(f);for(const px of [-.5,0,.5]){const l=M(new B(.04,.01,2),0x6d4c41);l.position.set(px,.106,0);g.add(l)}
   }else if(a.id==='wall'){
     const w=M(new B(2,4.25,.2),0x8d6e63);w.position.y=1.875;g.add(w); // 높이 4 (격자 2칸)
     for(const py of [.3,1.4,2.5,3.6]){const r=M(new B(2.04,.1,.24),0x6d4c41);r.position.y=py;g.add(r)}
@@ -1867,14 +1918,14 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
   }else{
     const b=M(new B(1.5,2,1.5),0x555555);b.position.y=1;
     const h=M(new B(1,.8,1.6),0x111111,1);h.position.y=.6;
-    light=new THREE.PointLight(0xff7a30,0,10);light.position.set(0,1.2,1.2); // 범위 안에서만 약하게 켜짐
+    light=mkSL(0xff7a30,0,10);light.position.set(0,1.2,1.2); // 범위 안에서만 약하게 켜짐
     g.add(b,h,light);furn=h;
   }
   if(WIDE_ST[id])g.scale.set(WIDE_ST[id],1,1.3);else if(id==='anvil')g.scale.setScalar(.85); // 작업대: 가로 2칸 / 모루: 1칸 안에
   g.rotation.y=(rot||0)*Math.PI/2;
   if(ghost){if(light)g.remove(light);g.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.5;o.material.depthWrite=false}});return g}
   if(panel&&lv)panel.rotation.y=-Math.PI/2;
-  g.position.set(px,EDGE[id]?edgeBase(px,pz,rot||0):id==='floor'&&px<2900?cellPlane(Math.floor(px/GRID),Math.floor(pz/GRID))-FLOOR_H:groundY(px,pz),pz);(ZG[zoneOf(px,pz)]||scene).add(g);
+  g.position.set(px,EDGE[id]?edgeBase(px,pz,rot||0):id==='floor'&&px<2900?cellPlane(Math.floor(px/GRID),Math.floor(pz/GRID))+4*(lv||0)-FLOOR_H:groundY(px,pz),pz);(ZG[zoneOf(px,pz)]||scene).add(g);
   placed.push({id,rot:rot||0,lv:lv||0,panel,pos:g.position,light,base:light?light.intensity:0,mesh:g,stick,flame,hole:furn,age,items:id==='chest'?new Array(45).fill(null):(id==='drill'||id==='oil_tank')?new Array(11).fill(null):null,oil:0,ob:0,spin:g.userData.spin});
 }
 
@@ -2027,7 +2078,7 @@ function fireGun(now){
     let o=h.object;while(o&&!live.some(n=>n.mesh===o))o=o.parent;const n=live.find(x=>x.mesh===o);
     if(!n||seen.has(n))continue;seen.add(n);D=h.distance;
     if(!n.animal)break;
-    const po=hitPart(h,hits,n.mesh),wk=!!po.userData.weak&&n.phase===2,hs=!!po.userData.head||wk,bh=n.type==='bear'?BEAR_HITS[a.id]:null;n.hp-=bh?n.maxHp/bh[hs?1:0]*1.001*pwr(a):df.dmg*pwr(a)*(wk?3:hs?1.5:1);if(hs)ding();hitFx(n);if(n.hp<=0)harvest(n,Date.now());
+    const po=hitPart(h,hits,n.mesh),wk=!!po.userData.weak&&n.phase===2,hs=!!po.userData.head||wk,bh=n.type==='bear'?BEAR_HITS[a.id]:null;n.hp-=bh?n.maxHp/bh[hs?1:0]*1.001*pwr(a):df.dmg*pwr(a)*(wk?3:hs?1.5:1);if(hs)ding();if(n.golem&&n.phase===2&&po.userData.gem){golemGemFx(po);n._gem=true}hitFx(n);if(n.hp<=0)harvest(n,Date.now());
     if(++pc>=maxP)break;
   }
   const A=(curGun&&curGun.muz&&toolMesh.visible)?curGun.muz.getWorldPosition(new THREE.Vector3()):cp.clone().addScaledVector(dir,.8).addScaledVector(right,.12).addScaledVector(up,-.12),E=cp.clone().addScaledVector(dir,D);
@@ -2188,7 +2239,7 @@ function attack(strong,part,mot){ // mot: 덜 차징돼도 강공격 모션(데�
   if(swingS){swingDur=.5;lastAtk=now+500-((it&&it.cd)||150)} // 도끼 강공격: 공속 0.5초
   if(sm&&it&&(swingS||it.kind==='spear')&&aoeHit(a,it,now,strong?2:1+(part||0)))return; // 도끼: 부채꼴 휩쓸기 / 창: 일직선 관통
   const live=nodes.filter(n=>n.active&&n.mesh.visible&&Math.abs(n.x-camera.position.x)<12&&Math.abs(n.z-camera.position.z)<12); // 가까운 것만 검사
-  const hit=ray(live.map(n=>n.mesh),true)[0];
+  const hits=ray(live.map(n=>n.mesh),true),hit=hits[0];
   const reach=(it&&it.kind==='spear'?6:it&&it.kind==='sword'?3.5:4)*(strong?(it&&it.kind==='spear'?1.5:1.3):1);
   if(!hit||hit.distance>reach){digGround(it);return}
   let o=hit.object;
@@ -2212,7 +2263,9 @@ function attack(strong,part,mot){ // mot: 덜 차징돼도 강공격 모션(데�
   if(good&&kind==='pickaxe'&&rk!==undefined&&tier-rk>=2)dm=99;
   if(good&&kind==='pickaxe'&&tier>=5&&hasAtt(a,'power_crystal')&&(n.type==='titanium'||n.type==='diamond'))dm=99; // 티타늄 합금 곡괭이 + 힘의 결정: 티타늄·다이아 1방
   if(good&&kind==='shovel'&&(n.type==='clay'||n.type==='sand')){const hs=(n.type==='clay'?[4,4,3,2,1,1]:[5,5,4,3,2,1])[tier]||3;dm=n.maxHp/hs+1e-6} // 삽 단계가 높을수록 적은 타수 (점토 구리3·철2·티타늄1 / 모래 구리4·철3·티타늄2)
-  n.hp-=((n.type==='cane'&&a&&a.id==='battle_axe')?999:good?dm*pwr(a):(n.animal?wdmg(kind,tier,a):1))*(strong?2:(part?1+part:1));hitFx(n,strong?2:1);
+  let gm=1;
+  if(n.golem&&n.phase===2){const po=hitPart(hit,hits,n.mesh),wk=!!po.userData.weak,hs=!!po.userData.head||wk;gm=wk?3:hs?1.5:1;if(hs)ding();if(po.userData.gem){golemGemFx(po);n._gem=true}} // 골렘 2페이즈: 보석 근접 타격도 치명타
+  n.hp-=(((n.type==='cane'||n.type==='wheat')&&a&&a.id==='battle_axe')?999:good?dm*pwr(a):(n.animal?wdmg(kind,tier,a):1))*(strong?2:(part?1+part:1))*gm;hitFx(n,strong?2:1);
   if(n.hp>0)return;
   harvest(n,now);
 }
@@ -2227,11 +2280,13 @@ function harvest(n,now){
   n.respawn=now+(n.animal?(n.type==='bear'?600000:300000):n.type==='sand'?120000:(ORE.includes(n.type)&&n.type!=='rock')||n.type==='titanium'?300000:30000); // 곰 10분 · 그 외 동물 5분 / 광물 5분 / 그 외 30초
   if(n.golem){n.respawn=now+1200000;golemDown(n)} // 바위 골렘: 하루(20분) 뒤 부활
   if(n.minion)n.respawn=Infinity; // 소환된 부하는 보스만 되살림
+  if(n.sentry){const b=n.boss;n.respawn=(b&&!b.active)?b.respawn:Infinity} // 보초: 두목이 살아 있는 동안은 리젠 없음 · 두목이 이미 죽었다면 두목과 같은 시간에 부활
+  if(n.weapon==='boss'&&n.sentries)for(const m of n.sentries)if(!m.active)m.respawn=n.respawn; // 두목을 잡으면 죽어 있던 보초도 두목과 함께 부활
   const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
   const drops=({
     golem:[['diamond',R(4,6)],['gold',R(8,12)],['titanium',R(4,6)],['stone',R(20,30)],['golem_core',1],...(Math.random()<.25?[['power_crystal',1]]:[]),...(Math.random()<.2?[['speed_crystal',1]]:[]),...(Math.random()<.2?[['energy_crystal',1]]:[])], // 바위 골렘 (속도·기력의 결정 각 20%)
     wood:[['log',4],['long_branch',R(2,3)],['branch',R(6,8)],['vine',R(8,10)]],
-    ghoul:[['stick',R(1,2)]],wheat:[['wheat',R(1,2)]],bandit:[['cloth',R(1,2)],...(Math.random()<.3?[['rope',R(1,2)]]:[]),...(BDROP[n.weapon]?[[BDROP[n.weapon],(n.minion&&n.weapon==='musket')?R(3,10):R(2,4)]]:[]),...(n.weapon==='boss'?[['lmg_part',R(3,5)],...(Math.random()<.1?[['power_crystal',1]]:[]),...(Math.random()<.05?[['speed_crystal',1]]:[]),...(Math.random()<.05?[['energy_crystal',1]]:[])]:[])], // 약탈자: 기본템 + 든 무기의 탄약 조금 (도끼는 기본템만)
+    ghoul:[['cloth',R(1,2)]],wheat:[['wheat',R(1,2)]],bandit:[['cloth',R(1,2)],...(Math.random()<.3?[['rope',R(1,2)]]:[]),...(BDROP[n.weapon]?[[BDROP[n.weapon],(n.minion&&n.weapon==='musket')?R(3,10):R(2,4)]]:[]),...(n.weapon==='boss'?[['lmg_part',R(3,5)],...(Math.random()<.1?[['power_crystal',1]]:[]),...(Math.random()<.05?[['speed_crystal',1]]:[]),...(Math.random()<.05?[['energy_crystal',1]]:[])]:[])], // 약탈자: 기본템 + 든 무기의 탄약 조금 (도끼는 기본템만)
     wolf:[['pork',R(1,2)],['wild_hide',R(1,2)]],bear:[['big_hide',R(2,3)],['pork',R(2,3)]],spider:[['rope',R(1,2)],['elastic_rope',R(1,2)]],cow:[['hide',R(1,2)],['pork',1]],sheep:[['wool',R(1,2)],['pork',1]],pig:[['pork',R(1,2)]],coal:[['coal',R(4,8)]],stone:[['stone',1]],rock:[['stone',R(4,6)]],clay:[['clay',R(2,4)]],sand:[['sand',1]],cane:[['sugarcane',R(1,2)]],slime:[['chemical',R(2,4)]]
   })[n.type]||[[n.type,R(2,4)]];
   if((ORE.includes(n.type)&&n.type!=='rock')||n.type==='titanium')drops.push(['stone',R(1,2)]);
@@ -2268,19 +2323,19 @@ function checkPortals(){
 }
 
 /* ---------- 근접 판정 ---------- */
-const RNG={furnace:10,table:10,util_table:10,campfire:7,chest:25,anvil:10,foundry:10,gun_table:10,chem_table:10,adv_table:10}; // 기능블록 범위: 블록 칸에서 ±N칸(2m 칸)의 정사각형
+const RNG={furnace:10,table:10,util_table:10,campfire:7,chest:25,anvil:10,foundry:10,gun_table:10,chem_table:10,adv_table:10,dis_table:10}; // 기능블록 범위: 블록 칸에서 ±N칸(2m 칸)의 정사각형
 const inSq=(s,x,z)=>{const r=RNG[s.id];return r!==undefined&&Math.abs(Math.floor(x/2)-Math.floor(s.pos.x/2))<=r&&Math.abs(Math.floor(z/2)-Math.floor(s.pos.z/2))<=r};
 function proximity(){
-  nearCamp=nearFurn=nearTable=nearUtil=nearAnvil=nearFoundry=nearGun=nearChemT=nearAdv=false;
+  nearCamp=nearFurn=nearTable=nearUtil=nearAnvil=nearFoundry=nearGun=nearChemT=nearAdv=nearDis=false;
   for(const s of placed){
     const inR=inSq(s,camera.position.x,camera.position.z);
     if((s.id==='furnace'||s.id==='foundry')&&s.hole){const lit=inR;if(lit!==s.lit){s.lit=lit;s.hole.material.color.setHex(lit?0xff6a10:0x111111);s.base=lit?.9:0}}
-    if(inR){if(s.id==='furnace')nearFurn=true;if(s.id==='table')nearTable=true;if(s.id==='util_table')nearUtil=true;if(s.id==='anvil')nearAnvil=true;if(s.id==='foundry')nearFoundry=true;if(s.id==='gun_table')nearGun=true;if(s.id==='chem_table')nearChemT=true;if(s.id==='adv_table'){nearAdv=true;nearTable=true}}
+    if(inR){if(s.id==='furnace')nearFurn=true;if(s.id==='table')nearTable=true;if(s.id==='util_table')nearUtil=true;if(s.id==='anvil')nearAnvil=true;if(s.id==='foundry')nearFoundry=true;if(s.id==='gun_table')nearGun=true;if(s.id==='chem_table')nearChemT=true;if(s.id==='adv_table'){nearAdv=true;nearTable=true}if(s.id==='dis_table')nearDis=true}
     if(inR&&s.id==='campfire')nearCamp=true;
   }
   if(nearCamp)buffT=600;
   const cn=nearChests().length;
-  if(nearFurn!==prevFurn||nearTable!==prevTable||nearUtil!==prevUtil||nearCamp!==prevCamp||nearAnvil!==prevAnvil||nearFoundry!==prevFoundry||nearGun!==prevGun||nearChemT!==prevChemT||nearAdv!==prevAdv||cn!==prevCN){prevAdv=nearAdv;prevChemT=nearChemT;prevCamp=nearCamp;prevAnvil=nearAnvil;prevFoundry=nearFoundry;prevGun=nearGun;prevFurn=nearFurn;prevTable=nearTable;prevUtil=nearUtil;prevCN=cn;renderRec()}
+  if(nearFurn!==prevFurn||nearTable!==prevTable||nearUtil!==prevUtil||nearCamp!==prevCamp||nearAnvil!==prevAnvil||nearFoundry!==prevFoundry||nearGun!==prevGun||nearChemT!==prevChemT||nearAdv!==prevAdv||nearDis!==prevDis||cn!==prevCN){prevDis=nearDis;prevAdv=nearAdv;prevChemT=nearChemT;prevCamp=nearCamp;prevAnvil=nearAnvil;prevFoundry=nearFoundry;prevGun=nearGun;prevFurn=nearFurn;prevTable=nearTable;prevUtil=nearUtil;prevCN=cn;renderRec()}
   if(!tutDone&&inv.some(s=>s&&s.id==='axe'))tutDone=true;
   if(AXEBOX){
     AXEBOX.axe.visible=!inv.some(s=>s&&s.id==='axe');
@@ -2328,7 +2383,7 @@ function updatePlayer(dt){
   // 중력
   let gy=height(camera.position.x,camera.position.z)+eyeH;
   {const bY=bridgeY(camera.position.x,camera.position.z);if(bY!==null&&camera.position.y-eyeH>=bY-1.5)gy=Math.max(gy,bY+eyeH)} // 다리 위(아래로 지나갈 땐 무시)
-  {const ft=floorTop(camera.position.x,camera.position.z);if(ft!==null&&camera.position.y-eyeH>=ft-.7)gy=Math.max(gy,ft+eyeH)} // 건축 바닥 위
+  {const ft=floorTop(camera.position.x,camera.position.z,camera.position.y-eyeH);if(ft!==null&&camera.position.y-eyeH>=ft-.7)gy=Math.max(gy,ft+eyeH)} // 건축 바닥 위
   velY-=19.6*dt;camera.position.y+=velY*dt;
   if(camera.position.y<=gy){camera.position.y=gy;velY=0;grounded=true}else grounded=false;
   if(grounded){lastGroundT=performance.now();if(jumpReq&&lastGroundT-jumpReq<150){velY=7;grounded=false;jumpReq=0;lastGroundT=0}}
@@ -2387,8 +2442,8 @@ function buildUI(){
 /* ---------- 아이템 모양 (아이콘 / 손에 든 모양) ---------- */
 const MATC={flint:'#8a8f98',wood:'#a1887f',copper:'#c8702a',gold:'#ffd54f',iron:'#cfd8dc',titanium:'#a3a8ad',talloy:'#7986cb',diamond:'#4dd0e1'};
 const ICOL={log:'#6d4c41',branch:'#8d6e63',long_branch:'#8d6e63',vine:'#43a047',stick:'#8d6e63',long_stick:'#8d6e63',stake:'#8d6e63',rope:'#d7c49e',plank:'#c8a165',stone:'#9e9e9e',flint:'#5f6368',clay:'#b5651d',sugarcane:'#43a047',sugar:'#f5f5f5',coal:'#262626',copper:'#d2691e',iron:'#e0c9a6',gold:'#ffd54f',diamond:'#4dd0e1',titanium:'#78909c',hide:'#8d5a2b',wool:'#f5f5f5',cloth:'#eceff1',pork:'#f4a6b0',cooked_pork:'#a0522d',wire:'#d2691e',arrow:'#8d6e63',campfire:'#ff7043',furnace:'#757575',table:'#8d6e63',chest:'#8d5a2b',flag:'#d32f2f',lantern:'#ffd54f',clock:'#ffd54f',compass:'#ef5350',bag:'#8d6e63',big_bag:'#5d4037',torch:'#ff9800',detector:'#78909c',headlamp:'#ffe082',quiver:'#8d5a2b',util_table:'#4dd0e1',big_hide:'#6d4c41',wild_hide:'#9e8c6a',ruby:'#e53935'};
-Object.assign(ICOL,{sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',wheat:'#d9b44a',flour:'#f5efe0',bolt_rifle:'#6d4c41',scope:'#263238',wild_cloak:'#8d6e63',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63',copper_rod:'#c8702a',gold_plate:'#ffd54f',gold_rod:'#ffd54f',titanium_plate:'#a3a8ad',silencer:'#455a64',power_crystal:'#ff5252',chem_table:'#558b2f',adv_table:'#90a4ae',oil_bucket:'#4a0e0e',hq_gunpowder:'#616161',arrowhead:'#a9845a',rifle_bullet:'#8d6e63',forest_map:'#e8d9a8',lmg:'#455a64',lmg_part:'#78909c',spring:'#b0bec5',ext_mag:'#455a64',bandolier:'#8d6e63',golem_core:'#43a047'});
-const _mat=id=>{const m=/^(copper|gold|iron|titanium|diamond|flint|wood)_(.+)$/.exec(id);return m?[m[1],m[2]]:[null,id]};
+Object.assign(ICOL,{bread:'#c8903f',bread_dough:'#efe0b8',sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',wheat:'#d9b44a',flour:'#f5efe0',bolt_rifle:'#6d4c41',scope:'#263238',wild_cloak:'#8d6e63',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63',copper_rod:'#c8702a',gold_plate:'#ffd54f',gold_rod:'#ffd54f',titanium_plate:'#a3a8ad',silencer:'#455a64',power_crystal:'#ff5252',chem_table:'#558b2f',adv_table:'#90a4ae',oil_bucket:'#4a0e0e',hq_gunpowder:'#616161',arrowhead:'#a9845a',rifle_bullet:'#8d6e63',forest_map:'#e8d9a8',lmg:'#455a64',lmg_part:'#78909c',spring:'#b0bec5',ext_mag:'#455a64',bandolier:'#8d6e63',golem_core:'#43a047'});
+const _mat=id=>{const m=/^(copper|gold|iron|titanium|diamond|flint|wood|talloy)_(.+)$/.exec(id);return m?[m[1],m[2]]:[null,id]};
 const hx=c=>parseInt(c.slice(1),16);
 const _svgC={};
 function iconSVG(id){
@@ -2452,6 +2507,8 @@ function iconBody(id){
   if(id==='salt')return `<rect x="6" y="14" width="9" height="9" rx="1" fill="#f5fbff" ${O}/><rect x="16" y="11" width="9" height="9" rx="1" fill="#e3f2fd" ${O}/><rect x="12" y="19" width="9" height="8" rx="1" fill="#fff" ${O}/>`;
   if(id==='chemical')return `<path d="M13 4 H19 V12 L26 26 H6 L13 12Z" fill="#b2ff5999" stroke="#cfd8dc" stroke-width="1.4"/><circle cx="16" cy="21" r="2" fill="#76ff03"/>`;
   if(id==='wheat')return `<path d="M16 30 V10 M10 30 L11 12 M22 30 L21 12" stroke="#b59b3c" stroke-width="1.6" fill="none"/><ellipse cx="16" cy="7" rx="2.6" ry="5" fill="#e6c556" ${O}/><ellipse cx="11" cy="9" rx="2.2" ry="4.2" fill="#e6c556" ${O}/><ellipse cx="21" cy="9" rx="2.2" ry="4.2" fill="#e6c556" ${O}/>`;
+  if(id==='bread_dough')return `<ellipse cx="16" cy="19" rx="11" ry="7" fill="#efe0b8" ${O}/><ellipse cx="13" cy="16.5" rx="5" ry="2.4" fill="#fff8"/><circle cx="21" cy="20" r="1.2" fill="#d7c28a"/>`;
+  if(id==='bread')return `<path d="M4 20 Q4 8 16 8 Q28 8 28 20 Q28 25 24 25 H8 Q4 25 4 20Z" fill="#c8903f" ${O}/><path d="M9 13 L12 19 M15 11 L18 18 M21 13 L23 19" stroke="#8a5a1e" stroke-width="1.6" stroke-linecap="round"/><path d="M7 15 Q10 10 16 10" stroke="#fff6" stroke-width="1.4" fill="none"/>`;
   if(id==='flour')return `<path d="M8 12 Q16 6 24 12 L26 28 H6 Z" fill="#f5efe0" ${O}/><path d="M9 12 H23" stroke="#8d6e63" stroke-width="2"/><circle cx="16" cy="20" r="3" fill="#d7ccc8"/>`;
   if(id==='bolt_rifle')return `<line x1="3" y1="8" x2="23" y2="18" stroke="#37474f" stroke-width="2.6" stroke-linecap="round"/><polygon points="19,16 30,21 28,27 17,22" fill="#8a6d46" ${O}/><rect x="9" y="6" width="9" height="3.5" rx="1.5" fill="#263238" transform="rotate(26 13 8)"/><circle cx="16" cy="14" r="1.6" fill="#90a4ae"/>`;
   if(id==='scope')return `<rect x="4" y="12" width="24" height="7" rx="3" fill="#263238" ${O}/><circle cx="6" cy="15.5" r="4.2" fill="#37474f" ${O}/><circle cx="26" cy="15.5" r="3.6" fill="#37474f" ${O}/><circle cx="6" cy="15.5" r="2" fill="#b3e5fc"/>`;
@@ -2495,6 +2552,7 @@ function iconBody(id){
     case 'headlamp':return `<path d="M3 18 Q16 3 29 18" stroke="#8d5a2b" stroke-width="3" fill="none"/><rect x="10.5" y="11" width="11" height="9" rx="2.5" fill="#455a64" ${O}/><circle cx="16" cy="15.5" r="3" fill="#ffe082"/><polygon points="12,22 20,22 28,30 4,30" fill="#ffe08255"/>`;
     case 'quiver':return `<path d="M10 8 L22 8 L24 29 L8 29Z" fill="#8d5a2b" ${O}/><rect x="9" y="8" width="14" height="3" fill="#5d3a1a"/><line x1="13" y1="8" x2="11" y2="1.5" stroke="#eee" stroke-width="1.6"/><line x1="16" y1="8" x2="16" y2="1" stroke="#eee" stroke-width="1.6"/><line x1="19" y1="8" x2="21" y2="1.5" stroke="#eee" stroke-width="1.6"/>`;
     case 'adv_table':return `<rect x="3" y="11" width="26" height="5" rx="1" fill="#90a4ae" ${O}/><rect x="6" y="16" width="3" height="12" fill="#6d4c41"/><rect x="23" y="16" width="3" height="12" fill="#6d4c41"/><rect x="12" y="5" width="8" height="6" rx="1" fill="#cfd8dc" ${O}/>`;
+    case 'dis_table':return `<rect x="3" y="11" width="26" height="5" rx="1" fill="#c62828" ${O}/><rect x="6" y="16" width="3" height="12" fill="#3e2723"/><rect x="23" y="16" width="3" height="12" fill="#3e2723"/><circle cx="16" cy="7" r="4.5" fill="#cfd8dc" ${O}/><circle cx="16" cy="7" r="1.4" fill="#546e7a"/>`;
     case 'chem_table':return `<rect x="3" y="11" width="26" height="5" rx="1" fill="#558b2f" ${O}/><rect x="6" y="16" width="3" height="12" fill="#37474f"/><rect x="23" y="16" width="3" height="12" fill="#37474f"/><rect x="13" y="4" width="6" height="7" rx="1.5" fill="#b2ff59" ${O}/>`;
     case 'util_table':return `<rect x="3" y="11" width="26" height="5" rx="1" fill="#ffd54f" ${O}/><rect x="6" y="16" width="3" height="12" fill="#37474f"/><rect x="23" y="16" width="3" height="12" fill="#37474f"/><polygon points="16,3 21,8 16,13 11,8" fill="#4dd0e1" ${O}/>`;
     case 'torch':return `<rect x="14.5" y="13" width="3" height="17" fill="#8d6e63"/><path d="M16 1.5 Q24 10 16 15 Q8 10 16 1.5Z" fill="#ff9800"/><path d="M16 7 Q20 11 16 14 Q12 11 16 7Z" fill="#ffee58"/>`;
@@ -2616,7 +2674,7 @@ function buildHeld(id){
     case 'wire':{const t=new THREE.Mesh(new THREE.TorusGeometry(.06,.012,5,10),ms(col));g.add(t);break}
     case 'plank':B(.3,.03,.11,col);break;
     case 'hide':case 'cloth':case 'wool':B(.22,.03,.22,col);break;
-    case 'pork':case 'cooked_pork':B(.2,.07,.14,col);break;
+    case 'pork':case 'cooked_pork':case 'bread':case 'bread_dough':B(.2,.07,.14,col);break;
     case 'stone':case 'flint':case 'clay':case 'coal':{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(.1),ms(col));g.add(m);break}
     case 'copper':case 'iron':case 'gold':case 'titanium':{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(.1),ms(0x757575));g.add(m);B(.05,.05,.05,col,.07,.05,.06);B(.05,.05,.05,col,-.06,.06,.06);B(.05,.05,.05,col,0,-.07,.08);break}
     case 'diamond':{const m=new THREE.Mesh(new THREE.OctahedronGeometry(.1),ms(col));g.add(m);break}
@@ -2683,6 +2741,7 @@ function buildHeld(id){
     case 'headlamp':B(.16,.1,.1,0x455a64);B(.07,.07,.02,0xffe082,0,0,.06);break;
     case 'quiver':Cy(.06,.4,0x8d5a2b);break;
     case 'adv_table':B(.3,.04,.2,0x90a4ae,0,.06);B(.03,.12,.03,0x6d4c41,-.12,-.02,-.07);B(.03,.12,.03,0x6d4c41,.12,-.02,.07);B(.08,.05,.08,0xcfd8dc,0,.11);break;
+    case 'dis_table':B(.3,.04,.2,0xc62828,0,.06);B(.03,.12,.03,0x3e2723,-.12,-.02,-.07);B(.03,.12,.03,0x3e2723,.12,-.02,.07);B(.08,.05,.08,0xcfd8dc,0,.11);break;
     case 'chem_table':B(.3,.04,.2,0x558b2f,0,.06);B(.03,.12,.03,0x37474f,-.12,-.02,-.07);B(.03,.12,.03,0x37474f,.12,-.02,.07);B(.06,.06,.06,0xb2ff59,0,.11);break;
     case 'util_table':B(.3,.04,.2,0xffd54f,0,.06);B(.03,.12,.03,0x37474f,-.12,-.02,-.07);B(.03,.12,.03,0x37474f,.12,-.02,.07);B(.06,.06,.06,0x4dd0e1,0,.11);break;
     case 'clock':Cy(.1,.03,0xffd54f);break;
@@ -2856,7 +2915,7 @@ function note(m){
 }
 
 /* ---------- 제작 패널 (테라리아식) ---------- */
-const CATS=[['tools','도구'],['weapons','무기'],['armor','갑옷'],['mat','재료'],['build','건물'],['cook','요리']];
+const CATS=[['tools','도구'],['weapons','무기'],['armor','갑옷'],['mat','재료'],['build','건물'],['cook','요리'],['dis','해체']];
 const rcat=r=>r.cat==='func'?'build':r.cat==='util'?'tools':r.cat,rsub=r=>r.cat==='func'?'기능':r.cat==='build'?(r.sub||'건축'):r.cat==='util'?'유틸리티':r.sub; // 기능·건축 블록은 건물 카테고리 안의 탭
 const SUBS={tools:['곡괭이','도끼','삽','기타','유틸리티'],weapons:['창','도끼','검','활·화살','총','총알','장착물'],mat:['주괴','가공','금속','머리','틀']};
 // 제작 목록 정렬: 초반 → 후반 (목록에 없는 것은 원래 순서 유지)
@@ -2869,9 +2928,9 @@ const RK=new Map(['flint_pickaxe','copper_pickaxe','gold_pickaxe','iron_pickaxe'
   'copper_ingot','gold_ingot','iron_ingot','titanium_ingot','alloy','titanium_alloy',
   'stick','long_stick','rope','flint','stake','plank','cloth','sugar','glass','wire','spring','tension_string','coal_powder','gunpowder','hq_gunpowder','oil_bucket',
   'copper_plate','copper_rod','gold_plate','gold_rod','metal_plate','metal_rod','titanium_plate','titanium_rod','talloy_pickaxe_head','talloy_shovel_head',
-  'campfire','table','adv_table','furnace','chest','shelf','flag','anvil','foundry','gun_table','chem_table','util_table','drill','oil_tank',
+  'campfire','table','adv_table','dis_table','furnace','chest','shelf','flag','anvil','foundry','gun_table','chem_table','util_table','drill','oil_tank',
   'floor','wall','window','door','filter_coal','filter_copper','filter_iron','filter_gold','filter_sulfur','filter_titanium','filter_diamond','filter_sand','filter_clay',
-  'cooked_pork','flour','salt','sugar'].map((id,i)=>[id,i]));
+  'cooked_pork','flour','bread_dough','bread','salt','sugar'].map((id,i)=>[id,i]));
 const rk=r=>RK.has(r.id)?RK.get(r.id):9999;
 let craftSub=null,craftRst=false,craftFocus=null;
 function renderCraft(){
@@ -2886,6 +2945,7 @@ function renderCraft(){
   CATS.forEach(([k])=>$('cat_'+k).classList.toggle('on',k===craftCat));
   const st0=list.scrollTop;list.innerHTML='';$('subs').innerHTML='';$('warn').style.display='none';
   if(!craftCat)return;
+  if(craftCat==='dis'){renderDis(list);list.scrollTop=craftRst?0:st0;craftRst=false;return}
   const vis=RECIPES.filter(r=>rcat(r)===craftCat&&(!r.near||({furnace:nearFurn,util_table:nearUtil,table:nearTable,anvil:nearAnvil,foundry:nearFoundry,gun_table:nearGun,chem_table:nearChemT,adv_table:nearAdv,campfire:nearCamp})[r.near]));
   const ncn=nearChests().length;
   if(ncn){const h=document.createElement('div');h.style.cssText='font-size:11px;color:#ffcc80;padding:2px 4px';h.textContent=`📦 근처 창고 ${ncn}개의 재료도 사용 (25m)`;list.appendChild(h)}
@@ -2915,6 +2975,45 @@ function renderCraft(){
   list.onclick=e=>{const m=e.target.closest&&e.target.closest('.miss');if(m)makeMissing(m.dataset.m,+m.dataset.n)};
   list.scrollTop=craftRst?0:st0;craftRst=false;
   if(craftFocus){const fc=list.querySelector(`.rc[data-id="${craftFocus}"]`);craftFocus=null;if(fc){fc.style.outline='2px solid #ff8a65';fc.scrollIntoView({block:'nearest'});setTimeout(()=>{fc.style.outline=''},3000)}}
+}
+/* ---------- 해체 제작대: 제작법을 거꾸로 돌려 재료 반환 ---------- */
+function disInfo(it){ // 해체 정보 (null이면 해체 불가) — 강화 단계가 있으면 한 단계만 내림
+  if(!it||!ITEMS[it.id])return null;
+  if((it.lv||0)>0){const up=RECIPES.find(r=>r.up===it.id);if(up)return{cost:up.cost,n:1,lvDown:true}}
+  const r=RECIPES.find(x=>x.id===it.id&&!x.up&&!x.ret); // 빈 양동이 같은 반환물이 있는 레시피는 제외 (복제 방지)
+  return r?{cost:r.cost,n:r.yield||1}:null;
+}
+function renderDis(list){
+  const h=document.createElement('div');h.className='rc';h.style.cssText='font-size:12px;color:#ffcc80';
+  h.textContent=nearDis?'해체할 아이템을 고르면 제작 재료를 돌려받아요 (한 번에 만들어지는 수량 단위)':'해체 제작대 근처(10m)에서 사용할 수 있어요';list.appendChild(h);
+  const seen={},rows=[];
+  for(const i of SL()){const it=inv[i];if(!it)continue;const info=disInfo(it);if(!info)continue;
+    if(SOL(ITEMS[it.id])||it.lv){rows.push({i,it,info})}else if(!seen[it.id]){seen[it.id]=1;rows.push({i,it,info})}}
+  if(!rows.length){const d0=document.createElement('div');d0.className='rc';d0.textContent='해체할 수 있는 아이템이 없어요';list.appendChild(d0)}
+  rows.forEach(({i,it,info})=>{
+    const d=ITEMS[it.id],solid=SOL(d)||info.lvDown,have=solid?1:SL().reduce((a,j)=>inv[j]&&inv[j].id===it.id?a+inv[j].count:a,0),ok=nearDis&&have>=info.n;
+    const back=Object.entries(info.cost).map(([k,v])=>`${ITEMS[k].name} ${v}`).join(', ')+((it.att&&it.att.some(Boolean))?', 부착물':'');
+    const nm=info.lvDown?`${d.name} ${(it.lv||0)+1}단계 → ${it.lv}단계`:d.name+(info.n>1?` x${info.n}`:'');
+    const row=document.createElement('div');row.className='rc';
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><span class="ric">${iconSVG(it.id)}</span><div><b>${nm}</b><small>돌려받음: ${info.lvDown?`${d.name} ${it.lv}단계, `:''}${back}${solid?'':` · 보유 ${have}/${info.n}`}</small></div></div>`;
+    const b=document.createElement('button');b.textContent='해체';b.disabled=!ok;b.onclick=()=>doDis(i);row.appendChild(b);list.appendChild(row);
+  });
+}
+function doDis(i){
+  const it=inv[i],info=disInfo(it);if(!it||!info)return;
+  if(!nearDis){note('해체 제작대 근처에서만 해체할 수 있어요');return}
+  const d=ITEMS[it.id],solid=SOL(d)||info.lvDown;
+  if(!solid&&it.count<info.n&&SL().reduce((a,j)=>inv[j]&&inv[j].id===it.id?a+inv[j].count:a,0)<info.n){note(`${d.name} ${info.n}개가 필요해요`);return}
+  const snap=inv.map(s=>s&&{...s}),atts=(it.att||[]).filter(Boolean).map(a=>({...a}));
+  if(info.lvDown)it.lv--;
+  else if(SOL(d))inv[i]=null;
+  else{let need=info.n;for(const j of SL()){const s=inv[j];if(need<=0)break;if(s&&s.id===it.id){const t=Math.min(s.count,need);s.count-=t;need-=t;if(s.count<=0)inv[j]=null}}}
+  let ok=true;
+  for(const [k,v] of Object.entries(info.cost))if(ok&&!addItem(k,v))ok=false;
+  for(const a of atts)if(ok&&ITEMS[a.id]&&!addItem(a.id,a.count||1))ok=false;
+  if(!ok){snap.forEach((s,k)=>inv[k]=s);renderInv();note('인벤토리가 가득 차서 해체할 수 없어요');return}
+  renderInv();renderCraft();
+  note(`${d.name} 해체 완료!`);
 }
 function makeMissing(k,need){ // 부족한 재료를 바로 제작
   const r=RECIPES.find(x=>x.id===k);
@@ -3195,7 +3294,14 @@ function bindInv(){
     if(i>=0){drag={i,x:e.clientX,y:e.clientY,moved:false};clearTimeout(lpT);
       if(mobile||e.pointerType==='touch')lpT=setTimeout(()=>{if(drag&&!drag.moved&&attDef(drag.i)){drag.lp=true;toggleAtt(drag.i)}},500)}
   });
-  document.addEventListener('contextmenu',e=>{if(!invOpen||mobile)return;const i=slotIdx(e.target);if(i>=0&&i<81)toggleAtt(i)});
+  function splitHalf(i){ // 우클릭: 도구 외 스택을 반으로 나눔 → 같은 구역(인벤·가방 / 창고)의 빈 칸에 두고 그 칸을 들어 올림
+  const it=inv[i];if(!it||SOL(ITEMS[it.id])||it.count<2)return;
+  const ch=i>=81&&i<126;if(!ch&&!(i<36||(i>=45&&i<81)))return;
+  const rg=ch?Array.from({length:45},(_,k)=>81+k):[...Array.from({length:36},(_,k)=>k),...Array.from({length:bagN()},(_,k)=>45+k)];
+  const t=rg.find(k=>!inv[k]);if(t===undefined){note('빈 칸이 없어요');return}
+  const h=Math.floor(it.count/2);it.count-=h;inv[t]={...it,count:h};held=t;renderInv();markHeld();
+}
+  document.addEventListener('contextmenu',e=>{if(!invOpen||mobile)return;const i=slotIdx(e.target);if(i<0||i>=126)return;if(i<81&&attDef(i)){toggleAtt(i);return}splitHalf(i)});
   document.addEventListener('pointermove',e=>{
     if(!drag)return;
     if(!drag.moved&&inv[drag.i]&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6){
@@ -3448,7 +3554,20 @@ const BDROP={bow:'long_arrow',longbow:'long_arrow',gun:'bullet',musket:'bullet',
 const BW={gun:{gun:1,sp:80,dmg:11,acc:.012},bow:{sp:80,dmg:6,acc:.02},musket:{gun:1,sp:80,dmg:14,acc:.012},bolt:{gun:1,sp:120,dmg:20,acc:.007},boss:{gun:1,sp:90,dmg:4,acc:.02},longbow:{sp:100,dmg:10,acc:.014}}; // 약탈자 무기별 탄속·데미지·정확도
 const BR={gun:[12,26,70],bow:[12,26,70],musket:[10,28,85],bolt:[22,50,130],boss:[16,40,160],longbow:[18,42,100],axe:[0,2.2,0]}; // [후퇴 거리, 접근 거리, 사거리]
 const BCD={gun:[3.4,1],bow:[2.2,.8],musket:[2.4,.8],bolt:[3.6,1],longbow:[3,.8]}; // 발사 간격 [기본, 랜덤 폭]
+const STRC=[];
+function sentryShot(n,d){ // 보초 저격: 히트스캔 — 지형이 시야를 가리지 않으면 거리 확률로 즉시 명중
+  const cp=camera.position,sx=n.x,sy=(n.fy!==undefined?n.fy:height(n.x,n.z))+1.5,sz=n.z,ty=cp.y-.5;
+  let vis=true;const st=Math.max(2,Math.ceil(d/2.5));
+  for(let k=1;k<st;k++){const f=k/st;if(height(sx+(cp.x-sx)*f,sz+(cp.z-sz)*f)>sy+(ty-sy)*f){vis=false;break}}
+  const hit=vis&&Math.random()<Math.max(.25,.9-d*.006);
+  const ex=cp.x+(hit?0:(Math.random()-.5)*4),ey=ty+(hit?0:(Math.random()-.5)*2),ez=cp.z+(hit?0:(Math.random()-.5)*4);
+  const vx=ex-sx,vy=ey-sy,vz=ez-sz,L=Math.hypot(vx,vy,vz)||1;
+  const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,L),new THREE.MeshBasicMaterial({color:0xffe082,transparent:true,opacity:.9}));
+  m.position.set(sx+vx/2,sy+vy/2,sz+vz/2);m.lookAt(ex,ey,ez);scene.add(m);STRC.push({m,t:.12});
+  if(hit)hurtPlayer(22);
+}
 function banditShoot(n,d){ // 산적 사격: 멀수록 부정확, 화살은 느리고 총알은 빠름
+  if(n.sentry){sentryShot(n,d);return}
   const W=BW[n.weapon]||BW.bow,cp=camera.position,gun=!!W.gun,sx=n.x,sy=height(n.x,n.z)+(n.weapon==='boss'?2.2:1.4),sz=n.z,acc=d*W.acc;
   const tx=cp.x+(Math.random()-.5)*acc*2,ty=cp.y-.6+(Math.random()-.5)*acc,tz=cp.z+(Math.random()-.5)*acc*2;
   let vx=tx-sx,vy=ty-sy,vz=tz-sz;const L=Math.hypot(vx,vy,vz)||1,sp=W.sp; // 약탈자 화살 속도 40 → 80 (2배)vx*=sp/L;vy*=sp/L;vz*=sp/L;
@@ -3490,8 +3609,8 @@ function golemBuild(x,z){ // 모델 앞쪽 = +x · 속 몸(2페이즈: 날렵·�
   for(const s of [-1,1]){const e=new THREE.Mesh(new THREE.BoxGeometry(.2,.26,.4),em);e.position.set(1.47,6.5,s*.4);e.userData.head=true;g.add(e);AR.push(e);HD.push(e)}
   const cores=[]; // 2페이즈에 드러나는 광석 핵(약점)
   for(const [px,py,pz,c] of [[.95,5.3,.8,0xffca28],[.95,4.4,-.8,0x26c6da],[.2,5.9,1.65,0xffca28],[.2,5.9,-1.65,0x26c6da],[-1.0,5.0,0,0xff7043]]){
-    const m=new THREE.Mesh(new THREE.BoxGeometry(.65,.65,.65),new THREE.MeshBasicMaterial({color:c}));m.position.set(px,py,pz);m.rotation.set(.4,.5,.3);m.visible=false;g.add(m);cores.push(m)}
-  {const cm=new THREE.Mesh(new THREE.BoxGeometry(.95,.95,.95),new THREE.MeshBasicMaterial({color:0x76ff03}));cm.position.set(.95,4.9,0);cm.rotation.set(.4,.5,.3);cm.visible=false;cm.userData.chest=true;g.add(cm);cores.push(cm)} // 가슴 핵(2페이즈 약점)
+    const m=new THREE.Mesh(new THREE.BoxGeometry(.65,.65,.65),new THREE.MeshBasicMaterial({color:c}));m.position.set(px,py,pz);m.rotation.set(.4,.5,.3);m.visible=false;m.userData.gem=true;g.add(m);cores.push(m)}
+  {const cm=new THREE.Mesh(new THREE.BoxGeometry(.95,.95,.95),new THREE.MeshBasicMaterial({color:0x76ff03}));cm.position.set(.95,4.9,0);cm.rotation.set(.4,.5,.3);cm.visible=false;cm.userData.chest=true;cm.userData.gem=true;g.add(cm);cores.push(cm)} // 가슴 핵(2페이즈 약점)
   {const hb=new THREE.Mesh(new THREE.BoxGeometry(7.5,9.5,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hb.position.set(0,4.4,0);hb.userData.hb=true;g.add(hb)} // 확대된 투명 판정상자
   g.scale.set(1.12,1.12,1.12);
   g.position.set(x,height(x,z),z);AS(g);
@@ -3590,12 +3709,21 @@ function golemShatter(n){ // 돌 갑옷 파편 날리기
     GDEB.push({m,vx:dx/dl*(5+r()*8)+(r()-.5)*4,vy:7+r()*10,vz:dz/dl*(5+r()*8)+(r()-.5)*4,wx:(r()-.5)*10,wz:(r()-.5)*10,t:2.4});
     a.visible=false}
 }
+function golemGemFx(po){ // 보석 타격: 보석색 파편이 튀기만 함 (빨려 들어가지 않음)
+  const p=new THREE.Vector3();po.getWorldPosition(p);
+  const c=po.material.color.getHex(),m=CHIPM[c]||(CHIPM[c]=new THREE.MeshBasicMaterial({color:c}));
+  for(let i=0;i<9&&CHIP.length<150;i++){
+    const o=new THREE.Mesh(CHIPG,m),a=Math.random()*6.28,sp=2+Math.random()*3.5;
+    o.position.copy(p);gAdd(o);
+    CHIP.push({m:o,par:o.parent,vx:Math.cos(a)*sp,vy:2+Math.random()*4,vz:Math.sin(a)*sp,t:.6+Math.random()*.5});
+  }
+}
 function golemBreak(n){ // 1페이즈 체력 0 → 돌 갑옷 파괴 → 체력이 가득 차며 2페이즈 시작
   n.phase=2;n.st='trans';n.t=3;n.sub='';n.hp=n.maxHp;n._hp=n.hp;n.bf=0;n.p2hit=false;
   n.ta=[2.9,2.9];n.ak=6;n.ty=1;n.lean=0;n.sc=.78;n.scK=2.2;n.shk=.25;gLineRm();
   golemShatter(n);
   for(const h of n.headParts)h.userData.head=false; // 2페이즈: 머리는 치명타 아님 — 가슴 핵만 약점
-  for(const c of n.cores){c.visible=true;if(c.userData.chest)c.userData.weak=true;else c.userData.head=false}
+  for(const c of n.cores){c.visible=true;if(c.userData.chest)c.userData.weak=true;else c.userData.head=true} // 몸의 보석은 모두 치명타(가슴 핵은 3배)
   n.eyeM.color.setHex(0xff1744);gStrike(n.x,n.z,18,3,38);camShake=Math.max(camShake,.07);
 }
 function golemSlam(n){ // 내려찍기: 앞쪽 바닥에 예고 원 → 피해
@@ -3618,14 +3746,14 @@ function golemPick(n,d){
 }
 function golemTick(n,dt,now){
   if(n.st===undefined)golemReset(n);
-  if(n.phase===1){if(n._rp!==undefined&&n.hp<n._rp&&n.hp>0)n.hp+=(n._rp-n.hp)*.2;n._rp=n.hp}else n._rp=undefined; // 1페이즈 피해저항 20%
+  if(n.phase===1){if(n._rp!==undefined&&n.hp<n._rp&&n.hp>0&&!n._gem)n.hp+=(n._rp-n.hp)*.2;n._rp=n.hp}else n._rp=undefined; // 1페이즈 피해저항 20%
   const cp=camera.position,inR=zone==='cave'&&inCaveRoom(cp.x,cp.z),dx=cp.x-n.x,dz=cp.z-n.z,d=Math.hypot(dx,dz)||.001;
   if(n.phase===2&&n.st!=='trans'){if(n.hp<n.maxHp)n.p2hit=true;else if(n.p2hit)golemReset(n)} // 리젠: 처음 상태로 (2페이즈 시작 직후 가득 찬 체력은 제외)
   if(n._hp>n.hp&&n.st!=='trans'){ // 돌 갑옷: 1페이즈 받는 피해 70% · 기절 중 135%
-    const ls=n._hp-n.hp;n.hp=n._hp-ls*(n.st==='stun'?1.35:n.phase===1?.7:1);
+    const ls=n._hp-n.hp;n.hp=n._hp-ls*(n.st==='stun'?1.35:(n.phase===1&&!n._gem)?.7:1);
     if(n.hp<=0){harvest(n,Date.now());return}
   }
-  n._hp=n.hp;
+  n._hp=n.hp;n._gem=false;
   if(!inR){ // 방을 떠나면 6초 뒤 회복·초기화
     if(n.st!=='sleep'){n.leave+=dt;if(n.leave>6)golemReset(n)}
     golemPose(n,dt);gBar(false);return;
@@ -3697,6 +3825,7 @@ function golemTick(n,dt,now){
 }
 
 function banditProjTick(dt){
+  for(let i=STRC.length-1;i>=0;i--){const q=STRC[i];q.t-=dt;if(q.t<=0){scene.remove(q.m);q.m.geometry.dispose();q.m.material.dispose();STRC.splice(i,1)}}
   const cp=camera.position,eyeH=keys.crouch?1.2:2; // (버그 수정) eyeH 미정의 오류 → 맞아도 피가 안 닳던 문제
   for(let i=BPROJ.length-1;i>=0;i--){
     const p=BPROJ[i],steps=Math.max(1,Math.ceil(p.sp*dt/.5));let dead=false;
@@ -3940,6 +4069,7 @@ function animate(){
     s.stick.scale.y=k;s.stick.position.y=.4*k;s.flame.position.y=.8*k;s.light.position.y=k+.2;
     s.light.intensity=s.base*(.4+.6*k)*(1+fl);
   }
+  updateLights();
   // 휘두르기
   if(swing>0)swing=Math.max(0,swing-dt/(swingDur||.2));
   if(curRig){applyRig(swing>0?1-swing:0);torchMesh.position.z=-.6}
@@ -4068,7 +4198,7 @@ const NOTE_PAGES=[
 {t:'⛏ 파밍',h:()=>`<p><b class="h">자원 위치</b><br>점토·사탕수수는 강가, 모래는 해변·강가(삽), 금·다이아·유황은 동굴에 있어요. 티타늄은 금속탐지기로 찾아 삽으로 발굴한 뒤 곡괭이로 캡니다.</p><p><b class="h">리젠</b><br>광물은 5분 뒤 다시 생겨요. 멀리(320m 밖) 있는 자원은 숨겨졌다가 가까이 가면 다시 보여요.</p><p><b class="h">구조물 상자</b><br>신전·전초기지·야영지의 상자에 좋은 보상이 있어요. 부수면 5분 뒤 새로 생깁니다.</p><p><b class="h">사냥</b><br>숲 동물에게서 가죽·고기를 얻어요. 늑대·곰은 조심하세요.</p>`},
 {t:'🏠 건축',h:()=>`<p><b class="h">조각</b><br>제작창 건물 → 건축 탭: 바닥 x2 · 벽 x2 · 문 · 창문 x2. 기능 탭의 상자 선반도 건축용이에요.</p><p><b class="h">설치</b><br>바닥은 2m 칸 위에 놓이고 걸어 다닐 수 있어요. 벽·문·창문은 바라보는 칸의 가까운 경계에 붙어요. 문은 우클릭으로 열고 닫아요(조각을 들고 있으면 설치가 우선).</p><p><b class="h">상자 선반</b><br>작업대처럼 다리 4개 + 판이에요. 맨땅에 놓고, 다리 사이(1층)와 판 위(2층)에 상자를 하나씩 놓아요. 상자만 있는 칸에 선반을 덧씌우면 그 상자는 1층이 돼요. 선반이 없으면 칸당 상자는 1개예요.</p><p><b class="h">철거</b><br>망치로 부수면 아이템이 돌아와요. 격자 G · 회전 R.</p>`},
 {t:'🔥 생존',h:()=>`<p><b class="h">회복</b><br>모닥불 근처에서 체력이 회복돼요(피격 5초 뒤부터).</p><p><b class="h">밤</b><br>밤에는 몬스터가 나오니 불과 무기를 준비하세요.</p><p><b class="h">위험 지역</b><br>숲에는 늑대·곰이 있고, 동굴 깊은 곳에는 보스가 있습니다.</p>`},
-{t:'🎒 인벤토리',h:()=>`<p><b class="h">옮기기</b><br>Shift+클릭: 인벤토리·창고 아이템을 핫바 빈칸으로, 창고가 열려 있으면 인벤토리↔창고로 옮겨요.</p><p><b class="h">부착물</b><br>우클릭(모바일은 꾹 누르기)으로 부착물창을 엽니다.</p><p><b class="h">정렬</b><br>인벤 정렬 · 창고 정렬 버튼으로 정리할 수 있어요.</p>`},
+{t:'🎒 인벤토리',h:()=>`<p><b class="h">옮기기</b><br>Shift+클릭: 인벤토리·창고 아이템을 핫바 빈칸으로, 창고가 열려 있으면 인벤토리↔창고로 옮겨요.</p><p><b class="h">나누기</b><br>도구가 아닌 아이템을 우클릭하면 절반이 나뉘어 들립니다.</p><p><b class="h">부착물</b><br>도구·총을 우클릭(모바일은 꾹 누르기)하면 부착물창이 열립니다.</p><p><b class="h">정렬</b><br>인벤 정렬 · 창고 정렬 버튼으로 정리할 수 있어요.</p>`},
 {t:'🏆 도전과제',h:()=>{achSync();const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p style="margin:0 0 28px"><b class="h">달성 ${n} / ${ACH_LIST.length}</b> <span class="nk" style="font-size:12px">이름을 누르면 달성 방법이 보여요</span></p>`+ACH_LIST.map(a=>`<div class="${ACH[a[0]]?'ck':'nk'}" style="cursor:pointer;margin:0" onclick="achToggle(this)">${ACH[a[0]]?'✔':'☐'} ${a[1]}</div><div class="nk achd" style="display:none;font-size:12px;padding-left:22px;line-height:20px;margin-bottom:8px">${a[2]}</div>`).join('')}},
 ];
 let notePg=0,_noteMM=false;
@@ -4190,7 +4320,7 @@ function cellInfo(i,j){ // 지형 기준 건축 가능 여부
 }
 let gridOn=false,gridLines=null,gridHL=null,gridKey='',gridTxt=null,rangeLines=null;
 const GRID_K=4,RANGE_MAX=64; // 격자 층 수(0~6m) / 범위 표시 최대 개수
-const RCOL={table:0xd7b98e,furnace:0x9e9e9e,campfire:0xff9800,chest:0x5d4037,util_table:0x4fc3f7,anvil:0x424242,foundry:0x111111,gun_table:0xb71c1c,chem_table:0x7cb342}; // 작업대 연한 갈색·화로 회색·모닥불 주황·창고 짙은 갈색·유틸리티 작업대 하늘색·모루 짙은 회색·주조소 검정
+const RCOL={table:0xd7b98e,furnace:0x9e9e9e,campfire:0xff9800,chest:0x5d4037,util_table:0x4fc3f7,anvil:0x424242,foundry:0x111111,gun_table:0xb71c1c,chem_table:0x7cb342,dis_table:0xc62828}; // 작업대 연한 갈색·화로 회색·모닥불 주황·창고 짙은 갈색·유틸리티 작업대 하늘색·모루 짙은 회색·주조소 검정
 function initGrid(){
   const N=GRID_R*2+1,E=GRID_K*2*(N+1)*N+(N+1)*(N+1);
   const geo=new THREE.BufferGeometry();
@@ -4268,10 +4398,23 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v13.13.13';
+const SAVE_VER=7,GAME_VERSION='v13.15.15';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v13",t:"대규모 · 건축",subs:[
+    {v:"13.15.15",d:'해체 제작대·보초 저격수',items:[
+      "추가: 해체 제작대 (고급작업대 재료 + 철 주괴 10 + 금 주괴 10) — 근처(10m)에서 제작창의 '해체' 탭을 열어 아이템을 고르면 제작법을 거꾸로 돌려 재료를 돌려받음. 돋보기 4단계는 3단계 돋보기 + 유리로 해체 / 여러 개가 한 번에 만들어지는 아이템은 그 수량 단위로 해체 / 총의 부착물도 돌려받음 (인벤토리가 가득 차면 해체 안 됨)",
+      "추가: 약탈자 기지 보초 — 망루 4곳에 볼트액션 소총 저격수 1명씩 (히트스캔: 쏘면 바로 명중, 지형이 시야를 가리면 안 맞음, 멀수록 빗나감). 두목에게 가기 전에 먼저 잡아야 함",
+      "변경: 보초는 두목이 살아 있는 동안 리젠되지 않고, 두목을 잡으면 두목과 같은 시간에 함께 부활 / 기존 약탈자 5명은 망루 대신 기지 안쪽 땅에 배치"]},
+    {v:"13.14.14",d:'요리·골렘·건축 다듬기',items:[
+      "추가: 우클릭으로 도구를 제외한 아이템 스택을 반으로 나눔 (나뉜 쪽이 바로 들린 상태가 되어 원하는 칸에 놓을 수 있음, 창고 안에서도 동작)",
+      "변경: 바위 골렘 2페이즈 — 몸에 박힌 보석을 때리면 모두 치명타(가슴 핵은 기존대로 3배), 맞으면 보석색 파편이 튀기만 하고 갑옷 피해 감소(흡수)는 적용 안 됨 / 근접 공격도 치명타 판정",
+      "추가: 빵 반죽(밀가루 4 + 물 양동이 1 → 반죽 3 + 빈 양동이) · 빵(빵 반죽 1, 모닥불 근처) — 먹으면 체력 30 · 스태미나 50 회복",
+      "변경: 구울 드랍 막대 → 천",
+      "수정: 티타늄 합금 곡괭이·삽 머리 아이콘이 사각형으로 나오던 문제 — 다른 머리와 같은 모양으로 (합금 색)",
+      "변경: 전투도끼로 밀도 한 방에 채집",
+      "변경: 바닥을 얇은 판으로 변경 / 추가: 벽·문·창문 윗부분(또는 기존 천장)을 보고 바닥을 설치하면 벽 높이에 천장(2층 바닥)으로 붙음 — 벽 근처 격자에만 가능, 위에서 걸어 다닐 수 있음",
+      "수정: 횃불 설치 시 렉 — 설치물마다 조명을 새로 만들던 것을 고정 조명 5개를 돌려 쓰는 방식으로 변경 (모닥불·화로·주조소 포함, 가까운 5개만 밝힘)"]},
     {v:"13.13.13",d:'버그 수정',items:[
       "수정: 총 장전 중 다른 칸으로 옮기면 장전이 해제됨 (경기관총 탄창 수가 레버액션에 들어가던 버그)",
       "수정: 약탈자 두목 부하 — 동시에 최대 6마리, 전투가 끝나고 6초 지나면 사라짐 (자리를 비운 사이 부하가 쌓여 있던 문제)",
