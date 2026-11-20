@@ -451,9 +451,8 @@ function mainH0(x,z){
  {const dx=x-CAVE_IN.x,dz=z-CAVE_IN.z; // 동굴 입구: 산이 U자로 입구를 감싸는 협곡 (양옆 능선 + 뒤쪽 절벽), 바닥은 평평
   if(dx*dx+dz*dz<8100){const al=dx*CAVE_DIR.x+dz*CAVE_DIR.z,a=Math.abs(-dx*CAVE_DIR.z+dz*CAVE_DIR.x);
    const F=CAVE_F;
-   const wing=ss(20.5,24,a)*(1-ss(40,54,a))*(1-ss(28,42,al))*ss(-14,-3,al); // 입구 바로 옆(폭 ±20~24m)에서 솟는 양옆 벽
    const blk=(1-ss(20.5,24,a))*ss(F+1.5,F-2.5,al)*ss(-16,-4,al); // 입구 위·뒤를 산 꼭대기까지 꽉 채움 (정면 절벽)
-   h=Math.max(h,CAVE_PH+(26+(fbm(x+50,z)-.4)*8)*Math.max(wing,blk));
+   h=Math.max(h,CAVE_PH+(26+(fbm(x+50,z)-.4)*8)*blk); // 양옆 벽(wing) 삭제: 정면 절벽만 남김
    h+=(CAVE_PH-h)*ss(F+1,F+3,al)*(1-ss(32,44,al))*(1-ss(19,21,a))}}
  return h}
 /* ===== 별도 공간(동굴·숲): 기존 맵 아래(y=-400), 멀리 떨어진 좌표에 배치 ===== */
@@ -617,13 +616,9 @@ function buildWorld(){
     eg.position.set(CAVE_IN.x+CAVE_DIR.x*CAVE_F,gy,CAVE_IN.z+CAVE_DIR.z*CAVE_F);eg.rotation.y=.6106;AS(eg);
     const rm=new THREE.MeshStandardMaterial({color:0x6e6c67,roughness:1}),rm2=new THREE.MeshStandardMaterial({color:0x5f5d59,roughness:1});
     const eb=(w,h,d,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);eg.add(o);return o};
-    // 손그림 기준: 정면 = 둥근 바위벽 한가운데 아치형 입구 / 위 = 벽 사이에 움푹 들어간 통로 + 바닥 문턱판
-    const sh=new THREE.Shape();sh.moveTo(-23,0);sh.lineTo(-6,0);sh.lineTo(-6,7);sh.absarc(0,7,6,Math.PI,0,true);sh.lineTo(6,0);sh.lineTo(23,0);sh.lineTo(23,8);sh.quadraticCurveTo(23,22,0,22);sh.quadraticCurveTo(-23,22,-23,8);sh.lineTo(-23,0);
-    const wall=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:6,bevelEnabled:false,curveSegments:16}),rm);wall.position.set(0,-.5,-3);eg.add(wall);
-    const ar=new THREE.Shape();ar.moveTo(-6,0);ar.lineTo(6,0);ar.lineTo(6,7);ar.absarc(0,7,6,0,Math.PI,false);ar.lineTo(-6,0);
-    const dk=new THREE.Mesh(new THREE.ShapeGeometry(ar,16),new THREE.MeshBasicMaterial({color:0x050505,side:THREE.DoubleSide}));dk.position.set(0,-.5,-2.4);eg.add(dk); // 어두운 통로 안쪽
-    eb(12,.14,3.4,new THREE.MeshStandardMaterial({color:0x8a8782,roughness:1}),0,-.4,1.4); // 문턱판
-    eb(54,26,8,rm2,0,12,-7);for(const sd of [-1,1])eb(16,14,7,rm,sd*30,6,-3.5); // 뒤 절벽·옆 산 덩어리와 연결
+    // v14.2.3: 평평한 바위벽에 검은 입구만 (옆으로 튀어나온 벽·아치 구조물 없음). 앞면은 local z=+3
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(44,22,6),rm);wall.position.set(0,10.5,0);eg.add(wall);
+    const dk=new THREE.Mesh(new THREE.PlaneGeometry(11,9),new THREE.MeshBasicMaterial({color:0x050505}));dk.position.set(0,4,3.03);eg.add(dk); // 검은 입구
   }
   // 강가 점토
   RS(10);
@@ -2953,7 +2948,7 @@ function toggleMouse(){
   if(mouseMode)document.exitPointerLock();else try{document.body.requestPointerLock()}catch(e){}
 }
 function toggleInv(){
-  mouseMode=false;invOpen=!invOpen;held=null;markHeld();if(!invOpen){closeChest();closeDrill();closeDis();closeAtt()}
+  mouseMode=false;invOpen=!invOpen;if(invOpen)invOpenT=performance.now();held=null;markHeld();if(!invOpen){closeChest();closeDrill();closeDis();closeAtt()}
   $('inv').style.display=invOpen?'flex':'none';
   if(invOpen){
     for(const k in keys)keys[k]=0;
@@ -3330,7 +3325,7 @@ function bindInv(){
   const t=rg.find(k=>!inv[k]);if(t===undefined){note('빈 칸이 없어요');return}
   const h=Math.floor(it.count/2);it.count-=h;inv[t]={...it,count:h};held=t;renderInv();markHeld();
 }
-  document.addEventListener('contextmenu',e=>{if(!invOpen||mobile)return;const i=slotIdx(e.target);if(i<0||i>=126)return;if(i<81&&attDef(i)){toggleAtt(i);return}splitHalf(i)});
+  document.addEventListener('contextmenu',e=>{if(!invOpen||mobile||performance.now()-invOpenT<1000)return;const i=slotIdx(e.target);if(i<0||i>=126)return;if(i<81&&attDef(i)){toggleAtt(i);return}splitHalf(i)});
   document.addEventListener('pointermove',e=>{
     if(!drag)return;
     if(!drag.moved&&inv[drag.i]&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6){
@@ -4221,6 +4216,7 @@ function powerTick(dt){
   }
 }
 /* ---------- 해체 제작대 창 (v14.2.2): 우클릭 → 입력 5칸 + 결과 27칸 (5개 동시 해체 시 최대 27종) ---------- */
+let invOpenT=0; // 인벤토리/창고를 연 시각 (열고 1초간 우클릭 나누기 잠금)
 let curDis=null;const DIS_IN=151,DIS_OUT=156,DIS_N=32;
 function openDis(s){if(invOpen)return;if(!s.items)s.items=new Array(DIS_N).fill(null);curDis=s;for(let i=0;i<DIS_N;i++)inv[DIS_IN+i]=(s.items[i]&&ITEMS[s.items[i].id])?s.items[i]:null;toggleInv();$('disWrap').style.display='block';renderInv()}
 function closeDis(){if(curDis)for(let i=0;i<DIS_N;i++){curDis.items[i]=inv[DIS_IN+i]||null;inv[DIS_IN+i]=null}curDis=null;$('disWrap').style.display='none'}
@@ -4507,10 +4503,13 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v14.2.2';
+const SAVE_VER=7,GAME_VERSION='v14.2.3';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v14",t:"대규모 · 월드 파일 · 전기",subs:[
+    {v:"14.2.3",d:'창고 열 때 실수 방지·동굴 입구',items:[
+      "버그: 창고(인벤토리)를 열고 1초 동안은 우클릭 나누기가 되지 않음 — 우클릭으로 창고를 열 때 마우스 아래 아이템이 바로 반으로 나뉘던 문제",
+      "변경: 동굴 입구를 평평한 바위벽에 검은 입구만 있는 모습으로 단순화 — 옆으로 튀어나온 벽·산 덩어리와 아치형 구조물 삭제"]},
     {v:"14.2.2",d:'월드 저장 버튼·해체 전용 창',items:[
       "변경: 메인 메뉴의 월드 칸 맨 끝에 '저장' 버튼 — 월드를 .json 파일로 저장해 다른 브라우저·기기에서 '📂 파일에서 월드 열기'로 같은 맵(시드·건물·인벤토리)을 이어서 플레이",
       "변경: 해체는 해체 제작대를 우클릭해 여는 전용 창으로 — 제작창의 '해체' 탭 삭제 / 해체할 아이템 5칸(최대 5개 동시) · 결과 27칸 (5개를 한 번에 해체하면 재료가 최대 27종까지 나올 수 있어 27칸) / 쌓이는 아이템은 누를 때마다 1회분(만들 때 수량 단위)씩 해체 / Shift+클릭으로 빠르게 이동 / 결과칸이 가득 차면 해체 안 됨"]},
