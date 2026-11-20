@@ -72,8 +72,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Se
 #win.fit #equip .slot,#win.fit #util .slot,#win.fit #qv .slot{width:var(--e,34px);height:var(--e,34px);font-size:9px}
 #win.fit #chestWrap{margin-left:calc(var(--e,34px)*4 + 12px + 14px)}
 #win.fit #grid .slot i,#win.fit #cgrid .slot i{font-size:clamp(11px,calc(var(--s,48px)*.2),15px)}
-#dgrid,#ugrid{display:grid;grid-template-columns:repeat(5,52px);gap:6px}#ugrid{grid-template-columns:repeat(4,52px)}#dgrid .slot,#ugrid .slot{width:52px;height:52px;touch-action:none}#ugrid .slot{border-color:#90a4ae}#ogrid{display:grid;grid-template-columns:52px}#drillWrap.tank .dpart{display:none}
-#obgrid{display:grid;grid-template-columns:52px}#obgrid .slot{width:52px;height:52px;touch-action:none;border-color:#78909c}#ogrid .slot{width:52px;height:52px;touch-action:none;border-color:#ab47bc}
+#dgrid,#ugrid{display:grid;grid-template-columns:repeat(5,52px);gap:6px}#ugrid{grid-template-columns:repeat(4,52px)}#dgrid .slot,#ugrid .slot{width:52px;height:52px;touch-action:none}#ugrid .slot{border-color:#90a4ae}#ogrid{display:grid;grid-template-columns:52px}#drillWrap.tank .dpart,#drillWrap.gen .dpart{display:none}#drillWrap.edr .opart{display:none}
+#disin{display:grid;grid-template-columns:repeat(5,46px);gap:6px}#disout{display:grid;grid-template-columns:repeat(9,46px);gap:6px}#disin .slot,#disout .slot{width:46px;height:46px;touch-action:none}#disin .slot{border-color:#ef5350}#disout .slot{border-color:#66bb6a}#obgrid{display:grid;grid-template-columns:52px}#obgrid .slot{width:52px;height:52px;touch-action:none;border-color:#78909c}#ogrid .slot{width:52px;height:52px;touch-action:none;border-color:#ab47bc}
 #cv{touch-action:none}#mob{display:none}body.mob #mob{display:block}
 body.mob #hud{top:10px;bottom:auto;left:10px}body.mob .bar{width:130px}body.mob #buff{top:70px;bottom:auto;left:10px}
 body.mob #hotbar .slot{width:38px;height:38px;font-size:9px}body.mob #hotbar{bottom:6px}
@@ -177,6 +177,7 @@ body.mob #clock{top:70px;right:12px}
 <input id="wname" maxlength="20" placeholder="월드 이름 (비우면 자동)">
 <input id="wseed" maxlength="20" placeholder="시드 (비우면 랜덤)">
 <button class="setbtn" id="newBtn">＋ 새 월드 만들기</button>
+<button class="setbtn" id="openBtn">📂 파일에서 월드 열기</button><input type="file" id="wfile" accept=".json,application/json" style="display:none">
 <button class="setbtn" id="quitBtn" style="display:block;margin:14px auto 0;background:#b71c1c">🚪 나가기</button>
 </div></div>
 <div id="blocker"><div id="ins">
@@ -219,7 +220,8 @@ body.mob #clock{top:70px;right:12px}
 <h2>인벤토리 <small style="font-size:12px;color:#aaa;font-weight:400">드래그 또는 탭→탭으로 이동</small></h2>
 <button class="setbtn" id="mobBtn2" style="margin:0">모바일 모드: 끔</button> <button class="setbtn" id="sortBtn" style="margin:0 0 0 6px">↕ 인벤 정렬 (R)</button> <button class="setbtn mobOnly" id="exitBtn2" style="margin:0 0 0 6px">💾 저장 및 종료</button>
 <div id="chestWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px;display:flex;align-items:center;gap:8px">창고 (45칸) <button class="setbtn" id="chestSortBtn" style="margin:0">↕ 창고 정렬 (R)</button><button class="setbtn" id="chestTakeBtn" style="margin:0">⬇ 모두 가져가기</button><button class="setbtn" id="chestPutBtn" style="margin:0">⬆ 모두 넣기</button></div><div id="cgrid"></div></div>
-<div id="drillWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="drillTitle">드릴 — 보관 5칸 (캔 아이템) · 업그레이드 4칸 (필터·결정) · 기름 1칸 · 빈 양동이 1칸</span> <button class="setbtn dpart" id="drillTakeBtn" style="margin:0">⬇ 모두 가져가기</button></div><div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px"><div class="dpart"><div style="font-size:12px;color:#aaa;margin-bottom:4px">보관</div><div id="dgrid"></div></div><div class="dpart"><div style="font-size:12px;color:#aaa;margin-bottom:4px">업그레이드</div><div id="ugrid"></div></div><div><div style="font-size:12px;color:#aaa;margin-bottom:4px">기름 양동이</div><div id="ogrid"></div></div><div><div style="font-size:12px;color:#aaa;margin-bottom:4px">빈 양동이</div><div id="obgrid"></div></div><div style="flex:1;min-width:150px;align-self:flex-end"><div style="font-size:12px;color:#aaa;margin-bottom:4px">기름 게이지 <b id="oilTxt">0 / 200</b></div><div style="height:16px;background:#1b1b1f;border:1px solid #666;border-radius:8px;overflow:hidden"><div id="oilBar" style="height:100%;width:0%;background:linear-gradient(90deg,#3e2723,#8d6e63)"></div></div><div id="oilHelp" style="font-size:11px;color:#888;margin-top:4px">1칸 = 30초 작동 · 양동이 1개 = +40 · 최대 200 (꽉 차는 만큼만 넣음) · 속도의 결정 +25% 채굴 · 기력의 결정 기름 +50% 지속</div></div></div></div>
+<div id="drillWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="drillTitle">드릴 — 보관 5칸 (캔 아이템) · 업그레이드 4칸 (필터·결정) · 기름 1칸 · 빈 양동이 1칸</span> <button class="setbtn dpart" id="drillTakeBtn" style="margin:0">⬇ 모두 가져가기</button></div><div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px"><div class="dpart"><div style="font-size:12px;color:#aaa;margin-bottom:4px">보관</div><div id="dgrid"></div></div><div class="dpart"><div style="font-size:12px;color:#aaa;margin-bottom:4px">업그레이드</div><div id="ugrid"></div></div><div class="opart"><div style="font-size:12px;color:#aaa;margin-bottom:4px">기름 양동이</div><div id="ogrid"></div></div><div class="opart"><div style="font-size:12px;color:#aaa;margin-bottom:4px">빈 양동이</div><div id="obgrid"></div></div><div style="flex:1;min-width:150px;align-self:flex-end"><div style="font-size:12px;color:#aaa;margin-bottom:4px"><span id="oilLbl">기름 게이지</span> <b id="oilTxt">0 / 200</b></div><div style="height:16px;background:#1b1b1f;border:1px solid #666;border-radius:8px;overflow:hidden"><div id="oilBar" style="height:100%;width:0%;background:linear-gradient(90deg,#3e2723,#8d6e63)"></div></div><div id="oilHelp" style="font-size:11px;color:#888;margin-top:4px">1칸 = 30초 작동 · 양동이 1개 = +40 · 최대 200 (꽉 차는 만큼만 넣음) · 속도의 결정 +25% 채굴 · 기력의 결정 기름 +50% 지속</div></div></div></div>
+<div id="disWrap" style="display:none"><div style="font-size:13px;color:#aaa;margin:4px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span>해체 제작대 — 해체할 아이템 5칸(최대 5개 동시) → 결과 27칸</span> <button class="setbtn" id="disBtn" style="margin:0;background:#c62828">🔨 해체</button><button class="setbtn" id="disTakeBtn" style="margin:0">⬇ 결과 모두 가져가기</button></div><div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px"><div><div style="font-size:12px;color:#aaa;margin-bottom:4px">해체할 아이템</div><div id="disin"></div></div><div><div style="font-size:12px;color:#aaa;margin-bottom:4px">돌려받은 재료</div><div id="disout"></div></div></div><div id="disTxt" style="font-size:12px;color:#ffcc80;white-space:pre-line;margin-bottom:8px"></div><div style="font-size:11px;color:#888;margin-bottom:8px">판자·나뭇가지·가루·판·봉·주괴·합금·머리·틀·유리는 해체할 수 없어요 · 쌓이는 아이템은 누를 때마다 1회분(만들 때 수량 단위)씩 해체해요 · Shift+클릭으로 빠르게 옮겨요</div></div>
 <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div class="lcol"><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">장비</div><div id="equip"></div></div><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">유틸리티 (8칸)</div><div id="util"></div></div><div><div style="font-size:13px;color:#aaa;margin-bottom:6px">화살</div><div id="qv"></div></div></div><div style="flex:1 1 420px;min-width:0"><div style="font-size:13px;color:#aaa;margin-bottom:6px">인벤토리 (36칸)</div><div id="grid"></div></div></div>
 <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px"><span style="font-size:12px;color:#aaa">휴지통 칸</span><div class="slot" id="i36"></div><button class="setbtn" id="trashBtn" style="margin:0;background:#b71c1c">🗑 삭제</button></div>
 </div></div>
@@ -283,6 +285,10 @@ const HEADN={pickaxe:3,axe:3,shovel:2,spear:2,sword:4}; // 머리 주괴 개수(
 const MATS=[['copper','구리',2],['gold','금',1],['iron','철',3],['titanium','티타늄',4]];
 const ORE=['coal','copper','gold','iron','diamond','rock','sulfur'];
 const NEED={sulfur:1,wood:0,stone:0,rock:1,clay:0,coal:1,copper:1,gold:1,iron:2,titanium:3,diamond:4};
+Object.assign(ITEMS,{ // v14: 맷돌 · 전력망
+  grinder:{name:'맷돌',type:'placeable'},elec_table:{name:'전기작업대',type:'placeable'},coil:{name:'코일'},
+  edrill:{name:'전기 드릴',type:'placeable'},generator:{name:'발전기',type:'placeable'},battery:{name:'배터리',type:'placeable'},pylon:{name:'송전탑',type:'placeable'}
+});
 const RECIPES=[];
 const add=(cat,sub,id,name,cost,o)=>RECIPES.push(Object.assign({cat,sub,id,name,cost},o||{}));
 for(const k in TN){
@@ -312,9 +318,9 @@ add('build',null,'window','창문 x2',{plank:4,glass:1},{yield:2});
 add('build',null,'door','문',{plank:6,rope:2});
 add('util',null,'lantern','랜턴',{iron_ingot:2,gold_ingot:6,coal:4});
 add('tools','기타','detector','금속탐지기',{iron_ingot:5,copper_ingot:5,gold_ingot:1,wire:6});
-add('mat','가공','wire','전선 x2',{copper_ingot:1},{near:'furnace',yield:2});
+add('mat','가공','wire','전선 x2',{copper_rod:1},{near:'table',yield:2}); // v14: 구리봉 1개
 add('mat','가공','cloth','천 x4',{wool:1},{yield:4});
-add('cook',null,'sugar','설탕 x4',{sugarcane:1},{yield:4});
+add('cook',null,'sugar','설탕 x4',{sugarcane:1},{near:'grinder',yield:4}); // v14: 맷돌 전용
 add('util',null,'compass','나침반',{diamond:1,iron_ingot:1,wire:2});
 add('util',null,'bag','가방 (+18칸)',{cloth:8,rope:4,gold_ingot:4});
 add('util',null,'headlamp','헤드랜턴',{diamond:3,hide:2,lantern:1},{near:'util_table'});
@@ -357,7 +363,7 @@ ITEMS.battle_axe={name:'전투도끼',type:'tool',kind:'axe',tier:4,cd:550};
 for(const k in ITEMS){const d=ITEMS[k];if(d.type==='tool'&&['pickaxe','sword','spear','axe','bow','shovel'].includes(d.kind))d.att=[{l:'결정 슬롯 (힘·속도)',ok:['power_crystal','speed_crystal']}]} // 곡괭이·칼·창·도끼·활·장궁·삽: 힘의 조각 슬롯 1칸 (총은 기존 슬롯 사용)
 add('mat','머리','battle_axe_head','전투도끼 머리',{titanium_alloy:5},{near:'foundry',need:{axe_mold:1}});
 add('weapons','도끼','battle_axe','전투도끼',{battle_axe_head:1,long_stick:1},{near:'anvil'});
-add('mat','가공','coal_powder','석탄가루 x8',{coal:2},{near:'anvil',yield:8});
+add('mat','가공','coal_powder','석탄가루 x4',{coal:1},{near:'grinder',yield:4}); // v14: 맷돌 전용
 add('mat','가공','gunpowder','화약 x4',{sulfur:2,coal_powder:10,sugar:4},{near:'anvil',yield:4});
 add('mat','가공','hq_gunpowder','고품질 화약 x4',{gunpowder:6,chemical:4,sulfur:2},{near:'anvil',yield:4});
 add('weapons','활·화살','arrowhead','화살촉 x4',{alloy:1},{near:'anvil',yield:4});
@@ -378,7 +384,7 @@ add('weapons','장착물','bandolier','탄띠 (레버·볼트 · 장전 20% 빠�
 add('weapons','장착물','scope','스코프 몸체',{metal_plate:4},{near:'gun_table'});
 add('weapons','장착물','silencer','소음기 (총소리 80% 감소)',{metal_plate:4,metal_rod:1,wild_hide:3},{near:'gun_table'});
 add('cook',null,'cooked_pork','구운 고기',{pork:1},{near:'campfire'});
-add('cook',null,'flour','밀가루 x8',{wheat:1},{yield:8}); // 모닥불 없이 제작
+add('cook',null,'flour','밀가루 x8',{wheat:1},{near:'grinder',yield:8}); // v14: 맷돌 전용
 add('cook',null,'bread_dough','빵 반죽 x3',{flour:4,water_bucket:1},{yield:3,ret:{bucket:1}}); // 물 양동이는 빈 양동이로 돌아옴
 add('cook',null,'bread','빵',{bread_dough:1},{near:'campfire'});
 add('cook',null,'salt','소금 x4',{sea_bucket:1},{near:'campfire',yield:4,ret:{bucket:1}});
@@ -390,6 +396,13 @@ add('util',null,'energy_charm','기력의 부적',{gold:30,energy_crystal:1,tita
 add('func',null,'table','제작대',{plank:6,rope:2});
 add('func',null,'adv_table','고급작업대',{plank:10,metal_plate:6,rope:4}); // 2티어 작업대: 근처에서 기존 제작대 레시피도 가능
 add('func',null,'dis_table','해체 제작대',{plank:10,metal_plate:6,rope:4,iron_ingot:10,gold_ingot:10}); // 아이템을 해체해 제작 재료를 돌려받음 (제작창 '해체' 탭)
+add('func',null,'grinder','맷돌',{stone:20,stick:1}); // 근처(10m)에서 석탄가루·밀가루·설탕 제작
+add('func',null,'elec_table','전기작업대',{wire:20,copper_plate:5,plank:4,metal_rod:3},{near:'adv_table'});
+add('mat','가공','coil','코일',{wire:30,iron_ingot:5,metal_plate:2},{near:'elec_table'});
+add('func',null,'edrill','전기 드릴',{drill:1,gold_plate:5,wire:10,coil:2},{near:'elec_table'});
+add('func',null,'generator','발전기',{coil:4,metal_plate:20,titanium_rod:4},{near:'elec_table'});
+add('func',null,'battery','배터리',{coil:4,metal_plate:4,titanium_ingot:10},{near:'elec_table'}); // 임시: 티타늄 '주괴'
+add('func',null,'pylon','송전탑',{plank:8,metal_plate:4,coil:1},{near:'elec_table'});
 add('func',null,'furnace','화로',{stone:20});
 add('func',null,'campfire','모닥불',{stone:8,branch:10});
 add('mat','가공','stick','막대',{branch:1});
@@ -470,7 +483,7 @@ const keys={f:0,b:0,l:0,r:0,sprint:0,crouch:0};
 let velY=0,grounded=true,yaw=0,pitch=0;
 const P={hp:100,maxHp:100,st:100,maxSt:100};
 let lastStUse=0,buffT=0,nearCamp=false,nearFurn=false;
-const inv=new Array(151).fill(null); // 140~144 드릴 보관칸, 145~148 드릴 업그레이드칸, 149 드릴 기름 양동이칸 // // 134 머리장신구, 135 망토, 136 화살통칸 / 130 화살칸(1칸) / 0~35 인벤토리, 36 휴지통, 37~44 유틸리티, 45~80 가방, 81~125 창고, 126~129 갑옷(헬멧·갑옷·바지·신발), 130~133 화살통
+const inv=new Array(183).fill(null); // 151~155 해체 입력칸, 156~182 해체 결과칸 // // 140~144 드릴 보관칸, 145~148 드릴 업그레이드칸, 149 드릴 기름 양동이칸 // // 134 머리장신구, 135 망토, 136 화살통칸 / 130 화살칸(1칸) / 0~35 인벤토리, 36 휴지통, 37~44 유틸리티, 45~80 가방, 81~125 창고, 126~129 갑옷(헬멧·갑옷·바지·신발), 130~133 화살통
 const ARM0=126,QV0=130,ACC_S=134,CAPE_S=135,QUIV_S=136,ARM_PARTS=['helmet','chest','legs','boots'],ARM_LBL=['헬멧','갑옷','바지','신발'];
 let sel=0,tab='tools',invOpen=false,lastAtk=0,swing=0,swingDur=.2,swingAlt=0,swingS=false,curRig=null,curBow=null,bowAim=0;
 const nodes=[],placed=[];
@@ -484,7 +497,7 @@ const setT=(e,t)=>{if(e._t!==t){e._t=t;e.textContent=t}};
 let titan=null,audio=null,lastBeep=0,notiT=null;
 let prevCamp=false,nearAnvil=false,nearFoundry=false,nearGun=false,prevAnvil=false,prevFoundry=false,prevGun=false;
 let mobile=false,started=false,saved=null,worldSeed=1,mouseMode=false,prevFurn=false,craftCat=null;let SAVE='';let worldT=0,ambL=null,sunL=null;
-const SKY_D=new THREE.Color(0x87ceeb),SKY_N=new THREE.Color(0x050a15),C_MN=new THREE.Color(0x88aaff),C_SD=new THREE.Color(0xfff2d0);let nearDis=false,prevDis=false,nearTable=false,prevTable=false,nearUtil=false,prevUtil=false,prevCN=0,nearChemT=false,prevChemT=false,nearAdv=false,prevAdv=false;
+const SKY_D=new THREE.Color(0x87ceeb),SKY_N=new THREE.Color(0x050a15),C_MN=new THREE.Color(0x88aaff),C_SD=new THREE.Color(0xfff2d0);let nearDis=false,prevDis=false,nearTable=false,prevTable=false,nearUtil=false,prevUtil=false,prevCN=0,nearGrind=false,prevGrind=false,nearElec=false,prevElec=false,nearChemT=false,prevChemT=false,nearAdv=false,prevAdv=false;
 let fmOn=false,fmBase=null,fmTimer=null,ghWave={day:-1,on:false}; // ghWave: 구울 웨이브(밤마다 10%)
 function active(){return mobile?started&&!invOpen&&!fmOn:(document.pointerLockElement===document.body||mouseMode)}
 
@@ -1539,6 +1552,9 @@ function ray(objs,rec){
 const STK={chest:1,shelf:1},PASS_ST={flag:1,campfire:1,chest:1,torch:1,floor:1}; // 쌓기 가능 / 기능건물(통과 가능)
 const stackable=q=>!!STK[q.id]&&!q.gk;
 let placeRot=0;
+const DR_IDS={drill:1,oil_tank:1,edrill:1,generator:1}; // 우클릭으로 창이 열리는 설비
+const CAVE_OK={drill:1,oil_tank:1,edrill:1,generator:1,battery:1,pylon:1}; // 동굴에 설치 가능
+const PW={perOil:2,genSec:10,drillUse:2/30,genR:30,towerR:50,chain:true,batCap:10000,genOil:200}; // 임시값: 기름 1당 전기 2 · 발전기는 기름 10초당 1 · 전기 드릴 소비(작동 1초당) · 발전기 범위 30 · 송전탑 반경 50 · 송전탑 연쇄 가능 · 배터리 10000 · 발전기 기름 최대 200
 const LPOOL=[],mkSL=(c,i,d)=>{const o=new THREE.Object3D();o.intensity=i;o.userData.c=c;o.userData.d=d;return o}; // 설치 조명: 가짜 조명(위치·세기만) — 실제 PointLight는 고정 5개를 돌려 씀 (조명 개수가 바뀌면 전체 셰이더가 재컴파일돼 렉이 걸림)
 const EDGE={wall:1,door:1,window:1},FLOOR_H=.1; // 벽·문: 칸 경계(rot 0=가로 / 1=세로)에 설치 · 바닥: 칸 위 얇은 판(걸어 다닐 수 있음)
 const cellPlane=(i,j)=>{ // 격자의 윗면: 지형이 걸친 격자 층의 윗면 (월드 y가 GRID 배수) — 같은 격자의 바닥은 모두 같은 높이
@@ -1685,7 +1701,7 @@ function updateLights(){ // 가까운(60m 안) 켜진 설치 조명 5개만 실�
   }
 }
 function updateGhost(){
-  const a=inv[sel],id=(a&&ITEMS[a.id]&&ITEMS[a.id].type==='placeable'&&active()&&(zone==='main'||(zone==='cave'&&(a.id==='drill'||a.id==='oil_tank')))&&!invOpen)?a.id:null;
+  const a=inv[sel],id=(a&&ITEMS[a.id]&&ITEMS[a.id].type==='placeable'&&active()&&(zone==='main'||(zone==='cave'&&CAVE_OK[a.id]))&&!invOpen)?a.id:null;
   if(!id){if(ghostMesh){scene.remove(ghostMesh);scene.remove(ghostPl);ghostMesh=ghostPl=ghostId=null}_pl=null;return}
   if(ghostId!==id||!ghostMesh){
     if(ghostMesh){scene.remove(ghostMesh);scene.remove(ghostPl)}
@@ -1735,7 +1751,7 @@ function loadPlaced(list,fixed){
       if(!free(sp.cells)){let f=null;for(let r=1;r<=15&&!f;r++)for(let dx=-r;dx<=r&&!f;dx++)for(let dz=-r;dz<=r;dz++){if(Math.max(Math.abs(dx),Math.abs(dz))!==r)continue;const c=snapPlace(q.id,sp.x+dx*GRID,sp.z+dz*GRID,rot);if(free(c.cells)){f=c;break}}if(f)sp=f}
       x=sp.x;z=sp.z;lv=0;
     }
-    makeStruct(q.id,x,z,q.age||0,rot,lv);if(q.items)placed[placed.length-1].items=q.items;if(q.oil)placed[placed.length-1].oil=q.oil;
+    makeStruct(q.id,x,z,q.age||0,rot,lv);if(q.items)placed[placed.length-1].items=q.items;if(q.oil)placed[placed.length-1].oil=q.oil;if(q.pw)placed[placed.length-1].pw=q.pw;
   }
   const seen=new Set();for(const q of placed)if(stackable(q)){const i=Math.floor(q.pos.x/GRID),j=Math.floor(q.pos.z/GRID),k=i+','+j;if(!seen.has(k)){seen.add(k);layoutCell(i,j)}}
 }
@@ -1746,14 +1762,16 @@ function place(){
   const chs=placed.filter(s=>s.id==='chest'),chh=ray(chs.map(s=>s.mesh),true)[0];
   const stkHold=!!(a&&STK[a.id]&&zone==='main'&&planPlace(a.id).ok); // 상자·선반을 들고 설치할 수 있으면 설치 우선 (아래 상자는 안 열림)
   if(!stkHold&&chh&&chh.distance<6){let o=chh.object;while(o&&!chs.some(s=>s.mesh===o))o=o.parent;const cs=chs.find(s=>s.mesh===o);if(cs){openChest(cs);return}}
-  {const ds=placed.filter(s=>(s.id==='drill'||s.id==='oil_tank')&&s.mesh),dh=ray(ds.map(s=>s.mesh),true)[0];if(dh&&dh.distance<6){let o=dh.object;while(o&&!ds.some(s=>s.mesh===o))o=o.parent;const dr=ds.find(s=>s.mesh===o);if(dr){openDrill(dr);return}}}
+  {const ds=placed.filter(s=>DR_IDS[s.id]&&s.mesh),dh=ray(ds.map(s=>s.mesh),true)[0];if(dh&&dh.distance<6){let o=dh.object;while(o&&!ds.some(s=>s.mesh===o))o=o.parent;const dr=ds.find(s=>s.mesh===o);if(dr){openDrill(dr);return}}}
+  {const ts=placed.filter(s=>s.id==='dis_table'&&s.mesh),th=ray(ts.map(s=>s.mesh),true)[0];if(th&&th.distance<6){let o=th.object;while(o&&!ts.some(s=>s.mesh===o))o=o.parent;const t=ts.find(s=>s.mesh===o);if(t){openDis(t);return}}}
+  {const bs=placed.filter(s=>s.id==='battery'&&s.mesh),bh=ray(bs.map(s=>s.mesh),true)[0];if(bh&&bh.distance<6){let o=bh.object;while(o&&!bs.some(s=>s.mesh===o))o=o.parent;const bt=bs.find(s=>s.mesh===o);if(bt){note(`배터리 ${Math.floor(bt.pw||0)} / ${PW.batCap}${bt.net?'':' · 전력망 범위 밖'}`);return}}}
   if(AXEBOX){const ab=ray([AXEBOX.group],true)[0];if(ab&&ab.distance<6){takeEmergencyAxe();return}}
   if(a&&a.id==='cooked_pork'){a.count--;if(a.count<=0)inv[sel]=null;P.hp=Math.min(P.maxHp,P.hp+25);P.st=Math.min(P.maxSt,P.st+30);renderInv();return}
   if(a&&a.id==='bread'){a.count--;if(a.count<=0)inv[sel]=null;P.hp=Math.min(P.maxHp,P.hp+30);P.st=Math.min(P.maxSt,P.st+50);renderInv();return}
   if(a&&a.id==='forest_map'){openForestMap();return}
   if(a&&(a.id==='bucket'||a.id==='sea_bucket'||a.id==='water_bucket')){bucketUse(a);return}
   if(!a||ITEMS[a.id].type!=='placeable')return;
-  if(zone==='cave'&&a.id!=='drill'&&a.id!=='oil_tank'){note('동굴에서는 드릴·기름 저장소만 설치할 수 있어요');return}
+  if(zone==='cave'&&!CAVE_OK[a.id]){note('동굴에서는 드릴·전력 설비·기름 저장소만 설치할 수 있어요');return}
   const pl=planPlace(a.id);
   if(!pl.ok){note(pl.why);return}
   const sp=pl.sp;
@@ -1820,7 +1838,7 @@ function bucketUse(a){
     bkSwap(a,w==='sea'?'sea_bucket':'water_bucket',w==='sea'?'바닷물을 펐습니다':'물을 펐습니다');
   }else bkSwap(a,'bucket','물을 버렸습니다');
 }
-const WIDE_ST={table:1.77,util_table:1.77,gun_table:1.62,chem_table:1.77,adv_table:1.77,dis_table:1.77}; // 가로 2칸(4m) 구조물
+const WIDE_ST={table:1.77,util_table:1.77,gun_table:1.62,chem_table:1.77,adv_table:1.77,dis_table:1.77,elec_table:1.77}; // 가로 2칸(4m) 구조물
 function makeStruct(id,px,pz,age,rot,lv,ghost){
   const a={id};let stick=null,flame=null,furn=null,panel=null;
   const g=new THREE.Group();let light=null;
@@ -1878,21 +1896,49 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
     for(const y of [.35,1.55]){const bd=M(new THREE.CylinderGeometry(.89,.89,.14,14),0x5d4037);bd.position.y=y;g.add(bd)}
     const cap=M(new THREE.CylinderGeometry(.28,.32,.3,10),0x454b50);cap.position.y=2.05;g.add(cap);
     const pp=M(new THREE.CylinderGeometry(.08,.08,.7,6),0x6d4c2a);pp.rotation.z=Math.PI/2;pp.position.set(.95,.5,0);g.add(pp);
-  }else if(a.id==='drill'){ // 가운데 드릴팁이 땅을 보고, 다리 4개가 몸통을 받치는 정제 드릴 (다크 엘릭서 드릴 느낌)
-    const dkc=0x4a4f55,pur=0x777d83,stl=0x6d4c2a,up=new THREE.Vector3(0,1,0);
+  }else if(a.id==='drill'||a.id==='edrill'){ // 가운데 드릴팁이 땅을 보고, 다리 4개가 몸통을 받치는 정제 드릴 (다크 엘릭서 드릴 느낌)
+    const ED=a.id==='edrill',dkc=ED?0x1e4a7a:0x4a4f55,pur=ED?0x4fc3f7:0x777d83,stl=0x6d4c2a,up=new THREE.Vector3(0,1,0);
     const rod=(x1,y1,z1,x2,y2,z2,r,c)=>{const v=new THREE.Vector3(x2-x1,y2-y1,z2-z1),m=M(new THREE.CylinderGeometry(r,r,v.length(),6),c);m.position.set((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);m.quaternion.setFromUnitVectors(up,v.normalize());g.add(m)};
     for(const sx of [-1,1])for(const sz of [-1,1]){rod(sx*.85,0,sz*.85,sx*.45,1.45,sz*.45,.09,stl);const ft=M(new B(.32,.08,.32),0x5d4037);ft.position.set(sx*.85,.04,sz*.85);g.add(ft)}
     const rg=M(new THREE.CylinderGeometry(.82,.82,.16,12),pur);rg.position.y=1.45;
     const bd=M(new THREE.CylinderGeometry(.62,.72,.8,12),dkc);bd.position.y=1.93;
     const bn=M(new THREE.CylinderGeometry(.75,.75,.1,12),pur);bn.position.y=2.35;
     const tk=M(new THREE.CylinderGeometry(.34,.34,.55,10),0x33373b);tk.position.y=2.7;
-    const gm=M(new THREE.SphereGeometry(.22,10,8),0x9ea4a9,1);gm.position.y=3.15;
+    const gm=M(new THREE.SphereGeometry(.22,10,8),(ED?0x00e5ff:0x9ea4a9),1);gm.position.y=3.15;
     g.add(rg,bd,bn,tk,gm);
     const spin=new THREE.Group(); // 가운데 드릴 축 + 땅을 향한 드릴팁 (작동 중 회전)
     const sh=M(new THREE.CylinderGeometry(.12,.12,.9,8),0x90a4ae);sh.position.y=1.05;
     const cn=M(new THREE.ConeGeometry(.27,.62,8),0xb0bec5);cn.rotation.x=Math.PI;cn.position.y=.31;spin.add(sh,cn);
     for(let k=0;k<3;k++){const fn=M(new B(.04,.5,.3),0xcfd8dc);fn.position.set(Math.cos(k*2.094)*.16,.3,Math.sin(k*2.094)*.16);fn.rotation.y=-k*2.094;spin.add(fn)}
     g.add(spin);g.userData.spin=spin;
+  }else if(a.id==='grinder'){ // 맷돌: 아랫돌 + 윗돌 + 손잡이
+    const b0=M(new THREE.CylinderGeometry(.85,.9,.45,16),0x8a8a8a);b0.position.y=.225;
+    const b1=M(new THREE.CylinderGeometry(.78,.78,.35,16),0xa5a5a5);b1.position.y=.62;
+    const hl=M(new THREE.CylinderGeometry(.2,.2,.05,10),0x2b2b2b);hl.position.y=.8;
+    const hd=M(new B(.08,.7,.08),0x6d4c2a);hd.position.set(.6,1,0);const hb=M(new B(.5,.07,.07),0x6d4c2a);hb.position.set(.6,1.35,0);hb.rotation.y=.6;g.add(b0,b1,hl,hd,hb);
+  }else if(a.id==='elec_table'){ // 전기작업대: 노란 상판 + 구리 코일 + 푸른 불꽃
+    const t=M(new B(2,.9,1.2),0x455a64);t.position.y=.45;
+    const l=M(new B(2.2,.15,1.4),0xfdd835);l.position.y=.95;
+    const cl=M(new THREE.TorusGeometry(.28,.06,6,14),0xd2691e);cl.position.set(.5,1.35,0);cl.rotation.x=Math.PI/2;
+    const gm=M(new THREE.SphereGeometry(.12,8,6),0x00e5ff,1);gm.position.set(-.5,1.2,0);g.add(t,l,cl,gm);
+  }else if(a.id==='generator'){ // 발전기: 회색 몸체 + 주황 띠 + 연료통 + 배기관
+    const ft=M(new B(1.6,.1,1.2),0x37474f);ft.position.y=.05;
+    const bd=M(new B(1.5,1.1,1.1),0x546e7a);bd.position.y=.65;
+    const st=M(new B(1.52,.18,1.12),0xff8f00);st.position.y=.75;
+    const tk=M(new THREE.CylinderGeometry(.35,.35,.5,10),0x6b7278);tk.position.set(-.4,1.45,0);
+    const ex=M(new THREE.CylinderGeometry(.09,.09,.9,8),0x263238);ex.position.set(.5,1.6,.3);g.add(ft,bd,st,tk,ex);
+  }else if(a.id==='battery'){ // 배터리: 어두운 몸체 + 초록 충전 띠
+    const bd=M(new B(1.1,1.7,1.1),0x263238);bd.position.y=.85;
+    const cp=M(new B(.5,.2,.5),0x90a4ae);cp.position.y=1.8;g.add(bd,cp);
+    for(const y of [.5,.95,1.4]){const s=M(new B(.8,.18,1.14),0x76ff03,1);s.position.y=y;g.add(s)}
+  }else if(a.id==='pylon'){ // 송전탑: 뾰족한 철탑 + 가로대
+    const up=new THREE.Vector3(0,1,0);
+    const rod=(x1,y1,z1,x2,y2,z2,r,c)=>{const v=new THREE.Vector3(x2-x1,y2-y1,z2-z1),m=M(new THREE.CylinderGeometry(r,r,v.length(),6),c);m.position.set((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);m.quaternion.setFromUnitVectors(up,v.normalize());g.add(m)};
+    for(const sx of [-1,1])for(const sz of [-1,1])rod(sx*.7,0,sz*.7,sx*.12,6.2,sz*.12,.07,0x78909c);
+    for(const [y,w] of [[1.5,.55],[3,.4],[4.5,.27]]){const r=M(new B(w*2,.07,w*2),0x607d8b);r.position.y=y;g.add(r)}
+    const arm=M(new B(2.4,.1,.1),0x455a64);arm.position.y=5.4;g.add(arm);
+    for(const sx of [-1.1,1.1]){const ins=M(new THREE.CylinderGeometry(.06,.06,.4,6),0xb0bec5);ins.position.set(sx,5.15,0);g.add(ins)}
+    const tip=M(new THREE.SphereGeometry(.14,8,6),0x00e5ff,1);tip.position.y=6.3;g.add(tip);
   }else if(a.id==='shelf'){ // 작업대처럼 다리 4개 + 판: 1층(다리 사이, 높이 0.9) · 2층(판 위) = 격자 1칸(2.0)
     for(const sx of [-1,1])for(const sz of [-1,1]){const lg=M(new B(.14,.9,.14),0x6d4c2a);lg.position.set(sx*.93,.45,sz*.93);g.add(lg)}
     const dk=M(new B(2,.2,2),0xa1887f);dk.position.y=1;const rm=M(new B(2.06,.06,2.06),0x6d4c2a);rm.position.y=1;g.add(dk,rm);
@@ -1926,7 +1972,7 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
   if(ghost){if(light)g.remove(light);g.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.5;o.material.depthWrite=false}});return g}
   if(panel&&lv)panel.rotation.y=-Math.PI/2;
   g.position.set(px,EDGE[id]?edgeBase(px,pz,rot||0):id==='floor'&&px<2900?cellPlane(Math.floor(px/GRID),Math.floor(pz/GRID))+4*(lv||0)-FLOOR_H:groundY(px,pz),pz);(ZG[zoneOf(px,pz)]||scene).add(g);
-  placed.push({id,rot:rot||0,lv:lv||0,panel,pos:g.position,light,base:light?light.intensity:0,mesh:g,stick,flame,hole:furn,age,items:id==='chest'?new Array(45).fill(null):(id==='drill'||id==='oil_tank')?new Array(11).fill(null):null,oil:0,ob:0,spin:g.userData.spin});
+  placed.push({id,rot:rot||0,lv:lv||0,panel,pos:g.position,light,base:light?light.intensity:0,mesh:g,stick,flame,hole:furn,age,items:id==='chest'?new Array(45).fill(null):DR_IDS[id]?new Array(11).fill(null):id==='dis_table'?new Array(32).fill(null):null,oil:0,ob:0,spin:g.userData.spin});
 }
 
 /* ---------- 채굴/공격 ---------- */
@@ -2177,7 +2223,9 @@ function canInteract(){ // 창고·비상도끼함·문을 보고 있으면 우�
   if(doorAim())return true;
   const chs=placed.filter(s=>s.id==='chest'&&s.mesh),h=ray(chs.map(s=>s.mesh),true)[0];
   if(h&&h.distance<6)return true;
-  {const ds=placed.filter(s=>(s.id==='drill'||s.id==='oil_tank')&&s.mesh),dh=ray(ds.map(s=>s.mesh),true)[0];if(dh&&dh.distance<6)return true}
+  {const ds=placed.filter(s=>DR_IDS[s.id]&&s.mesh),dh=ray(ds.map(s=>s.mesh),true)[0];if(dh&&dh.distance<6)return true}
+  {const ts=placed.filter(s=>s.id==='dis_table'&&s.mesh),th=ray(ts.map(s=>s.mesh),true)[0];if(th&&th.distance<6)return true}
+  {const bs=placed.filter(s=>s.id==='battery'&&s.mesh),bh=ray(bs.map(s=>s.mesh),true)[0];if(bh&&bh.distance<6)return true}
   if(AXEBOX){const ab=ray([AXEBOX.group],true)[0];if(ab&&ab.distance<6)return true}
   return false;
 }
@@ -2224,7 +2272,7 @@ function attack(strong,part,mot){ // mot: 덜 차징돼도 강공격 모션(데�
           if(!takeAll(s.items.concat([{id:'chest',count:1}]))){note('인벤토리 공간이 부족해 부술 수 없습니다');return}
           s.items.fill(null);renderInv();
           s.mesh.parent&&s.mesh.parent.remove(s.mesh);placed.splice(placed.indexOf(s),1);relayout(s);lastAtk=now;swing=1;swingDur=.2;note('창고를 부수고 아이템을 챙겼습니다');return}
-        if((s.id==='drill'||s.id==='oil_tank')&&s.items&&s.items.some(Boolean)){if(!takeAll(s.items.concat([{id:s.id,count:1}]))){note('인벤토리 공간이 부족해 부술 수 없습니다');return}s.items.fill(null);renderInv();s.mesh.parent&&s.mesh.parent.remove(s.mesh);placed.splice(placed.indexOf(s),1);lastAtk=now;swing=1;swingDur=.2;note(ITEMS[s.id].name+' 철거 · 아이템을 챙겼습니다');return}
+        if((DR_IDS[s.id]||s.id==='dis_table')&&s.items&&s.items.some(Boolean)){if(!takeAll(s.items.concat([{id:s.id,count:1}]))){note('인벤토리 공간이 부족해 부술 수 없습니다');return}s.items.fill(null);renderInv();s.mesh.parent&&s.mesh.parent.remove(s.mesh);placed.splice(placed.indexOf(s),1);lastAtk=now;swing=1;swingDur=.2;note(ITEMS[s.id].name+' 철거 · 아이템을 챙겼습니다');return}
         if(!addItem(s.id,1))return;
         s.mesh.parent&&s.mesh.parent.remove(s.mesh);if(s.light&&s.light.parent)s.light.parent.remove(s.light);
         placed.splice(placed.indexOf(s),1);relayout(s);lastAtk=now;swing=1;swingDur=.2;note(ITEMS[s.id].name+' 회수');
@@ -2323,19 +2371,19 @@ function checkPortals(){
 }
 
 /* ---------- 근접 판정 ---------- */
-const RNG={furnace:10,table:10,util_table:10,campfire:7,chest:25,anvil:10,foundry:10,gun_table:10,chem_table:10,adv_table:10,dis_table:10}; // 기능블록 범위: 블록 칸에서 ±N칸(2m 칸)의 정사각형
+const RNG={furnace:10,table:10,util_table:10,campfire:7,chest:25,anvil:10,foundry:10,gun_table:10,chem_table:10,adv_table:10,dis_table:10,grinder:10,elec_table:10}; // 기능블록 범위: 블록 칸에서 ±N칸(2m 칸)의 정사각형
 const inSq=(s,x,z)=>{const r=RNG[s.id];return r!==undefined&&Math.abs(Math.floor(x/2)-Math.floor(s.pos.x/2))<=r&&Math.abs(Math.floor(z/2)-Math.floor(s.pos.z/2))<=r};
 function proximity(){
-  nearCamp=nearFurn=nearTable=nearUtil=nearAnvil=nearFoundry=nearGun=nearChemT=nearAdv=nearDis=false;
+  nearCamp=nearFurn=nearTable=nearUtil=nearAnvil=nearFoundry=nearGun=nearChemT=nearAdv=nearDis=nearGrind=nearElec=false;
   for(const s of placed){
     const inR=inSq(s,camera.position.x,camera.position.z);
     if((s.id==='furnace'||s.id==='foundry')&&s.hole){const lit=inR;if(lit!==s.lit){s.lit=lit;s.hole.material.color.setHex(lit?0xff6a10:0x111111);s.base=lit?.9:0}}
-    if(inR){if(s.id==='furnace')nearFurn=true;if(s.id==='table')nearTable=true;if(s.id==='util_table')nearUtil=true;if(s.id==='anvil')nearAnvil=true;if(s.id==='foundry')nearFoundry=true;if(s.id==='gun_table')nearGun=true;if(s.id==='chem_table')nearChemT=true;if(s.id==='adv_table'){nearAdv=true;nearTable=true}if(s.id==='dis_table')nearDis=true}
+    if(inR){if(s.id==='furnace')nearFurn=true;if(s.id==='table')nearTable=true;if(s.id==='util_table')nearUtil=true;if(s.id==='anvil')nearAnvil=true;if(s.id==='foundry')nearFoundry=true;if(s.id==='gun_table')nearGun=true;if(s.id==='chem_table')nearChemT=true;if(s.id==='adv_table'){nearAdv=true;nearTable=true}if(s.id==='dis_table')nearDis=true;if(s.id==='grinder')nearGrind=true;if(s.id==='elec_table')nearElec=true}
     if(inR&&s.id==='campfire')nearCamp=true;
   }
   if(nearCamp)buffT=600;
   const cn=nearChests().length;
-  if(nearFurn!==prevFurn||nearTable!==prevTable||nearUtil!==prevUtil||nearCamp!==prevCamp||nearAnvil!==prevAnvil||nearFoundry!==prevFoundry||nearGun!==prevGun||nearChemT!==prevChemT||nearAdv!==prevAdv||nearDis!==prevDis||cn!==prevCN){prevDis=nearDis;prevAdv=nearAdv;prevChemT=nearChemT;prevCamp=nearCamp;prevAnvil=nearAnvil;prevFoundry=nearFoundry;prevGun=nearGun;prevFurn=nearFurn;prevTable=nearTable;prevUtil=nearUtil;prevCN=cn;renderRec()}
+  if(nearFurn!==prevFurn||nearTable!==prevTable||nearUtil!==prevUtil||nearCamp!==prevCamp||nearAnvil!==prevAnvil||nearFoundry!==prevFoundry||nearGun!==prevGun||nearChemT!==prevChemT||nearAdv!==prevAdv||nearDis!==prevDis||nearGrind!==prevGrind||nearElec!==prevElec||cn!==prevCN){prevDis=nearDis;prevGrind=nearGrind;prevElec=nearElec;prevAdv=nearAdv;prevChemT=nearChemT;prevCamp=nearCamp;prevAnvil=nearAnvil;prevFoundry=nearFoundry;prevGun=nearGun;prevFurn=nearFurn;prevTable=nearTable;prevUtil=nearUtil;prevCN=cn;renderRec()}
   if(!tutDone&&inv.some(s=>s&&s.id==='axe'))tutDone=true;
   if(AXEBOX){
     AXEBOX.axe.visible=!inv.some(s=>s&&s.id==='axe');
@@ -2435,6 +2483,8 @@ function buildUI(){
   for(let i=145;i<149;i++){const s=document.createElement('div');s.className='slot';s.id='i'+i;$('ugrid').appendChild(s)}
   {const s=document.createElement('div');s.className='slot';s.id='i149';$('ogrid').appendChild(s)}
   {const s=document.createElement('div');s.className='slot';s.id='i150';$('obgrid').appendChild(s)}
+  for(let i=151;i<156;i++){const s=document.createElement('div');s.className='slot';s.id='i'+i;$('disin').appendChild(s)}
+  for(let i=156;i<183;i++){const s=document.createElement('div');s.className='slot';s.id='i'+i;$('disout').appendChild(s)}
   for(let i=45;i<81;i++){const s=document.createElement('div');s.className='slot';s.id='i'+i;s.style.display='none';$('grid').appendChild(s)}
   renderInv();renderRec();
 }
@@ -2442,6 +2492,7 @@ function buildUI(){
 /* ---------- 아이템 모양 (아이콘 / 손에 든 모양) ---------- */
 const MATC={flint:'#8a8f98',wood:'#a1887f',copper:'#c8702a',gold:'#ffd54f',iron:'#cfd8dc',titanium:'#a3a8ad',talloy:'#7986cb',diamond:'#4dd0e1'};
 const ICOL={log:'#6d4c41',branch:'#8d6e63',long_branch:'#8d6e63',vine:'#43a047',stick:'#8d6e63',long_stick:'#8d6e63',stake:'#8d6e63',rope:'#d7c49e',plank:'#c8a165',stone:'#9e9e9e',flint:'#5f6368',clay:'#b5651d',sugarcane:'#43a047',sugar:'#f5f5f5',coal:'#262626',copper:'#d2691e',iron:'#e0c9a6',gold:'#ffd54f',diamond:'#4dd0e1',titanium:'#78909c',hide:'#8d5a2b',wool:'#f5f5f5',cloth:'#eceff1',pork:'#f4a6b0',cooked_pork:'#a0522d',wire:'#d2691e',arrow:'#8d6e63',campfire:'#ff7043',furnace:'#757575',table:'#8d6e63',chest:'#8d5a2b',flag:'#d32f2f',lantern:'#ffd54f',clock:'#ffd54f',compass:'#ef5350',bag:'#8d6e63',big_bag:'#5d4037',torch:'#ff9800',detector:'#78909c',headlamp:'#ffe082',quiver:'#8d5a2b',util_table:'#4dd0e1',big_hide:'#6d4c41',wild_hide:'#9e8c6a',ruby:'#e53935'};
+Object.assign(ICOL,{coil:'#d2691e',grinder:'#9e9e9e',elec_table:'#fdd835',edrill:'#4fc3f7',generator:'#546e7a',battery:'#76ff03',pylon:'#78909c'});
 Object.assign(ICOL,{bread:'#c8903f',bread_dough:'#efe0b8',sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',wheat:'#d9b44a',flour:'#f5efe0',bolt_rifle:'#6d4c41',scope:'#263238',wild_cloak:'#8d6e63',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#90a4ae',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63',copper_rod:'#c8702a',gold_plate:'#ffd54f',gold_rod:'#ffd54f',titanium_plate:'#a3a8ad',silencer:'#455a64',power_crystal:'#ff5252',chem_table:'#558b2f',adv_table:'#90a4ae',oil_bucket:'#4a0e0e',hq_gunpowder:'#616161',arrowhead:'#a9845a',rifle_bullet:'#8d6e63',forest_map:'#e8d9a8',lmg:'#455a64',lmg_part:'#78909c',spring:'#b0bec5',ext_mag:'#455a64',bandolier:'#8d6e63',golem_core:'#43a047'});
 const _mat=id=>{const m=/^(copper|gold|iron|titanium|diamond|flint|wood|talloy)_(.+)$/.exec(id);return m?[m[1],m[2]]:[null,id]};
 const hx=c=>parseInt(c.slice(1),16);
@@ -2562,6 +2613,13 @@ function iconBody(id){
     case 'bag':return `<path d="M10 11 Q16 5 22 11 L26 26 Q16 31 6 26Z" fill="#8d6e63" ${O}/><path d="M10 11 Q16 15 22 11" stroke="#5d4037" stroke-width="2" fill="none"/>`;
     case 'big_bag':return `<path d="M8 10 Q16 3 24 10 L29 26 Q16 32 3 26Z" fill="#5d4037" ${O}/><path d="M8 10 Q16 15 24 10" stroke="#ffd54f" stroke-width="2.2" fill="none"/><rect x="13" y="19" width="6" height="5" rx="1" fill="#ffd54f"/>`;
     case 'flag':return `<rect x="8" y="3" width="2.4" height="27" fill="#8d6e63"/><polygon points="10.4,4 27,9 10.4,15" fill="#d32f2f" ${O}/>`;
+    case 'grinder':return `<ellipse cx="16" cy="24" rx="11" ry="4" fill="#757575" ${O}/><rect x="5" y="15" width="22" height="9" fill="#9e9e9e" ${O}/><ellipse cx="16" cy="15" rx="11" ry="4" fill="#bdbdbd" ${O}/><ellipse cx="16" cy="14" rx="4" ry="1.6" fill="#424242"/><rect x="24" y="4" width="2.4" height="13" fill="#8d6e63"/>`;
+    case 'elec_table':return `<rect x="3" y="11" width="26" height="5" rx="1" fill="#fdd835" ${O}/><rect x="6" y="16" width="3" height="12" fill="#455a64"/><rect x="23" y="16" width="3" height="12" fill="#455a64"/><circle cx="16" cy="7" r="4.5" fill="none" stroke="#d2691e" stroke-width="2.4"/><path d="M15 3 L13 8 L16 8 L14 12" stroke="#00e5ff" stroke-width="1.5" fill="none"/>`;
+    case 'coil':return `<ellipse cx="16" cy="9" rx="9" ry="3" fill="none" stroke="#d2691e" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="9" ry="3" fill="none" stroke="#d2691e" stroke-width="2.4"/><ellipse cx="16" cy="23" rx="9" ry="3" fill="none" stroke="#d2691e" stroke-width="2.4"/><rect x="14.5" y="5" width="3" height="22" fill="#90a4ae" opacity=".5"/>`;
+    case 'edrill':return `<rect x="6" y="14" width="20" height="12" rx="2" fill="#1e4a7a" ${O}/><rect x="6" y="10" width="20" height="4" fill="#4fc3f7" ${O}/><polygon points="16,30 11,22 21,22" fill="#b0bec5" ${O}/><path d="M17 2 L13 8 L16 8 L14 13" stroke="#ffeb3b" stroke-width="2" fill="none"/>`;
+    case 'generator':return `<rect x="4" y="11" width="24" height="15" rx="2" fill="#546e7a" ${O}/><rect x="4" y="15" width="24" height="3" fill="#ff8f00"/><rect x="22" y="5" width="3" height="6" fill="#37474f" ${O}/><path d="M13 12 L10 19 L14 19 L11 25" stroke="#ffeb3b" stroke-width="1.8" fill="none"/>`;
+    case 'battery':return `<rect x="7" y="7" width="18" height="21" rx="2" fill="#263238" ${O}/><rect x="12" y="3" width="8" height="4" fill="#90a4ae" ${O}/><rect x="10" y="11" width="12" height="3" fill="#76ff03"/><rect x="10" y="16" width="12" height="3" fill="#76ff03"/><rect x="10" y="21" width="12" height="3" fill="#76ff03" opacity=".4"/>`;
+    case 'pylon':return `<path d="M16 3 L8 29 M16 3 L24 29" stroke="#78909c" stroke-width="2" fill="none"/><path d="M11 17 H21 M9.5 23 H22.5 M13 10 H19" stroke="#78909c" stroke-width="1.6"/><path d="M5 9 H27" stroke="#455a64" stroke-width="2"/>`;
     case 'oil_tank':return `<rect x="7" y="9" width="18" height="19" rx="3" fill="#78909c" ${O}/><rect x="7" y="14" width="18" height="3" fill="#5d4037"/><rect x="7" y="21" width="18" height="3" fill="#5d4037"/><rect x="13" y="4" width="6" height="5" fill="#455a64" ${O}/>`;
     case 'drill':return `<rect x="6" y="14" width="20" height="12" rx="2" fill="#546e7a" ${O}/><rect x="6" y="10" width="20" height="4" fill="#ffc107" ${O}/><polygon points="16,30 11,22 21,22" fill="#b0bec5" ${O}/><rect x="13" y="4" width="6" height="6" fill="#37474f" ${O}/>`;
     case 'filter_coal':case 'filter_copper':case 'filter_iron':case 'filter_gold':case 'filter_titanium':case 'filter_diamond':case 'filter_sulfur':case 'filter_sand':case 'filter_clay':{const fc={filter_sand:'#f0e0a0',filter_clay:'#b5651d',filter_sulfur:'#ffd54f',filter_coal:'#424242',filter_copper:'#c77d4b',filter_iron:'#b0bec5',filter_gold:'#ffd54f',filter_titanium:'#80cbc4',filter_diamond:'#4dd0e1'}[id];return `<rect x="5" y="6" width="22" height="20" rx="2" fill="#607d8b" ${O}/><rect x="9" y="10" width="14" height="12" fill="${fc}" ${O}/><path d="M9 14 H23 M9 18 H23" stroke="#263238" stroke-width="1.2"/>`}
@@ -2761,7 +2819,7 @@ function selectSlot(i){
 }
 function renderInv(){
   const bn=bagN();
-  for(let i=0;i<151;i++){
+  for(let i=0;i<183;i++){
     const el=$('i'+i);if(!el)continue;
     if(i>=45&&i<81)el.style.display=i<45+bn?'':'none';
     const it=inv[i];if(it&&it.id==='battle_axe'&&it.dur!==undefined)delete it.dur; // 전투도끼는 내구도 없음
@@ -2769,7 +2827,7 @@ function renderInv(){
     el.innerHTML=html;el.title=tt;
     if(i<9){$('h'+i).innerHTML=html;$('h'+i).title=tt}
   }
-  updateLighting();renderRec();renderAtt();
+  updateLighting();renderRec();renderAtt();if(curDis)updDis();
 }
 function bagN(){const u=inv.slice(37,45);return u.some(s=>s&&s.id==='big_bag')?36:u.some(s=>s&&s.id==='bag')?18:0}
 const hasQuiver=()=>!!((inv[QUIV_S]&&inv[QUIV_S].id==='quiver')||inv.slice(37,45).some(s=>s&&s.id==='quiver'));
@@ -2895,7 +2953,7 @@ function toggleMouse(){
   if(mouseMode)document.exitPointerLock();else try{document.body.requestPointerLock()}catch(e){}
 }
 function toggleInv(){
-  mouseMode=false;invOpen=!invOpen;held=null;markHeld();if(!invOpen){closeChest();closeDrill();closeAtt()}
+  mouseMode=false;invOpen=!invOpen;held=null;markHeld();if(!invOpen){closeChest();closeDrill();closeDis();closeAtt()}
   $('inv').style.display=invOpen?'flex':'none';
   if(invOpen){
     for(const k in keys)keys[k]=0;
@@ -2915,7 +2973,7 @@ function note(m){
 }
 
 /* ---------- 제작 패널 (테라리아식) ---------- */
-const CATS=[['tools','도구'],['weapons','무기'],['armor','갑옷'],['mat','재료'],['build','건물'],['cook','요리'],['dis','해체']];
+const CATS=[['tools','도구'],['weapons','무기'],['armor','갑옷'],['mat','재료'],['build','건물'],['cook','요리']];
 const rcat=r=>r.cat==='func'?'build':r.cat==='util'?'tools':r.cat,rsub=r=>r.cat==='func'?'기능':r.cat==='build'?(r.sub||'건축'):r.cat==='util'?'유틸리티':r.sub; // 기능·건축 블록은 건물 카테고리 안의 탭
 const SUBS={tools:['곡괭이','도끼','삽','기타','유틸리티'],weapons:['창','도끼','검','활·화살','총','총알','장착물'],mat:['주괴','가공','금속','머리','틀']};
 // 제작 목록 정렬: 초반 → 후반 (목록에 없는 것은 원래 순서 유지)
@@ -2926,9 +2984,9 @@ const RK=new Map(['flint_pickaxe','copper_pickaxe','gold_pickaxe','iron_pickaxe'
   'copper_spear','gold_spear','iron_spear','titanium_spear','diamond_spear','copper_sword','gold_sword','iron_sword','titanium_sword','battle_axe',
   'bow','longbow','arrow','arrowhead','long_arrow','musket','bolt_rifle','lmg','bullet','rifle_bullet','scope','silencer','bandolier','ext_mag',
   'copper_ingot','gold_ingot','iron_ingot','titanium_ingot','alloy','titanium_alloy',
-  'stick','long_stick','rope','flint','stake','plank','cloth','sugar','glass','wire','spring','tension_string','coal_powder','gunpowder','hq_gunpowder','oil_bucket',
+  'stick','long_stick','rope','flint','stake','plank','cloth','sugar','glass','wire','coil','spring','tension_string','coal_powder','gunpowder','hq_gunpowder','oil_bucket',
   'copper_plate','copper_rod','gold_plate','gold_rod','metal_plate','metal_rod','titanium_plate','titanium_rod','talloy_pickaxe_head','talloy_shovel_head',
-  'campfire','table','adv_table','dis_table','furnace','chest','shelf','flag','anvil','foundry','gun_table','chem_table','util_table','drill','oil_tank',
+  'campfire','table','adv_table','dis_table','furnace','chest','shelf','flag','anvil','foundry','gun_table','chem_table','util_table','drill','oil_tank','grinder','elec_table','edrill','generator','battery','pylon',
   'floor','wall','window','door','filter_coal','filter_copper','filter_iron','filter_gold','filter_sulfur','filter_titanium','filter_diamond','filter_sand','filter_clay',
   'cooked_pork','flour','bread_dough','bread','salt','sugar'].map((id,i)=>[id,i]));
 const rk=r=>RK.has(r.id)?RK.get(r.id):9999;
@@ -2945,8 +3003,7 @@ function renderCraft(){
   CATS.forEach(([k])=>$('cat_'+k).classList.toggle('on',k===craftCat));
   const st0=list.scrollTop;list.innerHTML='';$('subs').innerHTML='';$('warn').style.display='none';
   if(!craftCat)return;
-  if(craftCat==='dis'){renderDis(list);list.scrollTop=craftRst?0:st0;craftRst=false;return}
-  const vis=RECIPES.filter(r=>rcat(r)===craftCat&&(!r.near||({furnace:nearFurn,util_table:nearUtil,table:nearTable,anvil:nearAnvil,foundry:nearFoundry,gun_table:nearGun,chem_table:nearChemT,adv_table:nearAdv,campfire:nearCamp})[r.near]));
+  const vis=RECIPES.filter(r=>rcat(r)===craftCat&&(!r.near||({furnace:nearFurn,util_table:nearUtil,table:nearTable,anvil:nearAnvil,foundry:nearFoundry,gun_table:nearGun,chem_table:nearChemT,adv_table:nearAdv,campfire:nearCamp,grinder:nearGrind,elec_table:nearElec})[r.near]));
   const ncn=nearChests().length;
   if(ncn){const h=document.createElement('div');h.style.cssText='font-size:11px;color:#ffcc80;padding:2px 4px';h.textContent=`📦 근처 창고 ${ncn}개의 재료도 사용 (25m)`;list.appendChild(h)}
   const subs=craftCat==='build'?['기능','건축','업그레이드']:(SUBS[craftCat]||[]).filter(x=>x==='유틸리티'||(craftCat==='weapons'&&x==='도끼')||vis.some(r=>rsub(r)===x));
@@ -2977,48 +3034,17 @@ function renderCraft(){
   if(craftFocus){const fc=list.querySelector(`.rc[data-id="${craftFocus}"]`);craftFocus=null;if(fc){fc.style.outline='2px solid #ff8a65';fc.scrollIntoView({block:'nearest'});setTimeout(()=>{fc.style.outline=''},3000)}}
 }
 /* ---------- 해체 제작대: 제작법을 거꾸로 돌려 재료 반환 ---------- */
+const DIS_BLOCK=id=>/^(plank|branch|long_branch|coal_powder|flour|glass|alloy|titanium_alloy)$|_(plate|rod|ingot|head|mold)$/.test(id); // v14: 판자·나뭇가지·가루·판·봉·주괴·머리·틀·유리는 해체 불가
 function disInfo(it){ // 해체 정보 (null이면 해체 불가) — 강화 단계가 있으면 한 단계만 내림
-  if(!it||!ITEMS[it.id])return null;
+  if(!it||!ITEMS[it.id]||DIS_BLOCK(it.id))return null;
   if((it.lv||0)>0){const up=RECIPES.find(r=>r.up===it.id);if(up)return{cost:up.cost,n:1,lvDown:true}}
   const r=RECIPES.find(x=>x.id===it.id&&!x.up&&!x.ret); // 빈 양동이 같은 반환물이 있는 레시피는 제외 (복제 방지)
   return r?{cost:r.cost,n:r.yield||1}:null;
 }
-function renderDis(list){
-  const h=document.createElement('div');h.className='rc';h.style.cssText='font-size:12px;color:#ffcc80';
-  h.textContent=nearDis?'해체할 아이템을 고르면 제작 재료를 돌려받아요 (한 번에 만들어지는 수량 단위)':'해체 제작대 근처(10m)에서 사용할 수 있어요';list.appendChild(h);
-  const seen={},rows=[];
-  for(const i of SL()){const it=inv[i];if(!it)continue;const info=disInfo(it);if(!info)continue;
-    if(SOL(ITEMS[it.id])||it.lv){rows.push({i,it,info})}else if(!seen[it.id]){seen[it.id]=1;rows.push({i,it,info})}}
-  if(!rows.length){const d0=document.createElement('div');d0.className='rc';d0.textContent='해체할 수 있는 아이템이 없어요';list.appendChild(d0)}
-  rows.forEach(({i,it,info})=>{
-    const d=ITEMS[it.id],solid=SOL(d)||info.lvDown,have=solid?1:SL().reduce((a,j)=>inv[j]&&inv[j].id===it.id?a+inv[j].count:a,0),ok=nearDis&&have>=info.n;
-    const back=Object.entries(info.cost).map(([k,v])=>`${ITEMS[k].name} ${v}`).join(', ')+((it.att&&it.att.some(Boolean))?', 부착물':'');
-    const nm=info.lvDown?`${d.name} ${(it.lv||0)+1}단계 → ${it.lv}단계`:d.name+(info.n>1?` x${info.n}`:'');
-    const row=document.createElement('div');row.className='rc';
-    row.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><span class="ric">${iconSVG(it.id)}</span><div><b>${nm}</b><small>돌려받음: ${info.lvDown?`${d.name} ${it.lv}단계, `:''}${back}${solid?'':` · 보유 ${have}/${info.n}`}</small></div></div>`;
-    const b=document.createElement('button');b.textContent='해체';b.disabled=!ok;b.onclick=()=>doDis(i);row.appendChild(b);list.appendChild(row);
-  });
-}
-function doDis(i){
-  const it=inv[i],info=disInfo(it);if(!it||!info)return;
-  if(!nearDis){note('해체 제작대 근처에서만 해체할 수 있어요');return}
-  const d=ITEMS[it.id],solid=SOL(d)||info.lvDown;
-  if(!solid&&it.count<info.n&&SL().reduce((a,j)=>inv[j]&&inv[j].id===it.id?a+inv[j].count:a,0)<info.n){note(`${d.name} ${info.n}개가 필요해요`);return}
-  const snap=inv.map(s=>s&&{...s}),atts=(it.att||[]).filter(Boolean).map(a=>({...a}));
-  if(info.lvDown)it.lv--;
-  else if(SOL(d))inv[i]=null;
-  else{let need=info.n;for(const j of SL()){const s=inv[j];if(need<=0)break;if(s&&s.id===it.id){const t=Math.min(s.count,need);s.count-=t;need-=t;if(s.count<=0)inv[j]=null}}}
-  let ok=true;
-  for(const [k,v] of Object.entries(info.cost))if(ok&&!addItem(k,v))ok=false;
-  for(const a of atts)if(ok&&ITEMS[a.id]&&!addItem(a.id,a.count||1))ok=false;
-  if(!ok){snap.forEach((s,k)=>inv[k]=s);renderInv();note('인벤토리가 가득 차서 해체할 수 없어요');return}
-  renderInv();renderCraft();
-  note(`${d.name} 해체 완료!`);
-}
 function makeMissing(k,need){ // 부족한 재료를 바로 제작
   const r=RECIPES.find(x=>x.id===k);
   if(!r){note('이 재료는 제작할 수 없어요 (채집·채굴)');return}
-  if(r.near&&!({furnace:nearFurn,util_table:nearUtil,table:nearTable,anvil:nearAnvil,foundry:nearFoundry,gun_table:nearGun,chem_table:nearChemT,adv_table:nearAdv,campfire:nearCamp})[r.near]){note(`${r.name}: 해당 작업대 근처에서 제작할 수 있어요`);return}
+  if(r.near&&!({furnace:nearFurn,util_table:nearUtil,table:nearTable,anvil:nearAnvil,foundry:nearFoundry,gun_table:nearGun,chem_table:nearChemT,adv_table:nearAdv,campfire:nearCamp,grinder:nearGrind,elec_table:nearElec})[r.near]){note(`${r.name}: 해당 작업대 근처에서 제작할 수 있어요`);return}
   const times=Math.max(1,Math.ceil((need-count(k))/(r.yield||1))); // 부족분을 채우는 최소 횟수 (Shift·Ctrl 연속 제작은 무시)
   craftLoop=true;let c=0;
   try{for(let i=0;i<times&&i<200;i++){if(count(k)>=need)break;craftOK=false;craft(r);if(!craftOK)break;c++}}finally{craftLoop=false}
@@ -3036,10 +3062,11 @@ function makeMissing(k,need){ // 부족한 재료를 바로 제작
 function saveGame(){
   try{
     if(curDrill)for(let i=0;i<11;i++)curDrill.items[i]=inv[140+i]||null;
+    if(curDis)for(let i=0;i<32;i++)curDis.items[i]=inv[151+i]||null;
     const nk={};for(const n of nodes)if(!n.active&&!n.night&&!n.slime)nk[n.k]=n.respawn===Infinity?-1:Math.max(1,n.respawn-Date.now());
     const ws0=jget(WK,[]),w0=CUR&&ws0.find(x=>x.id===CUR.id);if(w0){w0.last=Date.now();jset(WK,ws0)}
     localStorage.setItem(SAVE,JSON.stringify({ver:SAVE_VER,seed:worldSeed,zone,pos:[camera.position.x,camera.position.z],yaw,pitch,P,inv,sel,buffT,
-      gv:2,td:tutDone?1:0,ns:noteSeen?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,oil:s.oil||0,gk:s.gk,rot:s.rot||0,lv:s.lv||0})),gq:1,ach:ACH,worldT,nk,chR:CH_RESP.map(r=>({gk:r.gk,left:Math.max(1,r.t-Date.now())}))}));
+      gv:2,td:tutDone?1:0,ns:noteSeen?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,oil:s.oil||0,pw:s.pw||0,gk:s.gk,rot:s.rot||0,lv:s.lv||0})),gq:1,ach:ACH,worldT,nk,chR:CH_RESP.map(r=>({gk:r.gk,left:Math.max(1,r.t-Date.now())}))}));
   }catch(e){}
 }
 function loadGame(){
@@ -3051,7 +3078,7 @@ function loadGame(){
     Object.assign(P,saved.P);worldT=saved.worldT||0;buffT=saved.buffT||0;
     saved.inv.forEach((v,i)=>inv[i]=v);
     for(let i=0;i<inv.length;i++)if(inv[i]&&!ITEMS[inv[i].id])inv[i]=null; // 삭제된 아이템 정리
-    for(let i=140;i<151;i++)inv[i]=null;
+    for(let i=140;i<183;i++)inv[i]=null;
     if(saved.nk)for(const n of nodes){const v=saved.nk[n.k];if(v){n.active=false;n.mesh.visible=false;n.respawn=v<0?Infinity:Date.now()+v}}
     if(saved.gv){ // 구조물 창고: 저장본에 없으면 이미 회수된 것 → 제거, 있으면 내용물 복원
       const gk=new Map(saved.placed.filter(s=>s.gk).map(s=>[s.gk,s]));
@@ -3173,6 +3200,8 @@ function moveItem(f,t){
   const slotOK=(it,i)=>{
     if(!it)return true;
     const d=ITEMS[it.id];
+    if(i>=156&&i<183)return false; // 해체 결과칸: 꺼내기만
+    if(i>=151&&i<156)return !!disInfo(it); // 해체 입력칸: 해체할 수 있는 아이템만
     if(i>=140&&i<145||i===150)return false; // 드릴 보관칸·빈 양동이칸: 꺼내기만
     if(i>=145&&i<149)return !!(d.filter||d.dcrystal);
     if(i===149)return it.id==='oil_bucket'; // 드릴 기름칸: 기름 양동이만
@@ -3187,7 +3216,7 @@ function moveItem(f,t){
   const mg=!!b&&a.id===b.id&&!SOL(ITEMS[a.id]);
   const bad=!slotOK(a,t)?t:(!mg&&!slotOK(b,f))?f:-1;
   if(bad>=0){
-    note(bad===150?'빈 양동이 칸은 꺼내기만 할 수 있어요':bad===149?'기름 양동이만 넣을 수 있어요':bad>=145&&bad<149?'필터·결정만 넣을 수 있어요':bad>=140&&bad<145?'보관칸에는 넣을 수 없어요':bad===QV0?'화살통을 장착해야 화살을 넣을 수 있어요':bad===ACC_S?'머리 장신구만 넣을 수 있어요':bad===CAPE_S?'망토만 넣을 수 있어요':bad===QUIV_S?'화살통만 넣을 수 있어요':bad>=ARM0?'해당 부위 갑옷만 넣을 수 있어요':'유틸리티 아이템만 넣을 수 있어요');return;
+    note(bad>=156&&bad<183?'결과칸에는 넣을 수 없어요':bad>=151&&bad<156?'해체할 수 없는 아이템이에요':bad===150?'빈 양동이 칸은 꺼내기만 할 수 있어요':bad===149?'기름 양동이만 넣을 수 있어요':bad>=145&&bad<149?'필터·결정만 넣을 수 있어요':bad>=140&&bad<145?'보관칸에는 넣을 수 없어요':bad===QV0?'화살통을 장착해야 화살을 넣을 수 있어요':bad===ACC_S?'머리 장신구만 넣을 수 있어요':bad===CAPE_S?'망토만 넣을 수 있어요':bad===QUIV_S?'화살통만 넣을 수 있어요':bad>=ARM0?'해당 부위 갑옷만 넣을 수 있어요':'유틸리티 아이템만 넣을 수 있어요');return;
   }
   if(b&&a.id===b.id&&!SOL(ITEMS[a.id])){
     const m=Math.min(a.count,99-b.count);
@@ -3250,7 +3279,7 @@ function quickMove(i){ // 창고가 열려 있을 때: 창고 칸 → 인벤토�
 function drillQuick(i){ // 드릴 창: 보관칸·업그레이드칸 → 인벤토리, 필터 → 빈 업그레이드칸
   const a=inv[i];if(!a)return false;
   if(i>=140&&i<151){const e=SL().find(t=>!inv[t]);if(e===undefined){note('자리가 없습니다');return true}inv[e]=a;inv[i]=null;renderInv();return true}
-  if((i<36||(i>=45&&i<45+bagN()))&&a.id==='oil_bucket'){const o=inv[149];if(!o){inv[149]=a;inv[i]=null}else{const m=Math.min(a.count,99-o.count);if(m<=0){note('기름 칸이 가득 찼어요');return true}o.count+=m;a.count-=m;if(a.count<=0)inv[i]=null}renderInv();return true}
+  if((i<36||(i>=45&&i<45+bagN()))&&a.id==='oil_bucket'&&!(curDrill&&curDrill.id==='edrill')){const o=inv[149];if(!o){inv[149]=a;inv[i]=null}else{const m=Math.min(a.count,99-o.count);if(m<=0){note('기름 칸이 가득 찼어요');return true}o.count+=m;a.count-=m;if(a.count<=0)inv[i]=null}renderInv();return true}
   if(i<36||(i>=45&&i<45+bagN())){if(!(ITEMS[a.id].filter||ITEMS[a.id].dcrystal))return false;const e=[145,146,147,148].find(t=>!inv[t]);if(e===undefined){note('업그레이드칸이 가득 찼어요');return true}inv[e]=a;inv[i]=null;renderInv();return true}
   return false;
 }
@@ -3321,6 +3350,7 @@ function bindInv(){
     if(shiftDown&&curChest&&!curDrill&&attIdx===null&&sdbl(d.i))return; // 쉬프트+더블클릭: 같은 아이템 전부 이동
     if(shiftDown&&attIdx!==null&&attShift(d.i)){return} // 쉬프트+클릭: 부착물 바로 장착
     if(shiftDown&&curDrill&&drillQuick(d.i)){held=null;markHeld();return}
+    if(shiftDown&&curDis&&disQuick(d.i)){held=null;markHeld();return}
     if(shiftDown&&curChest&&d.i>=81&&d.i<126&&toHotbar(d.i)){held=null;markHeld();return} // 창고 → 핫바 빈칸
     if(shiftDown&&curChest&&quickMove(d.i)){held=null;markHeld();return} // 쉬프트+클릭: 창고 ↔ 인벤토리 바로 이동
     if(shiftDown&&!curChest&&toHotbar(d.i)){held=null;markHeld();return} // 인벤토리 → 핫바 빈칸
@@ -3330,7 +3360,7 @@ function bindInv(){
     markHeld();
   });
   document.addEventListener('pointercancel',()=>{drag=null;ghost.style.display='none'});
-  $('sortBtn').addEventListener('click',sortInv);$('chestSortBtn').addEventListener('click',sortChest);$('chestTakeBtn').addEventListener('click',()=>bulkMove('chest'));$('chestPutBtn').addEventListener('click',()=>bulkMove('put'));$('drillTakeBtn').addEventListener('click',()=>bulkMove('drill'));
+  $('sortBtn').addEventListener('click',sortInv);$('chestSortBtn').addEventListener('click',sortChest);$('chestTakeBtn').addEventListener('click',()=>bulkMove('chest'));$('chestPutBtn').addEventListener('click',()=>bulkMove('put'));$('drillTakeBtn').addEventListener('click',()=>bulkMove('drill'));$('disBtn').addEventListener('click',doDisAll);$('disTakeBtn').addEventListener('click',disTakeAll);
   $('trashBtn').addEventListener('click',()=>{
     if(!inv[36]){note('휴지통 칸이 비어 있습니다');return}
     const nm=ITEMS[inv[36].id].name;inv[36]=null;renderInv();note(nm+' 삭제');
@@ -3998,7 +4028,7 @@ function animate(){
   updateGhost();updateDemo();
   if(active()){
     worldT+=dt;
-    updatePlayer(dt);drillTick(dt);checkPortals();bowTick();sgTick();reloadTick();proximity();updateDetector();updateMobs(dt,now);cullTick();banditProjTick(dt);golemFx(dt);chipTick(dt);dnumTick(dt);dropTick(dt);fallTick(dt);updateSlimes(dt);
+    updatePlayer(dt);drillTick(dt);powerTick(dt);checkPortals();bowTick();sgTick();reloadTick();proximity();updateDetector();updateMobs(dt,now);cullTick();banditProjTick(dt);golemFx(dt);chipTick(dt);dnumTick(dt);dropTick(dt);fallTick(dt);updateSlimes(dt);
     if(nearCamp){if(Date.now()-lastHurtT>5000)P.hp=Math.min(P.maxHp,P.hp+5*dt)} // 피격 5초 뒤부터 회복
     else if(buffT>0)buffT=Math.max(0,buffT-dt);
     const b=$('buff');
@@ -4097,8 +4127,8 @@ addEventListener('keyup',e=>{if(e.key==='Shift')shiftDown=false;if(e.key==='Cont
 addEventListener('blur',()=>{shiftDown=false;ctrlHeld=false});
 let curChest=null,curDrill=null;
 const DRILL_SEC={coal:20,copper:38,iron:50,titanium:50,gold:35,sulfur:35,diamond:170,sand:20,clay:20}; // 광물별 채굴 간격(초)
-function openDrill(s){if(invOpen)return;curDrill=s;const tk=s.id==='oil_tank';$('drillWrap').classList.toggle('tank',tk);$('drillTitle').textContent=tk?'기름 저장소 — 반경 50m 안의 모든 드릴에 기름 공급 · 기름 양동이 1개 = +40 · 최대 10000 · 빈 양동이는 아래 칸으로 나옴':'드릴 — 보관 5칸 (캔 아이템) · 업그레이드 4칸 (필터·결정) · 기름 1칸 · 빈 양동이 1칸';$('oilHelp').textContent=tk?'저장소에 기름이 있으면 50m 안의 드릴은 자기 기름 대신 저장소 기름을 씁니다 · 저장소가 비면 드릴 자체 기름을 사용':'1칸 = 30초 작동 · 양동이 1개 = +40 · 최대 200 (꽉 차는 만큼만 넣음) · 속도의 결정 +25% 채굴 · 기력의 결정 기름 +50% 지속';for(let i=0;i<11;i++)inv[140+i]=(s.items[i]&&ITEMS[s.items[i].id])?s.items[i]:null;toggleInv();$('drillWrap').style.display='block';renderInv();updOil(true)}
-let _oilShown=-1;function updOil(f){if(!curDrill)return;const v=Math.floor(curDrill.oil||0);if(!f&&v===_oilShown)return;_oilShown=v;const mx=curDrill.id==='oil_tank'?10000:200;$('oilTxt').textContent=v+' / '+mx;$('oilBar').style.width=(v/mx*100)+'%'}
+function openDrill(s){if(invOpen)return;curDrill=s;const tk=s.id==='oil_tank',gn=s.id==='generator',ed=s.id==='edrill';$('drillWrap').classList.toggle('tank',tk);$('drillWrap').classList.toggle('gen',gn);$('drillWrap').classList.toggle('edr',ed);$('drillTitle').textContent=gn?'발전기 — 기름 양동이 1개 = +40 · 최대 200 · 기름 1당 전기 2 · 빈 양동이는 아래 칸으로 나옴':ed?'전기 드릴 — 보관 5칸 (캔 아이템) · 업그레이드 4칸 (필터·결정) · 전력망 범위 안에서만 작동':tk?'기름 저장소 — 반경 50m 안의 모든 드릴·발전기에 기름 공급 · 기름 양동이 1개 = +40 · 최대 10000 · 빈 양동이는 아래 칸으로 나옴':'드릴 — 보관 5칸 (캔 아이템) · 업그레이드 4칸 (필터·결정) · 기름 1칸 · 빈 양동이 1칸';$('oilHelp').textContent=gn?'범위 '+PW.genR+'m (송전탑을 범위 안에 두면 송전탑 범위만큼 늘어남) · 전기가 필요할 때만 기름을 씀 · 50m 안 기름 저장소 기름을 먼저 씀':ed?'채굴 2배 빠름 · 기름 대신 전기 사용 · 속도의 결정 +25% 채굴 · 기력의 결정 전기 +50% 오래 · 발전기 범위 밖에서는 멈춤':tk?'저장소에 기름이 있으면 50m 안의 드릴·발전기는 자기 기름 대신 저장소 기름을 씁니다 · 저장소가 비면 드릴 자체 기름을 사용':'1칸 = 30초 작동 · 양동이 1개 = +40 · 최대 200 (꽉 차는 만큼만 넣음) · 속도의 결정 +25% 채굴 · 기력의 결정 기름 +50% 지속';for(let i=0;i<11;i++)inv[140+i]=(s.items[i]&&ITEMS[s.items[i].id])?s.items[i]:null;toggleInv();$('drillWrap').style.display='block';renderInv();updOil(true)}
+let _oilShown=-1;function updOil(f){if(!curDrill)return;const ed=curDrill.id==='edrill',v=ed?Math.round((curDrill.pw||0)*100)+(curDrill.net?1000:0):Math.floor(curDrill.oil||0);if(!f&&v===_oilShown)return;_oilShown=v;$('oilLbl').textContent=ed?'전력':'기름 게이지';if(ed){$('oilTxt').textContent=!curDrill.net?'전력망 범위 밖':curDrill.pw>0?Math.round(curDrill.pw*100)+'% 공급':'전기 없음';$('oilBar').style.width=(curDrill.net?curDrill.pw*100:0)+'%';return}const mx=curDrill.id==='oil_tank'?10000:200;$('oilTxt').textContent=v+' / '+mx;$('oilBar').style.width=(v/mx*100)+'%'}
 function closeDrill(){if(curDrill)for(let i=0;i<11;i++){curDrill.items[i]=inv[140+i]||null;inv[140+i]=null}curDrill=null;$('drillWrap').style.display='none'}
 function drillTick(dt){
   const tanks=placed.filter(t=>t.id==='oil_tank'&&t.items);
@@ -4113,37 +4143,116 @@ function drillTick(dt){
       if(q===curDrill)updOil();
       continue;
     }
-    if(q.id!=='drill'||!q.items)continue;
+    if(q.id==='generator'&&q.items){ // 발전기: 기름 양동이를 넣으면 기름으로 (+40, 최대 200) · 태우는 일은 powerTick이 함
+      const g=i=>q===curDrill?inv[140+i]:q.items[i],st=(i,v)=>{if(q===curDrill)inv[140+i]=v;else q.items[i]=v};
+      q.oil=q.oil||0;const o=g(9);
+      if(o&&o.id==='oil_bucket'){
+        const ob=g(10),rm=ob?(ob.id==='bucket'?99-ob.count:0):99,n=Math.min(o.count||1,Math.floor((PW.genOil-q.oil)/40),rm);
+        if(n>0){q.oil+=40*n;o.count=(o.count||1)-n;if(o.count<=0)st(9,null);if(ob)ob.count+=n;else st(10,{id:'bucket',count:n});if(q===curDrill)renderInv()}
+      }
+      if(q===curDrill)updOil();
+      continue;
+    }
+    if((q.id!=='drill'&&q.id!=='edrill')||!q.items)continue;const ED=q.id==='edrill';
     const g=i=>q===curDrill?inv[140+i]:q.items[i],st=(i,v)=>{if(q===curDrill)inv[140+i]=v;else q.items[i]=v};
     q.oil=q.oil||0;
-    { // 기름 양동이 칸: 게이지에 통째로 들어가는 만큼(+40씩, 최대 200)만 소비 · 빈 양동이는 빈 양동이 칸으로, 나머지 기름은 그대로
+    if(!ED){ // 기름 양동이 칸: 게이지에 통째로 들어가는 만큼(+40씩, 최대 200)만 소비 · 빈 양동이는 빈 양동이 칸으로, 나머지 기름은 그대로
       const o=g(9);
       if(o&&o.id==='oil_bucket'){
         const ob=g(10),rm=ob?(ob.id==='bucket'?99-ob.count:0):99,n=Math.min(o.count||1,Math.floor((200-q.oil)/40),rm);
         if(n>0){q.oil+=40*n;o.count=(o.count||1)-n;if(o.count<=0)st(9,null);if(ob)ob.count+=n;else st(10,{id:'bucket',count:n});if(q===curDrill)renderInv()}
       }
     }
-    let spd=1,eng=1;for(let i=5;i<9;i++){const f=g(i);if(f&&f.id==='speed_crystal')spd=1.25;if(f&&f.id==='energy_crystal')eng=1.5} // 속도의 결정: 채굴 +25% / 기력의 결정: 기름 1칸 +50% 오래
+    let spd=ED?2:1,eng=1;for(let i=5;i<9;i++){const f=g(i);if(f&&f.id==='speed_crystal')spd=ED?2.5:1.25;if(f&&f.id==='energy_crystal')eng=1.5} // 속도의 결정: 채굴 +25% / 기력의 결정: 기름 1칸 +50% 오래
     let anyF=false;const fl=[];for(let i=5;i<9;i++){const f=g(i);if(f&&ITEMS[f.id]&&ITEMS[f.id].filter){anyF=true;fl.push(ITEMS[f.id].filter)}}
     const room=o=>{for(let i=0;i<5;i++){const c=g(i);if(c&&c.id===o&&c.count<99)return true}for(let i=0;i<5;i++)if(!g(i))return true;return false};
     const put=o=>{let k=-1;for(let i=0;i<5;i++){const c=g(i);if(c&&c.id===o&&c.count<99){k=i;break}}
       if(k<0)for(let i=0;i<5;i++)if(!g(i)){k=i;break}
       if(k<0)return;const c=g(k);if(c)c.count++;else st(k,{id:o,count:1});if(q===curDrill)renderInv()};
-    let work=false;
+    let work=false;q.eng=eng;
+    let wnt=false;if(!anyF)wnt=room('stone');else for(const o of fl)if(room(o))wnt=true;if(ED)q.want=wnt;const kk=ED?(q.pw||0):1; // 전기 드릴: 전력 비율(kk)만큼만 채굴
     const tk=tanks.find(t=>(t.oil||0)>=1&&(t.pos.x-q.pos.x)**2+(t.pos.z-q.pos.z)**2<=2500); // 반경 50m 안에 기름이 있는 저장소
-    if(q.oil>0||tk){ // 기름이 있어야 작동 · 작동 중일 때만 닳음 (보관칸이 가득 차면 멈춤)
+    if(ED?kk>0:(q.oil>0||tk)){ // 기름이 있어야 작동 · 작동 중일 때만 닳음 (보관칸이 가득 차면 멈춤)
       if(!anyF){ // 필터가 없으면 돌 20초당 1개 (필터를 하나라도 끼우면 돌은 안 나옴)
-        if(room('stone')){work=true;q.sdt=(q.sdt||0)+dt*spd;while(q.sdt>=20){q.sdt-=20;put('stone')}}
+        if(room('stone')){work=true;q.sdt=(q.sdt||0)+dt*spd*kk;while(q.sdt>=20){q.sdt-=20;put('stone')}}
       }else{
         q.sdt=0;q.ot=q.ot||{};
-        for(const o of fl){if(!room(o))continue;work=true;const T=DRILL_SEC[o]||20;q.ot[o]=(q.ot[o]||0)+dt*spd;while(q.ot[o]>=T){q.ot[o]-=T;put(o)}}
+        for(const o of fl){if(!room(o))continue;work=true;const T=DRILL_SEC[o]||20;q.ot[o]=(q.ot[o]||0)+dt*spd*kk;while(q.ot[o]>=T){q.ot[o]-=T;put(o)}}
       }
     }
     q.run=work;
-    if(work){q.ob=(q.ob||0)+dt;const OT=30*eng;while(q.ob>=OT){q.ob-=OT;if(tk&&tk.oil>=1)tk.oil-=1;else q.oil=Math.max(0,q.oil-1)}if(q.spin)q.spin.rotation.y+=dt*9}
+    if(work){if(!ED){q.ob=(q.ob||0)+dt;const OT=30*eng;while(q.ob>=OT){q.ob-=OT;if(tk&&tk.oil>=1)tk.oil-=1;else q.oil=Math.max(0,q.oil-1)}}if(q.spin)q.spin.rotation.y+=dt*9*kk}
     if(q===curDrill)updOil();
   }
 }
+/* ---------- 전력망 (v14): 발전기 범위(+송전탑) 안의 전기 드릴·배터리가 한 망 ---------- */
+let _pwT=0,_pwN=-1,_pwNets=[];
+function pwTopo(){ // 발전기마다 범위(발전기 원 + 그 안에 놓인 송전탑 원)를 만들고, 같은 장비를 덮는 발전기끼리 한 망으로 묶음
+  const gens=[],bats=[],drs=[],tws=[];
+  for(const s of placed){if(!s.mesh)continue;const i=s.id;if(i==='generator'&&s.items)gens.push(s);else if(i==='battery')bats.push(s);else if(i==='edrill'&&s.items)drs.push(s);else if(i==='pylon')tws.push(s)}
+  const inD=(c,s)=>(s.pos.x-c.x)**2+(s.pos.z-c.z)**2<=c.r*c.r;
+  for(const g of gens){
+    g.cov=[{x:g.pos.x,z:g.pos.z,r:PW.genR}];const used=new Set();let ch=true;
+    while(ch){ch=false;for(const t of tws){if(used.has(t))continue;if(PW.chain?g.cov.some(c=>inD(c,t)):inD(g.cov[0],t)){used.add(t);g.cov.push({x:t.pos.x,z:t.pos.z,r:PW.towerR});ch=true}}}
+  }
+  const par=new Map(gens.map(g=>[g,g])),f=x=>{while(par.get(x)!==x){par.set(x,par.get(par.get(x)));x=par.get(x)}return x};
+  const devs=bats.concat(drs);
+  for(const s of devs){s._cg=gens.filter(g=>g.cov.some(c=>inD(c,s)));for(let k=1;k<s._cg.length;k++)par.set(f(s._cg[k]),f(s._cg[0]))}
+  const nets=new Map();
+  for(const g of gens){const k=f(g);if(!nets.has(k))nets.set(k,{gens:[],bats:[],drs:[]});nets.get(k).gens.push(g)}
+  for(const s of devs){if(!s._cg.length){s.net=null;if(s.id==='edrill')s.pw=0;continue}const n=nets.get(f(s._cg[0]));(s.id==='battery'?n.bats:n.drs).push(s);s.net=n}
+  _pwNets=[...nets.values()];_pwN=placed.length;
+}
+function powerTick(dt){
+  _pwT-=dt;if(_pwT<=0||_pwN!==placed.length){_pwT=.5;pwTopo()}
+  if(!_pwNets.length)return;
+  const tanks=placed.filter(t=>t.id==='oil_tank'&&(t.oil||0)>0),k0=PW.perOil/PW.genSec*dt; // k0: 발전기 1대가 이번 프레임에 만들 수 있는 전기
+  for(const n of _pwNets){
+    let need=0;for(const d of n.drs)if(d.want)need+=PW.drillUse/(d.eng||1)*dt;
+    let room=0,stored=0;for(const b of n.bats){b.pw=Math.min(PW.batCap,b.pw||0);room+=PW.batCap-b.pw;stored+=b.pw}
+    const fuel=[];let cap=0;
+    for(const g of n.gens){const tk=tanks.find(t=>(t.pos.x-g.pos.x)**2+(t.pos.z-g.pos.z)**2<=2500&&t.oil>0),src=tk||((g.oil||0)>0?g:null);if(src){fuel.push(src);cap+=k0}}
+    let made=0; // 필요한 만큼(소비 + 배터리 충전)만 기름을 태움
+    if(cap>0&&need+room>0){const sh=Math.min(1,(need+room)/cap);for(const src of fuel){const b=Math.min(src.oil,sh*dt/PW.genSec);src.oil-=b;made+=b*PW.perOil}}
+    const use=need>0?Math.min(need,made+stored):0,sat=need>0?use/need:((cap>0||stored>0)?1:0),sur=made-use;
+    if(sur>0&&room>0){for(const b of n.bats)b.pw+=Math.min(sur,room)*(PW.batCap-b.pw)/room}
+    else if(sur<0&&stored>0){const dr=Math.min(-sur,stored);for(const b of n.bats)b.pw-=dr*b.pw/stored}
+    for(const d of n.drs)d.pw=sat;
+  }
+}
+/* ---------- 해체 제작대 창 (v14.2.2): 우클릭 → 입력 5칸 + 결과 27칸 (5개 동시 해체 시 최대 27종) ---------- */
+let curDis=null;const DIS_IN=151,DIS_OUT=156,DIS_N=32;
+function openDis(s){if(invOpen)return;if(!s.items)s.items=new Array(DIS_N).fill(null);curDis=s;for(let i=0;i<DIS_N;i++)inv[DIS_IN+i]=(s.items[i]&&ITEMS[s.items[i].id])?s.items[i]:null;toggleInv();$('disWrap').style.display='block';renderInv()}
+function closeDis(){if(curDis)for(let i=0;i<DIS_N;i++){curDis.items[i]=inv[DIS_IN+i]||null;inv[DIS_IN+i]=null}curDis=null;$('disWrap').style.display='none'}
+function disPlan(){const r=[];for(let k=0;k<5;k++){const i=DIS_IN+k,it=inv[i];if(!it)continue;const info=disInfo(it);if(!info)continue;const solid=SOL(ITEMS[it.id])||!!info.lvDown;r.push({i,it,info,solid,ok:solid||it.count>=info.n})}return r}
+function updDis(){const el=$('disTxt');if(!el)return;const pl=disPlan();el.textContent=pl.length?pl.map(({it,info,ok})=>ITEMS[it.id].name+(info.lvDown?` ${it.lv}단계로`:'')+' → '+Object.entries(info.cost).map(([k,v])=>ITEMS[k].name+' '+v).join(', ')+((it.att&&it.att.some(Boolean))?', 부착물':'')+(ok?'':` (${info.n}개 필요)`)).join('\n'):'해체할 아이템을 위 칸에 넣고 해체를 누르세요'}
+function doDisAll(){
+  if(!curDis)return;
+  const pl=disPlan();if(!pl.length){note('해체할 수 있는 아이템을 넣어 주세요');return}
+  const snap=inv.map(s=>s&&{...s});let n=0,lack=0,ok=true;
+  const outFree=()=>{for(let j=DIS_OUT;j<DIS_OUT+27;j++)if(!inv[j])return j;return -1};
+  const put=(id,c,obj)=>{const d=ITEMS[id];if(!d)return true;ACH['g:'+id]=1;
+    if(SOL(d)){for(let k=0;k<c;k++){const j=outFree();if(j<0)return false;inv[j]=obj?{...obj,count:1}:{id,count:1,...(d.dur!==undefined?{dur:d.dur}:{})}}return true}
+    let left=c;for(let j=DIS_OUT;j<DIS_OUT+27&&left>0;j++){const b=inv[j];if(b&&b.id===id&&b.count<99){const m=Math.min(left,99-b.count);b.count+=m;left-=m}}
+    while(left>0){const j=outFree();if(j<0)return false;const m=Math.min(left,99);inv[j]={id,count:m};left-=m}return true};
+  for(const {i,it,info,solid,ok:enough} of pl){
+    if(!enough){lack++;continue}
+    const atts=(it.att||[]).filter(Boolean).map(a=>({...a}));
+    if(info.lvDown)it.lv--;else if(solid)inv[i]=null;else{it.count-=info.n;if(it.count<=0)inv[i]=null}
+    for(const [k,v] of Object.entries(info.cost))if(ok&&!put(k,v))ok=false;
+    for(const a of atts)if(ok&&ITEMS[a.id]&&!put(a.id,a.count||1,a))ok=false;
+    n++;
+  }
+  if(!ok){snap.forEach((s,k)=>inv[k]=s);renderInv();note('결과칸이 가득 찼어요. 비우고 다시 해체하세요');return}
+  renderInv();
+  note(n?`${n}개 해체 완료${lack?` · ${lack}칸은 수량 부족`:''}`:'수량이 부족해요');
+}
+function disTakeAll(){if(!curDis)return;let m=0,l=0;for(let j=DIS_OUT;j<DIS_OUT+27;j++){const a=inv[j];if(!a)continue;if(takeAll([a])){inv[j]=null;m++}else l++}renderInv();note(l?`${m}칸 이동 · ${l}칸은 자리가 부족해 남았습니다`:m?`${m}칸 이동 완료`:'옮길 아이템이 없습니다')}
+function disQuick(i){ // Shift+클릭: 입력·결과칸 → 인벤토리 / 인벤토리 → 빈 입력칸
+  const a=inv[i];if(!a)return false;
+  if(i>=DIS_IN&&i<DIS_IN+DIS_N){if(takeAll([a])){inv[i]=null;renderInv()}else note('자리가 없습니다');return true}
+  if(i<36||(i>=45&&i<45+bagN())){if(!disInfo(a))return false;const e=[0,1,2,3,4].map(k=>DIS_IN+k).find(t=>!inv[t]);if(e===undefined){note('입력칸이 가득 찼어요');return true}inv[e]=a;inv[i]=null;renderInv();return true}
+  return false}
 function fitChest(){ // 창고를 열면 칸 크기를 줄여 UI 전체가 한 화면에 들어오게
   const inv=$('inv'),w=$('win');
   if(!curChest){w.classList.remove('fit');inv.classList.remove('fitc');w.style.removeProperty('--s');w.style.removeProperty('--e');return}
@@ -4398,9 +4507,29 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v13.15.15';
+const SAVE_VER=7,GAME_VERSION='v14.2.2';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
+  {v:"v14",t:"대규모 · 월드 파일 · 전기",subs:[
+    {v:"14.2.2",d:'월드 저장 버튼·해체 전용 창',items:[
+      "변경: 메인 메뉴의 월드 칸 맨 끝에 '저장' 버튼 — 월드를 .json 파일로 저장해 다른 브라우저·기기에서 '📂 파일에서 월드 열기'로 같은 맵(시드·건물·인벤토리)을 이어서 플레이",
+      "변경: 해체는 해체 제작대를 우클릭해 여는 전용 창으로 — 제작창의 '해체' 탭 삭제 / 해체할 아이템 5칸(최대 5개 동시) · 결과 27칸 (5개를 한 번에 해체하면 재료가 최대 27종까지 나올 수 있어 27칸) / 쌓이는 아이템은 누를 때마다 1회분(만들 때 수량 단위)씩 해체 / Shift+클릭으로 빠르게 이동 / 결과칸이 가득 차면 해체 안 됨"]},
+    {v:"14.1.1",d:'송전탑 연쇄·월드 파일',items:[
+      "변경: 송전탑끼리 연쇄 — 발전기(또는 이미 이어진 송전탑) 범위 안에 송전탑을 이어 놓으면 멀리까지 전기가 전달됨",
+      "변경: 합금·티타늄 합금도 해체 불가",
+      "변경: 전선 x2는 제작대 근처에서 제작 (화로 → 제작대)",
+      "추가: 월드 파일 — 메인 메뉴 월드 칸 끝의 '저장' 버튼으로 월드를 .json 파일로 저장하고, '📂 파일에서 월드 열기'로 파일을 새 월드로 불러옴 (저장은 '저장 및 종료' 때 갱신된 내용)"]},
+    {v:"14.0.0",d:'맷돌·전력망·전기 드릴',items:[
+      "추가: 맷돌 (돌 20 + 막대) — 근처(10m)에서 석탄 1 → 석탄가루 4 · 밀 1 → 밀가루 8 · 사탕수수 1 → 설탕 4 제작 (기존 모루·맨손 제작법은 맷돌 전용으로 이동)",
+      "변경: 전선 x2는 구리봉 1개로 제작 (전선·코일은 재료 아이템)",
+      "추가: 전기작업대 (전선 20 + 구리판 5 + 판자 4 + 철봉 3, 고급작업대 근처에서 제작) — 코일·전기 드릴·발전기·배터리·송전탑을 만드는 작업대",
+      "추가: 코일 (전선 30 + 철 주괴 5 + 철판 2)",
+      "추가: 전기 드릴 (드릴 + 금판 5 + 전선 10 + 코일 2) — 채굴 2배 빠름 · 기름 대신 전기 사용 · 전력망 범위 안에서만 작동 · 필터·칸 구성은 드릴과 같음",
+      "추가: 발전기 (코일 4 + 철판 20 + 티타늄봉 4) — 기름을 넣으면 기름 1당 전기 2 생산 (기름 양동이 +40 · 최대 200 · 50m 안 기름 저장소 기름도 사용)",
+      "추가: 배터리 (코일 4 + 철판 4 + 티타늄 주괴 10) — 용량 10000 · 범위 없음 · 전력망 범위 안에서 저장·방출 (우클릭으로 충전량 확인)",
+      "추가: 송전탑 (판자 8 + 철판 4 + 코일 1) — 반경 50m · 발전기 범위 안에 두면 발전기 범위가 송전탑 범위만큼 늘어남",
+      "변경: 해체 제작대 — 판자·나뭇가지·가루·판·봉·주괴·머리·틀·유리는 해체 불가 (부적·건물·유틸템·도구·무기·갑옷·총은 가능)",
+      "임시값: 발전 속도(기름 10초당 1) · 전기 드릴 소비(30초당 전기 2) · 발전기 범위 30m"]}]},
   {v:"v13",t:"대규모 · 건축",subs:[
     {v:"13.15.15",d:'해체 제작대·보초 저격수',items:[
       "추가: 해체 제작대 (고급작업대 재료 + 철 주괴 10 + 금 주괴 10) — 근처(10m)에서 제작창의 '해체' 탭을 열어 아이템을 고르면 제작법을 거꾸로 돌려 재료를 돌려받음. 돋보기 4단계는 3단계 돋보기 + 유리로 해체 / 여러 개가 한 번에 만들어지는 아이템은 그 수량 단위로 해체 / 총의 부착물도 돌려받음 (인벤토리가 가득 차면 해체 안 됨)",
@@ -4438,7 +4567,7 @@ const ROADMAP=[
       "추가: 곰 전조 동작 — 공격 전 0.55초간 뒷발로 서서 포효(주황빛), 그 사이 물러나면 피함",
       "추가: 환경음 — 바람 · 강 가까이 물소리 · 발소리(풀·물·돌 구분, 웅크리면 작게)"]},
     {v:"13.10.10",d:'기름 저장소·활 개편·채굴 속도',items:[
-      "추가: 기름 저장소(철판 20 + 티타늄 합금 10) — 반경 50m 안의 모든 드릴에 기름 공급, 최대 10000 (기름 양동이 1개 = +40, 빈 양동이는 따로 나옴)",
+      "추가: 기름 저장소(철판 20 + 티타늄 합금 10) — 반경 50m 안의 모든 드릴·발전기에 기름 공급, 최대 10000 (기름 양동이 1개 = +40, 빈 양동이는 따로 나옴)",
       "변경: 티타늄 채굴 60초 · 금 45초 · 유황 45초로 단축",
       "변경: 다이아 필터 재료 다이아 100개 → 50개 / 드릴 제작에 다이아 10개 추가",
       "변경: 장궁이 '활'로, 긴 화살이 '화살'로 바뀜 — 기존 활·화살 제작법 삭제 (기존에 가진 구형 활·화살은 자동으로 변환됨)",
@@ -5060,8 +5189,30 @@ function renderMenu(){
       jset(WK,jget(WK,[]).filter(x=>x.id!==w.id));
       try{localStorage.removeItem('islandWorld_'+w.id);localStorage.removeItem('islandWorld_'+w.id+'m')}catch(e){}
       renderMenu()};
-    r.append(inf,pb,eb,db);L.appendChild(r);
+    const xb=document.createElement('button');xb.className='setbtn';xb.textContent='저장';xb.title='이 월드를 파일로 저장 (다른 브라우저·기기에서 불러오기)';xb.onclick=()=>exportWorld(w);
+    r.append(inf,pb,eb,db,xb);L.appendChild(r);
   });
+}
+function exportWorld(w){ // 월드 저장을 .json 파일로 내려받기
+  const d=jget('islandWorld_'+w.id,null);
+  if(!d){alert('저장된 내용이 없어요. 한 번 플레이한 뒤 저장하고 나와 주세요.');return}
+  const o={format:'island-world',gameVersion:GAME_VERSION,world:{name:w.name,seed:w.seed,created:w.created},save:d};
+  const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));
+  a.href=u;a.download=(w.name.replace(/[\\/:*?"<>|]/g,'_')||'world')+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);
+}
+function importWorldFile(f){ // 내보낸 .json을 새 월드로 불러오기 (기존 월드는 건드리지 않음)
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const o=JSON.parse(r.result),d=o&&o.format==='island-world'?o.save:o;
+      if(!d||typeof d!=='object'||!d.inv||!d.pos)throw 0;
+      if((d.ver||2)<SAVE_VER)upgradeSave(d);
+      const ws=jget(WK,[]),id='w'+Date.now().toString(36),wi=(o&&o.world)||{};
+      ws.push({id,name:String(wi.name||f.name.replace(/\.json$/i,'')||'불러온 월드').slice(0,20),seed:wi.seed||d.seed||1,created:Date.now(),last:Date.now()});
+      localStorage.setItem('islandWorld_'+id,JSON.stringify(d));jset(WK,ws);renderMenu();alert('월드를 불러왔어요. 목록에서 ▶ 플레이를 누르세요.');
+    }catch(e){alert('올바른 월드 파일이 아니에요.')}
+  };
+  r.readAsText(f);
 }
 function createWorld(){
   const ws=jget(WK,[]);
@@ -5086,6 +5237,8 @@ function showMenu(){
   try{importLegacy()}catch(e){}
   try{upgradeAll()}catch(e){}
   $('newBtn').addEventListener('click',createWorld);
+  $('openBtn').addEventListener('click',()=>$('wfile').click());
+  $('wfile').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)importWorldFile(f)});
   renderMenu();
 }
 try{if('serviceWorker' in navigator&&location.protocol==='https:'&&!/appassets/.test(location.host))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
