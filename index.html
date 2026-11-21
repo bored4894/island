@@ -1555,7 +1555,7 @@ const stackable=q=>!!STK[q.id]&&!q.gk;
 let placeRot=0;
 const DR_IDS={drill:1,oil_tank:1,edrill:1,generator:1}; // 우클릭으로 창이 열리는 설비
 const CAVE_OK={drill:1,oil_tank:1,edrill:1,generator:1,battery:1,pylon:1}; // 동굴에 설치 가능
-const PW={perOil:2,genSec:10,drillUse:2/30,genR:30,towerR:50,chain:true,batCap:10000,genOil:200}; // 임시값: 기름 1당 전기 2 · 발전기는 기름 10초당 1 · 전기 드릴 소비(작동 1초당) · 발전기 범위 30 · 송전탑 반경 50 · 송전탑 연쇄 가능 · 배터리 10000 · 발전기 기름 최대 200
+const PW={perOil:2,genSec:10,drillUse:2/30,genR:30,towerR:50,chain:true,batCap:10000,genOil:200,machUse:2/30}; // 임시값: 기름 1당 전기 2 · 발전기는 기름 10초당 1 · 전기 드릴 소비(작동 1초당) · 발전기 범위 30 · 송전탑 반경 50 · 송전탑 연쇄 가능 · 배터리 10000 · 발전기 기름 최대 200
 const LPOOL=[],mkSL=(c,i,d)=>{const o=new THREE.Object3D();o.intensity=i;o.userData.c=c;o.userData.d=d;return o}; // 설치 조명: 가짜 조명(위치·세기만) — 실제 PointLight는 고정 5개를 돌려 씀 (조명 개수가 바뀌면 전체 셰이더가 재컴파일돼 렉이 걸림)
 const EDGE={wall:1,door:1,window:1},FLOOR_H=.1; // 벽·문: 칸 경계(rot 0=가로 / 1=세로)에 설치 · 바닥: 칸 위 얇은 판(걸어 다닐 수 있음)
 const cellPlane=(i,j)=>{ // 격자의 윗면: 지형이 걸친 격자 층의 윗면 (월드 y가 GRID 배수) — 같은 격자의 바닥은 모두 같은 높이
@@ -4243,19 +4243,19 @@ function drillTick(dt){
 }
 /* ---------- 자동화 설비 (v14.3.4): 전기화로 · 자동 수집기 ---------- */
 const MACH={efurnace:1,collector:1};
-const EF_T={copper:1,gold:1,iron:2,titanium:2},EF_ORE=2,MACH_R=20,CO_T=.4; // 전기화로: 광석 2개 → 주괴 1개 · 석탄 없음 · 구리·금 1초 / 철·티타늄 2초 · 수집기: 아이템 상관없이 0.4초에 1개 · 범위 ±20m (임시값)
+const EF_T={copper:1,gold:1,iron:2,titanium:2},EF_ORE=1,MACH_R=20,CO_T=.4; // 전기화로: 광석 1개 → 주괴 1개 · 석탄 없음 · 구리·금 1초 / 철·티타늄 2초 · 수집기: 아이템 상관없이 0.4초에 1개 · 범위 ±20m (임시값)
 let curMach=null,_mT=0,_mtShown='';
 const mBase=s=>s.id==='efurnace'?183:189; // 창이 열려 있는 동안 설비 칸은 inv의 이 번호부터 들어옴
 const mGet=(s,i)=>s===curMach?inv[mBase(s)+i]:s.items[i];
 const mSet=(s,i,v)=>{if(s===curMach)inv[mBase(s)+i]=v;else s.items[i]=v};
 const efOK=it=>!!it&&/^(copper|gold|iron|titanium)_ingot$/.test(it.id);
-const EF_MSG={idle:'주괴를 지정하세요',work:'작동 중',noore:'근처 상자·드릴에 광석이 부족해요 (2개 필요)',full:'보관칸이 가득 찼어요',notg:'지정한 상자가 없어요 — 부수고 다시 지정하세요',nofil:'필터를 지정하세요',none:'옮길 아이템이 없어요',move:'옮기는 중'};
+const EF_MSG={idle:'주괴를 지정하세요',work:'작동 중',noore:'근처 상자·드릴에 광석이 없어요',nopw:'전력망 범위 밖이거나 전기가 없어요',full:'보관칸이 가득 찼어요',notg:'지정한 상자가 없어요 — 부수고 다시 지정하세요',nofil:'필터를 지정하세요',none:'옮길 아이템이 없어요',move:'옮기는 중'};
 function syncMach(){const s=curMach;if(!s)return;if(s.id==='efurnace'){for(let i=0;i<6;i++)s.items[i]=inv[183+i]||null}else{for(let i=0;i<10;i++)s.items[i]=inv[189+i]||null}}
 function openMach(s){
   if(invOpen)return;curMach=s;const ef=s.id==='efurnace';
   $('machWrap').classList.toggle('ef',ef);$('machWrap').classList.toggle('co',!ef);
   $('machTitle').textContent=ef?'전기화로 — 주괴 하나를 지정하면 근처 상자·드릴의 광석을 석탄 없이 자동으로 구워 보관해요':'자동 수집기 — 필터로 지정한 아이템을 범위 안 설비에서 지정한 상자로 옮겨요';
-  $('machHelp').textContent=ef?`범위 ±${MACH_R}m 안의 상자·드릴에서 광석 2개 → 주괴 1개 · 구리·금 1초 / 철·티타늄 2초 · 보관 5칸 · 지정 칸에는 인벤토리 주괴를 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`:`범위 ±${MACH_R}m 안의 드릴·전기 드릴·전기화로 보관칸에서 아이템 1개를 0.4초마다 상자로 옮김 · 필터 칸에는 인벤토리 아이템을 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`;
+  $('machHelp').textContent=ef?`범위 ±${MACH_R}m 안의 상자·드릴에서 광석 1개 → 주괴 1개 · 구리·금 1초 / 철·티타늄 2초 · 같은 주괴를 지정한 전기화로가 근처에 있으면 2배 · 전력 필요 · 보관 5칸 · 지정 칸에는 인벤토리 주괴를 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`:`범위 ±${MACH_R}m 안의 드릴·전기 드릴·전기화로 보관칸에서 아이템 1개를 0.4초마다 상자로 옮김 · 전력 필요 · 필터 칸에는 인벤토리 아이템을 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`;
   const n=ef?6:10,b=ef?183:189;
   for(let i=0;i<n;i++){const it=s.items[i];inv[b+i]=(it&&ITEMS[it.id])?it:null}
   toggleInv();$('machWrap').style.display='block';renderInv();updMach(true);
@@ -4299,37 +4299,48 @@ function machTick(dt){
         const take=n=>{for(const r of srcs)for(let i=0;i<r.n&&n>0;i++){const c=r.g(i);if(c&&c.id===ore){const t=Math.min(c.count,n);c.count-=t;n-=t;if(c.count<=0)r.st(i,null)}}};
         const room=()=>{for(let i=1;i<=5;i++){const c=mGet(s,i);if(!c||(c.id===sel.id&&c.count<99))return true}return false};
         const put=()=>{for(let i=1;i<=5;i++){const c=mGet(s,i);if(c&&c.id===sel.id&&c.count<99){c.count++;return}}for(let i=1;i<=5;i++)if(!mGet(s,i)){mSet(s,i,{id:sel.id,count:1});return}};
+        s.want=false;
         if(!room()){st='full';s.t=0}
         else if(have()<EF_ORE){st='noore';s.t=0}
         else{
-          st='work';wk=true;s.t=(s.t||0)+d;let g=0;
-          while(s.t>=T&&g++<20){if(!room()||have()<EF_ORE)break;take(EF_ORE);put();s.t-=T}
-          if(s.t>T)s.t=T;
+          s.want=true;const kk=s.pw||0;
+          if(kk<=0)st='nopw';
+          else{
+            const bo=placed.some(q=>q!==s&&q.id==='efurnace'&&q.items&&near(s,q)&&mGet(q,0)&&mGet(q,0).id===sel.id)?2:1; // 같은 금속 전기화로가 근처에 있으면 효율 2배
+            st='work';wk=true;s.t=(s.t||0)+d*kk*bo;let g=0;
+            while(s.t>=T&&g++<20){if(!room()||have()<EF_ORE)break;take(EF_ORE);put();s.t-=T}
+            if(s.t>T)s.t=T;
+          }
         }
         if(s===curMach)renderInv();
-      }else s.t=0;
+      }else{s.t=0;s.want=false}
     }else{ // 자동 수집기
       const fl=new Set();for(let i=0;i<10;i++){const c=mGet(s,i);if(c)fl.add(c.id)}
       const tg=s.tg?placed.find(q=>q.id==='chest'&&q.uid===s.tg&&q.items):null;
+      const find=()=>{
+        for(const q of placed){
+          if(q===s||!q.items||!near(s,q))continue;
+          let lo,hi,get,set;
+          if(q.id==='drill'||q.id==='edrill'){lo=0;hi=5;get=i=>dGet(q,i);set=(i,v)=>dSet(q,i,v)}
+          else if(q.id==='efurnace'){lo=1;hi=6;get=i=>mGet(q,i);set=(i,v)=>mSet(q,i,v)}
+          else continue;
+          for(let i=lo;i<hi;i++){const c=get(i);if(c&&fl.has(c.id)&&chestRoom(tg,c.id))return{c,i,set}}
+        }
+        return null;
+      };
+      s.want=false;
       if(!tg){st='notg';s.t=0}
       else if(!fl.size){st='nofil';s.t=0}
+      else if(!find()){st='none';s.t=Math.min(s.t||0,CO_T)}
       else{
-        s.t=(s.t||0)+d;let g=0,moved=0;
-        while(s.t>=CO_T&&g++<12){
-          let from=null;
-          for(const q of placed){
-            if(q===s||!q.items||!near(s,q))continue;
-            let lo,hi,get,set;
-            if(q.id==='drill'||q.id==='edrill'){lo=0;hi=5;get=i=>dGet(q,i);set=(i,v)=>dSet(q,i,v)}
-            else if(q.id==='efurnace'){lo=1;hi=6;get=i=>mGet(q,i);set=(i,v)=>mSet(q,i,v)}
-            else continue;
-            for(let i=lo;i<hi;i++){const c=get(i);if(c&&fl.has(c.id)&&chestRoom(tg,c.id)){from={c,i,set};break}}
-            if(from)break;
-          }
-          if(!from)break;
-          chestAdd(tg,from.c.id);from.c.count--;if(from.c.count<=0)from.set(from.i,null);s.t-=CO_T;moved++;
+        s.want=true;const kk=s.pw||0;
+        if(kk<=0)st='nopw';
+        else{
+          s.t=(s.t||0)+d*kk;let g=0,moved=0;
+          while(s.t>=CO_T&&g++<12){const from=find();if(!from)break;chestAdd(tg,from.c.id);from.c.count--;if(from.c.count<=0)from.set(from.i,null);s.t-=CO_T;moved++}
+          if(s.t>CO_T)s.t=CO_T;
+          st='move';if(moved){wk=true;renderInv()}
         }
-        if(moved){st='move';wk=true;renderInv()}else{st='none';if(s.t>CO_T)s.t=CO_T}
       }
     }
     s.mst=st;
@@ -4341,7 +4352,7 @@ function machTick(dt){
 let _pwT=0,_pwN=-1,_pwNets=[];
 function pwTopo(){ // 발전기마다 범위(발전기 원 + 그 안에 놓인 송전탑 원)를 만들고, 같은 장비를 덮는 발전기끼리 한 망으로 묶음
   const gens=[],bats=[],drs=[],tws=[];
-  for(const s of placed){if(!s.mesh)continue;const i=s.id;if(i==='generator'&&s.items)gens.push(s);else if(i==='battery')bats.push(s);else if(i==='edrill'&&s.items)drs.push(s);else if(i==='pylon')tws.push(s)}
+  for(const s of placed){if(!s.mesh)continue;const i=s.id;if(i==='generator'&&s.items)gens.push(s);else if(i==='battery')bats.push(s);else if((i==='edrill'||MACH[i])&&s.items)drs.push(s);else if(i==='pylon')tws.push(s)}
   const inD=(c,s)=>(s.pos.x-c.x)**2+(s.pos.z-c.z)**2<=c.r*c.r;
   for(const g of gens){
     g.cov=[{x:g.pos.x,z:g.pos.z,r:PW.genR}];const used=new Set();let ch=true;
@@ -4352,7 +4363,7 @@ function pwTopo(){ // 발전기마다 범위(발전기 원 + 그 안에 놓인 �
   for(const s of devs){s._cg=gens.filter(g=>g.cov.some(c=>inD(c,s)));for(let k=1;k<s._cg.length;k++)par.set(f(s._cg[k]),f(s._cg[0]))}
   const nets=new Map();
   for(const g of gens){const k=f(g);if(!nets.has(k))nets.set(k,{gens:[],bats:[],drs:[]});nets.get(k).gens.push(g)}
-  for(const s of devs){if(!s._cg.length){s.net=null;if(s.id==='edrill')s.pw=0;continue}const n=nets.get(f(s._cg[0]));(s.id==='battery'?n.bats:n.drs).push(s);s.net=n}
+  for(const s of devs){if(!s._cg.length){s.net=null;if(s.id!=='battery')s.pw=0;continue}const n=nets.get(f(s._cg[0]));(s.id==='battery'?n.bats:n.drs).push(s);s.net=n}
   _pwNets=[...nets.values()];_pwN=placed.length;
 }
 function powerTick(dt){
@@ -4360,7 +4371,7 @@ function powerTick(dt){
   if(!_pwNets.length)return;
   const tanks=placed.filter(t=>t.id==='oil_tank'&&(t.oil||0)>0),k0=PW.perOil/PW.genSec*dt; // k0: 발전기 1대가 이번 프레임에 만들 수 있는 전기
   for(const n of _pwNets){
-    let need=0;for(const d of n.drs)if(d.want)need+=PW.drillUse/(d.eng||1)*dt;
+    let need=0;for(const d of n.drs)if(d.want)need+=(d.id==='edrill'?PW.drillUse/(d.eng||1):PW.machUse)*dt;
     let room=0,stored=0;for(const b of n.bats){b.pw=Math.min(PW.batCap,b.pw||0);room+=PW.batCap-b.pw;stored+=b.pw}
     const fuel=[];let cap=0;
     for(const g of n.gens){const tk=tanks.find(t=>(t.pos.x-g.pos.x)**2+(t.pos.z-g.pos.z)**2<=2500&&t.oil>0),src=tk||((g.oil||0)>0?g:null);if(src){fuel.push(src);cap+=k0}}
@@ -4660,10 +4671,15 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v14.3.4';
+const SAVE_VER=7,GAME_VERSION='v14.4.5';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v14",t:"대규모 · 월드 파일 · 전기",subs:[
+    {v:"14.4.5",d:'전기화로·수집기 전력·효율',items:[
+      "변경: 전기화로 광석 1개 → 주괴 1개 (구리·금 1초 / 철·티타늄 2초)",
+      "변경: 전기화로·자동 수집기가 전력망 범위 안에서 전기를 써서 작동 (일할 때만 소비 · 전기가 부족하면 느려짐)",
+      "추가: 같은 주괴를 지정한 전기화로가 범위(±20m) 안에 있으면 효율 2배 (여러 대여도 2배까지) — 4종을 다 굽고 싶으면 전기화로 4대를 따로 설치",
+      "임시값: 설비 전기 소비 30초당 2 (전기 드릴과 같음)"]},
     {v:"14.3.4",d:'전기화로·자동 수집기·선반 쌓기',items:[
       "변경: 상자 선반 위에 선반을 바로 깔 수 있음 — 아래 선반에 상자 2개가 있을 때만 깔 수 있고, 위에 깐 선반(판만 얹힘)에는 상자 1개만 설치 (한 칸 최대 선반 2개 · 상자 3개)",
       "변경: 티타늄 합금을 티타늄 합금 도구처럼 남색 주괴 모양으로",
