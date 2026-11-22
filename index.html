@@ -91,7 +91,7 @@ button.setbtn.mobOnly{display:none}body.mob button.setbtn.mobOnly{display:inline
 #noteTop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 8px 30px;background:#efe2bd;border-bottom:2px solid #c9a96b}
 #noteTitle{flex:1;text-align:center;font-weight:800;font-size:15px;color:#6b3f1d}
 .nArr{width:38px;height:38px;border-radius:50%;border:2px solid #8d6e63;background:#fff8e1;color:#5d4037;font-size:18px;font-weight:900;cursor:pointer;padding:0}.nArr:disabled{opacity:.25;cursor:default}
-#noteBody{box-sizing:border-box;flex:none;overflow-y:auto;padding:0 16px 14px 56px;line-height:28px;min-height:260px;max-height:62vh;background:linear-gradient(90deg,transparent 46px,#e57373 46px,#e57373 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,#b9d3e0 27px 28px);background-attachment:local}
+#noteMid{display:flex;align-items:stretch;min-height:0;overflow:hidden}#noteTabs{display:flex;flex-direction:column;gap:8px;padding:12px 0 0;width:58px;background:#efe2bd;border-left:2px solid #c9a96b;flex:none}.nTab{border:none;border-radius:0 10px 10px 0;padding:8px 2px;width:54px;background:#d9c28f;color:#5d4037;font-weight:800;font-size:11px;cursor:pointer;box-shadow:inset -2px 0 0 #b59a60;line-height:1.25}.nTab span{display:block;font-size:17px}.nTab.on{background:#b23a48;color:#fff;box-shadow:none;width:58px}.nSet{display:flex;align-items:center;gap:8px;height:28px}.nSet input[type=range]{flex:1;min-width:0}.nOpt{border:1px solid #8d6e63;background:#fff8e1;color:#5d4037;border-radius:6px;padding:0 10px;height:24px;cursor:pointer;font-weight:700}.nOpt.on{background:#b23a48;color:#fff;border-color:#b23a48}#noteBody{box-sizing:border-box;flex:1;min-width:0;overflow-y:auto;padding:0 16px 14px 56px;line-height:28px;min-height:260px;max-height:62vh;background:linear-gradient(90deg,transparent 46px,#e57373 46px,#e57373 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,#b9d3e0 27px 28px);background-attachment:local}
 #noteBody p{margin:0 0 28px}#noteBody b.h{color:#b23a48;font-size:16px}#noteBody .ck{color:#2e7d32;font-weight:800}#noteBody .nk{color:#8a7a5a}
 #noteFoot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px 6px 30px;background:#efe2bd;border-top:2px solid #c9a96b;font-size:12px;color:#7a6446}
 #noteFoot button{border:1px solid #8d6e63;background:#fff8e1;color:#5d4037;border-radius:6px;padding:3px 10px;cursor:pointer;font-weight:700}
@@ -200,7 +200,7 @@ body.mob #clock{top:70px;right:12px}
 <div id="comp" class="abs" style="top:78px;right:12px;display:none;font-weight:700"></div>
 <div id="hotbar" class="abs"></div>
 <div id="craft" class="abs"><div id="cats"></div><div id="subs"></div><div id="rlist"></div></div>
-<div id="noteWin"><div id="noteTop"><button class="nArr" id="noteL">◀</button><div id="noteTitle"></div><button class="nArr" id="noteR">▶</button></div><div id="noteBody"></div><div id="noteFoot"><span class="nDots" id="noteDots"></span><span>◀ ▶ 또는 ← → 키로 넘기기</span><button id="noteX">닫기 (T)</button></div></div>
+<div id="noteWin"><div id="noteTop"><button class="nArr" id="noteL">◀</button><div id="noteTitle"></div><button class="nArr" id="noteR">▶</button></div><div id="noteMid"><div id="noteBody"></div><div id="noteTabs"></div></div><div id="noteFoot"><span class="nDots" id="noteDots"></span><span>◀ ▶ · ← → 키 · 오른쪽 책갈피로 이동</span><button id="noteX">닫기 (T)</button></div></div>
 <div id="mob">
 <div class="mb" id="mu" style="left:64px;bottom:128px">▲</div>
 <div class="mb" id="ml" style="left:8px;bottom:72px">◀</div>
@@ -313,16 +313,28 @@ for(const k of ['pickaxe','shovel']){ // 티타늄 합금 곡괭이·삽 (단계
 ITEMS.copper_shovel.cd=600;ITEMS.gold_shovel.cd=600;ITEMS.iron_shovel.cd=500;ITEMS.titanium_shovel.cd=400; // 삽 공속: 기본 +0.2초, 구리→철→티타늄 0.1초씩 빨라짐
 add('tools','곡괭이','flint_pickaxe','부싯돌 곡괭이',{long_stick:1,rope:2,flint:1});
 add('tools','기타','torch','횃불 x4',{stick:1,coal:1,rope:1},{yield:4});
-Object.assign(ITEMS,{floor:{name:'바닥',type:'placeable'},wall:{name:'벽',type:'placeable'},door:{name:'문',type:'placeable'},window:{name:'창문',type:'placeable'}}); // 건축 조각: 바닥=칸 1개 / 벽·문=칸 사이 경계
+Object.assign(ITEMS,{floor:{name:'바닥',type:'placeable'},wall:{name:'벽',type:'placeable'},door:{name:'문',type:'placeable'},window:{name:'창문',type:'placeable'},brick:{name:'벽돌'}}); // 건축 조각
+for(const [m,mn] of [['stone','돌'],['brick','벽돌']])for(const [b,bn] of [['floor','바닥'],['wall','벽'],['window','창문'],['door','문']])ITEMS[m+'_'+b]={name:mn+' '+bn,type:'placeable',base:b,mat:m}; // v14.5.5: 돌·벽돌 재질 (설치하면 base 건물 + mat 재질)
+// 건축 조각: 바닥=칸 1개 / 벽·문=칸 사이 경계: 바닥=칸 1개 / 벽·문=칸 사이 경계
 add('build',null,'floor','바닥 x2',{plank:4},{yield:2});
 add('build',null,'wall','벽 x2',{plank:6},{yield:2});
 add('build',null,'window','창문 x2',{plank:4,glass:1},{yield:2});
 add('build',null,'door','문',{plank:6,rope:2});
+add('build','돌','stone_floor','돌 바닥 x2',{stone:8},{yield:2});
+add('build','돌','stone_wall','돌 벽 x2',{stone:12},{yield:2});
+add('build','돌','stone_window','돌 창문 x2',{stone:8,glass:1},{yield:2});
+add('build','돌','stone_door','돌 문',{stone:12});
+add('build','벽돌','brick_floor','벽돌 바닥 x2',{brick:8},{yield:2});
+add('build','벽돌','brick_wall','벽돌 벽 x2',{brick:12},{yield:2});
+add('build','벽돌','brick_window','벽돌 창문 x2',{brick:8,glass:1},{yield:2});
+add('build','벽돌','brick_door','벽돌 문',{brick:12});
+add('mat','가공','brick','벽돌 x4',{clay:2,coal:1},{near:'furnace',yield:4}); // 전기화로에서는 점토 1개 → 벽돌 4개
 add('util',null,'lantern','랜턴',{iron_ingot:2,gold_ingot:6,coal:4});
 add('tools','기타','detector','금속탐지기',{iron_ingot:5,copper_ingot:5,gold_ingot:1,wire:6});
 add('mat','가공','wire','전선 x2',{copper_rod:1},{near:'table',yield:2}); // v14: 구리봉 1개
 add('mat','가공','cloth','천 x4',{wool:1},{yield:4});
 add('cook',null,'sugar','설탕 x4',{sugarcane:1},{near:'grinder',yield:4}); // v14: 맷돌 전용
+add('mat','가공','sand','모래',{stone:2},{near:'grinder'}); // v14.6.6: 맷돌에서 돌 2개 → 모래 1개
 add('util',null,'compass','나침반',{diamond:1,iron_ingot:1,wire:2});
 add('util',null,'bag','가방 (+18칸)',{cloth:8,rope:4,gold_ingot:4});
 add('util',null,'headlamp','헤드랜턴',{diamond:3,hide:2,lantern:1},{near:'util_table'});
@@ -335,7 +347,7 @@ add('func',null,'chest','창고 (45칸)',{plank:12,rope:4});
 add('func',null,'shelf','상자 선반',{plank:8,long_stick:10,rope:6});
 add('func',null,'drill','드릴',{iron_ingot:20,metal_plate:10,titanium_alloy:5,spring:4,diamond:10,golem_core:1},{near:'util_table'});
 add('func',null,'oil_tank','기름 저장소',{metal_plate:20,titanium_alloy:10},{near:'util_table'});
-for(const [o,n] of [['coal','석탄'],['copper','구리'],['iron','철'],['gold','금'],['titanium','티타늄'],['diamond','다이아'],['sulfur','유황'],['sand','모래'],['clay','점토']])add('build','업그레이드','filter_'+o,n+' 필터',{[o]:(o==='diamond'||o==='sand'||o==='clay')?50:80,titanium_alloy:10,titanium_plate:10}); // 광물 80개 · 다이아·모래·점토는 50개
+for(const [o,n] of [['coal','석탄'],['copper','구리'],['iron','철'],['gold','금'],['titanium','티타늄'],['diamond','다이아'],['sulfur','유황'],['clay','점토']])add('build','업그레이드','filter_'+o,n+' 필터',{[o]:(o==='diamond'||o==='clay')?50:80,titanium_alloy:10,titanium_plate:10}); // 광물 80개 · 다이아·모래·점토는 50개
 add('tools','기타','hammer','망치',{iron_ingot:6,long_stick:1});
 for(const [m,mn,mu] of [['copper','구리',20],['gold','금',10],['iron','철',30],['titanium','티타늄',40],['talloy','티타늄 합금',50]])
   for(const [p,pn,bs,cs] of [['helmet','헬멧',.2,5],['chest','갑옷',.4,8],['legs','바지',.3,7],['boots','신발',.1,4]]){
@@ -474,6 +486,7 @@ const gh=(x,z)=>height(x,z)-fl0(x,z); // 구역 바닥 기준 상대 높이
 const xAt=(p,z)=>{for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];if(z>=a[1]&&z<=b[1])return a[0]+(b[0]-a[0])*(z-a[1])/(b[1]-a[1])}return p[p.length-1][0]};
 const regionOf=(x,z)=>z<178*S?(x<xAt(TRUNK,z)?'W':'E'):(x<xAt(LEFT,z)?'W':x<xAt(RIGHT,z)?'M':'E');
 const herds=[],PACKS=[];
+let masterVol=1,stepVol=1,ambVol=1,viewD=1; // 설정 (노트 ⚙): 전체·발소리·환경음 볼륨 / 시야 거리(0 가깝게·1 보통·2 멀리)
 let ACH={},CRASH_POS=null,AXEBOX=null,tutDone=false,tutHintT=0,noteSeen=false,noteOn=false,jumpReq=0,lastGroundT=0,lastHurtT=0;
 const START={x:SPAWN.x,z:SPAWN.z-12}; // 스폰 표시 바로 북쪽 해변
 
@@ -1488,7 +1501,7 @@ function bindEvents(){
   const lock=()=>{try{document.body.requestPointerLock()}catch(e){}};
   $('blocker').addEventListener('click',()=>{
     if(mobile){started=true;$('blocker').style.display='none'}else lock();
-    if(!audio)try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
+    if(!audio)try{audio=new (window.AudioContext||window.webkitAudioContext)();masterInit()}catch(e){}
   });
   document.addEventListener('pointerlockchange',()=>{
     if(mobile)return;
@@ -1612,6 +1625,18 @@ function stCells(q){
   if(WIDE_ST[q.id]){if(rot%2===0){const bx=Math.round(x/GRID);return[[bx-1,cj],[bx,cj]]}const bz=Math.round(z/GRID);return[[ci,bz-1],[ci,bz]]}
   return[[ci,cj]];
 }
+function segRect(ax,az,bx,bz,x0,x1,z0,z1){ // 선분이 사각형과 겹치는지
+  let t0=0,t1=1;const dx=bx-ax,dz=bz-az;
+  for(const [p,q,lo,hi] of [[dx,ax,x0,x1],[dz,az,z0,z1]]){
+    if(Math.abs(p)<1e-9){if(q<lo||q>hi)return false}
+    else{let u=(lo-q)/p,v=(hi-q)/p;if(u>v){const t=u;u=v;v=t}t0=Math.max(t0,u);t1=Math.min(t1,v);if(t0>t1)return false}
+  }
+  return true;
+}
+function wallBetween(x0,z0,x1,z1){ // 두 점 사이에 벽·창문·닫힌 문이 있는지
+  for(const q of placed){if(!EDGE[q.id]||!q.mesh||Math.abs(q.pos.x-x0)>4||Math.abs(q.pos.z-z0)>4)continue;for(const r of edgeRects(q))if(segRect(x0,z0,x1,z1,r[0],r[1],r[2],r[3]))return true}
+  return false;
+}
 function pushCell(o,i,j,r){pushRect(o,i*GRID,i*GRID+GRID,j*GRID,j*GRID+GRID,r)}
 function pushRect(o,x0,x1,z0,z1,r){ // 사각형에서 원형 몸체 밀어내기
   const cx=Math.max(x0,Math.min(x1,o.x)),cz=Math.max(z0,Math.min(z1,o.z)),dx=o.x-cx,dz=o.z-cz,d=Math.hypot(dx,dz);
@@ -1717,12 +1742,12 @@ function updateGhost(){
     ghostPl=new THREE.Mesh(new THREE.BoxGeometry(1,.12,1),new THREE.MeshBasicMaterial({color:0x66ff77,transparent:true,opacity:.45,depthWrite:false}));scene.add(ghostPl);ghostId=id;
   }
   const nt=performance.now(),cp=camera.position,sg=(cp.x*10|0)+','+(cp.y*10|0)+','+(cp.z*10|0)+','+(yaw*60|0)+','+(pitch*60|0)+','+placed.length;
-  if(!_pl||_gId!==id||_gR!==placeRot||(nt-_gT>80&&sg!==_gS)||nt-_gT>600){_gT=nt;_gS=sg;_gId=id;_gR=placeRot;_pl=planPlace(id)} // 시점·위치가 바뀔 때만 0.08초마다 계산 (가만히 있으면 0.6초마다)
+  if(!_pl||_gId!==id||_gR!==placeRot||(nt-_gT>80&&sg!==_gS)||nt-_gT>600){_gT=nt;_gS=sg;_gId=id;_gR=placeRot;_pl=planPlace(ITEMS[id].base||id)} // 시점·위치가 바뀔 때만 0.08초마다 계산 (가만히 있으면 0.6초마다)
   const pl=_pl;
   if(!pl.sp){ghostMesh.visible=ghostPl.visible=false;return}
   ghostMesh.visible=ghostPl.visible=true;const sp=pl.sp;
   ghostMesh.position.set(sp.x,pl.y,sp.z);ghostMesh.rotation.y=pl.rot*Math.PI/2;if(id==='shelf')shelfShape(ghostMesh,pl.lv);
-  const w=WIDE_ST[id]?(pl.rot%2?[GRID,GRID*2]:[GRID*2,GRID]):EDGE[id]?(pl.rot%2?[.3,GRID]:[GRID,.3]):[GRID,GRID];
+  const w=WIDE_ST[id]?(pl.rot%2?[GRID,GRID*2]:[GRID*2,GRID]):EDGE[ITEMS[id].base||id]?(pl.rot%2?[.3,GRID]:[GRID,.3]):[GRID,GRID];
   ghostPl.scale.set(w[0],1,w[1]);ghostPl.position.set(sp.x,pl.y+.06,sp.z);ghostPl.material.color.set(pl.ok?0x66ff77:0xff5555);
 }
 /* 망치 철거 모드: 건물이 있는 칸만 반투명 빨간 블록 */
@@ -1759,7 +1784,7 @@ function loadPlaced(list,fixed){
       if(!free(sp.cells)){let f=null;for(let r=1;r<=15&&!f;r++)for(let dx=-r;dx<=r&&!f;dx++)for(let dz=-r;dz<=r;dz++){if(Math.max(Math.abs(dx),Math.abs(dz))!==r)continue;const c=snapPlace(q.id,sp.x+dx*GRID,sp.z+dz*GRID,rot);if(free(c.cells)){f=c;break}}if(f)sp=f}
       x=sp.x;z=sp.z;lv=0;
     }
-    makeStruct(q.id,x,z,q.age||0,rot,lv);if(q.items)placed[placed.length-1].items=q.items;if(q.oil)placed[placed.length-1].oil=q.oil;if(q.pw)placed[placed.length-1].pw=q.pw;if(q.uid)placed[placed.length-1].uid=q.uid;if(q.tg)placed[placed.length-1].tg=q.tg;
+    makeStruct(q.mat?q.mat+'_'+q.id:q.id,x,z,q.age||0,rot,lv);if(q.items)placed[placed.length-1].items=q.items;if(q.oil)placed[placed.length-1].oil=q.oil;if(q.pw)placed[placed.length-1].pw=q.pw;if(q.uid)placed[placed.length-1].uid=q.uid;if(q.tg)placed[placed.length-1].tg=q.tg;
   }
   const seen=new Set();for(const q of placed)if(stackable(q)){const i=Math.floor(q.pos.x/GRID),j=Math.floor(q.pos.z/GRID),k=i+','+j;if(!seen.has(k)){seen.add(k);layoutCell(i,j)}}
 }
@@ -1787,7 +1812,7 @@ function place(){
   if(a&&(a.id==='bucket'||a.id==='sea_bucket'||a.id==='water_bucket')){bucketUse(a);return}
   if(!a||ITEMS[a.id].type!=='placeable')return;
   if(zone==='cave'&&!CAVE_OK[a.id]){note('동굴에서는 드릴·전력 설비·기름 저장소만 설치할 수 있어요');return}
-  const pl=planPlace(a.id);
+  const pl=planPlace(ITEMS[a.id].base||a.id);
   if(!pl.ok){note(pl.why);return}
   const sp=pl.sp;
   makeStruct(a.id,sp.x,sp.z,0,pl.rot,pl.lv);_gT=0;_dT=0;ACH['p:'+a.id]=1;if(a.id==='collector')placed[placed.length-1].tg=a.tg;
@@ -1854,7 +1879,10 @@ function bucketUse(a){
   }else bkSwap(a,'bucket','물을 버렸습니다');
 }
 const WIDE_ST={table:1.77,util_table:1.77,gun_table:1.62,chem_table:1.77,adv_table:1.77,dis_table:1.77,elec_table:1.77}; // 가로 2칸(4m) 구조물
+const MATCOL={stone:{0x8d6e63:0x9e9e9e,0x6d4c41:0x616161,0xa1887f:0xbdbdbd,0x5d4037:0x424242},brick:{0x8d6e63:0xb5523b,0x6d4c41:0xd8cbbd,0xa1887f:0xc96a50,0x5d4037:0x8a3b28}};
+function recolor(g,mat){const m=MATCOL[mat];if(!m)return;g.traverse(o=>{if(o.isMesh&&o.material&&o.material.isMeshStandardMaterial){const c=m[o.material.color.getHex()];if(c!==undefined)o.material.color.setHex(c)}})} // 나무색 → 돌·벽돌색
 function makeStruct(id,px,pz,age,rot,lv,ghost){
+  let mat=null;{const vi=ITEMS[id];if(vi&&vi.base){mat=vi.mat;id=vi.base}} // 돌·벽돌 변형 → 기본 건물 + 재질
   const a={id};let stick=null,flame=null,furn=null,panel=null;
   const g=new THREE.Group();let light=null;
   const M=(geo,col,basic)=>new THREE.Mesh(geo,basic?new THREE.MeshBasicMaterial({color:col}):new THREE.MeshStandardMaterial({color:col}));
@@ -1997,12 +2025,13 @@ function makeStruct(id,px,pz,age,rot,lv,ghost){
     light=mkSL(0xff7a30,0,10);light.position.set(0,1.2,1.2); // 범위 안에서만 약하게 켜짐
     g.add(b,h,light);furn=h;
   }
+  if(mat)recolor(g,mat);
   if(WIDE_ST[id])g.scale.set(WIDE_ST[id],1,1.3);else if(id==='anvil')g.scale.setScalar(.85); // 작업대: 가로 2칸 / 모루: 1칸 안에
   g.rotation.y=(rot||0)*Math.PI/2;
   if(ghost){if(light)g.remove(light);g.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.5;o.material.depthWrite=false}});return g}
   if(panel&&lv)panel.rotation.y=-Math.PI/2;
   g.position.set(px,EDGE[id]?edgeBase(px,pz,rot||0):id==='floor'&&px<2900?cellPlane(Math.floor(px/GRID),Math.floor(pz/GRID))+4*(lv||0)-FLOOR_H:groundY(px,pz),pz);(ZG[zoneOf(px,pz)]||scene).add(g);
-  placed.push({id,rot:rot||0,lv:lv||0,panel,pos:g.position,light,base:light?light.intensity:0,mesh:g,stick,flame,hole:furn,age,items:id==='chest'?new Array(45).fill(null):DR_IDS[id]?new Array(11).fill(null):id==='dis_table'?new Array(32).fill(null):id==='efurnace'?new Array(6).fill(null):id==='collector'?new Array(10).fill(null):null,oil:0,ob:0,spin:g.userData.spin});
+  placed.push({id,mat,rot:rot||0,lv:lv||0,panel,pos:g.position,light,base:light?light.intensity:0,mesh:g,stick,flame,hole:furn,age,items:id==='chest'?new Array(45).fill(null):DR_IDS[id]?new Array(11).fill(null):id==='dis_table'?new Array(32).fill(null):id==='efurnace'?new Array(6).fill(null):id==='collector'?new Array(10).fill(null):null,oil:0,ob:0,spin:g.userData.spin});
 }
 
 /* ---------- 채굴/공격 ---------- */
@@ -2245,7 +2274,7 @@ function updateChem(){
 const SG_MS=1500;let sgOn=false,sgT0=0,sgC=0;
 const strongOK=()=>{const a=inv[sel];if(!a)return false;const k=ITEMS[a.id].kind;return a.id==='battle_axe'||k==='sword'||k==='spear'};
 function doorAim(){ // 5m 안의 문을 보고 있으면 그 문 (벽·바닥·문을 들고 있을 땐 설치 우선)
-  const a=inv[sel];if(a&&(a.id==='wall'||a.id==='door'||a.id==='floor'||a.id==='window'))return null;
+  const a=inv[sel];if(a&&(a.id==='wall'||a.id==='door'||a.id==='floor'||a.id==='window'||(ITEMS[a.id]&&ITEMS[a.id].base)))return null;
   const ds=placed.filter(s=>s.id==='door'&&s.mesh),dh=ray(ds.map(s=>s.mesh),true)[0];
   if(!dh||dh.distance>5)return null;let o=dh.object;while(o&&!ds.some(s=>s.mesh===o))o=o.parent;return ds.find(s=>s.mesh===o)||null;
 }
@@ -2310,9 +2339,9 @@ function attack(strong,part,mot){ // mot: 덜 차징돼도 강공격 모션(데�
           if(!takeAll(s.items.slice(1).filter(Boolean).concat([{id:'efurnace',count:1}]))){note('인벤토리 공간이 부족해 부술 수 없습니다');return}
           s.items.fill(null);renderInv();s.mesh.parent&&s.mesh.parent.remove(s.mesh);placed.splice(placed.indexOf(s),1);lastAtk=now;swing=1;swingDur=.2;note('전기화로 철거 · 아이템을 챙겼습니다');return}
         if((DR_IDS[s.id]||s.id==='dis_table')&&s.items&&s.items.some(Boolean)){if(!takeAll(s.items.concat([{id:s.id,count:1}]))){note('인벤토리 공간이 부족해 부술 수 없습니다');return}s.items.fill(null);renderInv();s.mesh.parent&&s.mesh.parent.remove(s.mesh);placed.splice(placed.indexOf(s),1);lastAtk=now;swing=1;swingDur=.2;note(ITEMS[s.id].name+' 철거 · 아이템을 챙겼습니다');return}
-        if(!addItem(s.id,1))return;
+        const bi=s.mat?s.mat+'_'+s.id:s.id;if(!addItem(bi,1))return;
         s.mesh.parent&&s.mesh.parent.remove(s.mesh);if(s.light&&s.light.parent)s.light.parent.remove(s.light);
-        placed.splice(placed.indexOf(s),1);relayout(s);lastAtk=now;swing=1;swingDur=.2;note(ITEMS[s.id].name+' 회수');
+        placed.splice(placed.indexOf(s),1);relayout(s);lastAtk=now;swing=1;swingDur=.2;note(ITEMS[bi].name+' 회수');
       }}
     return;
   }
@@ -2453,7 +2482,7 @@ function updatePlayer(dt){
     else if(now-lastStUse>=5000)P.st=Math.min(P.maxSt,P.st+5*1.3*dt);
     if(moving){
       const bY0=bridgeY(camera.position.x,camera.position.z),onBr=bY0!==null&&camera.position.y-eyeH>=bY0-1.5; // 다리 위에서는 물속 감속 없음
-      const sp=(sprint?12:6)*(1+armorSpd())*(gh(camera.position.x,camera.position.z)<-.3&&!onBr?.55:1),dz=keys.f-keys.b,dx=keys.r-keys.l;
+      const sp=(sprint?12:6)*(1+armorSpd())*(gh(camera.position.x,camera.position.z)<-.3&&!onBr&&camera.position.y-eyeH<=.05?.55:1),dz=keys.f-keys.b,dx=keys.r-keys.l;
       const len=Math.hypot(dx,dz)||1;
       const sy=Math.sin(yaw),cy=Math.cos(yaw),ox=camera.position.x,oz=camera.position.z;
       const stp=Math.max(1,Math.ceil(sp*dt/.2)),fx=((-sy)*dz+cy*dx)/len*sp*dt/stp,fz=((-cy)*dz+(-sy)*dx)/len*sp*dt/stp; // 한 번에 0.2m 이하로 나눠 이동 → 얇은 벽을 뚫지 못함
@@ -2532,7 +2561,7 @@ function buildUI(){
 /* ---------- 아이템 모양 (아이콘 / 손에 든 모양) ---------- */
 const MATC={flint:'#8a8f98',wood:'#a1887f',copper:'#c8702a',gold:'#ffd54f',iron:'#cfd8dc',titanium:'#a3a8ad',talloy:'#7986cb',diamond:'#4dd0e1'};
 const ICOL={log:'#6d4c41',branch:'#8d6e63',long_branch:'#8d6e63',vine:'#43a047',stick:'#8d6e63',long_stick:'#8d6e63',stake:'#8d6e63',rope:'#d7c49e',plank:'#c8a165',stone:'#9e9e9e',flint:'#5f6368',clay:'#b5651d',sugarcane:'#43a047',sugar:'#f5f5f5',coal:'#262626',copper:'#d2691e',iron:'#e0c9a6',gold:'#ffd54f',diamond:'#4dd0e1',titanium:'#78909c',hide:'#8d5a2b',wool:'#f5f5f5',cloth:'#eceff1',pork:'#f4a6b0',cooked_pork:'#a0522d',wire:'#d2691e',arrow:'#8d6e63',campfire:'#ff7043',furnace:'#757575',table:'#8d6e63',chest:'#8d5a2b',flag:'#d32f2f',lantern:'#ffd54f',clock:'#ffd54f',compass:'#ef5350',bag:'#8d6e63',big_bag:'#5d4037',torch:'#ff9800',detector:'#78909c',headlamp:'#ffe082',quiver:'#8d5a2b',util_table:'#4dd0e1',big_hide:'#6d4c41',wild_hide:'#9e8c6a',ruby:'#e53935'};
-Object.assign(ICOL,{efurnace:'#1e88e5',collector:'#78909c',coil:'#d2691e',grinder:'#9e9e9e',elec_table:'#fdd835',edrill:'#4fc3f7',generator:'#546e7a',battery:'#76ff03',pylon:'#78909c'});
+Object.assign(ICOL,{brick:'#b5523b',efurnace:'#1e88e5',collector:'#78909c',coil:'#d2691e',grinder:'#9e9e9e',elec_table:'#fdd835',edrill:'#4fc3f7',generator:'#546e7a',battery:'#76ff03',pylon:'#78909c'});
 Object.assign(ICOL,{bread:'#c8903f',bread_dough:'#efe0b8',sand:'#f0e0a0',sulfur:'#ffd54f',coal_powder:'#37474f',gunpowder:'#5a5a5a',glass:'#b3e5fc',magnifier:'#78909c',copper_plate:'#c8702a',titanium_rod:'#78909c',bullet:'#d2691e',musket:'#6d4c41',salt:'#e3f2fd',chemical:'#b2ff59',metal_radar:'#37474f',wheat:'#d9b44a',flour:'#f5efe0',bolt_rifle:'#6d4c41',scope:'#263238',wild_cloak:'#8d6e63',detect_amp:'#ffb300',lucky_charm:'#ffd54f',chem_detector:'#76ff03',sea_bucket:'#0288d1',water_bucket:'#4fc3f7',titanium_alloy:'#7986cb',alloy:'#a9845a',metal_rod:'#90a4ae',metal_plate:'#b0bec5',elastic_rope:'#e0e0e0',tension_string:'#eeeeee',long_arrow:'#8d6e63',anvil:'#546e7a',foundry:'#2b2b2b',gun_table:'#b71c1c',bucket:'#9e9e9e',longbow:'#8d6e63',copper_rod:'#c8702a',gold_plate:'#ffd54f',gold_rod:'#ffd54f',titanium_plate:'#a3a8ad',silencer:'#455a64',power_crystal:'#ff5252',chem_table:'#558b2f',adv_table:'#90a4ae',oil_bucket:'#4a0e0e',hq_gunpowder:'#616161',arrowhead:'#a9845a',rifle_bullet:'#8d6e63',forest_map:'#e8d9a8',lmg:'#455a64',lmg_part:'#78909c',spring:'#b0bec5',ext_mag:'#455a64',bandolier:'#8d6e63',golem_core:'#43a047'});
 const _mat=id=>{const m=/^(copper|gold|iron|titanium|diamond|flint|wood|talloy)_(.+)$/.exec(id);return m?[m[1],m[2]]:[null,id]};
 const hx=c=>parseInt(c.slice(1),16);
@@ -2545,7 +2574,9 @@ function iconSVG(id){
   return _svgC[id]=`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
 }
 const PELT=(f,d)=>`<path d="M7 8 L12 6 L16 8 L20 6 L25 8 L24 13 L28 16 L24 20 L25 26 L20 24 L16 27 L12 24 L7 26 L8 20 L4 16 L8 13Z" fill="${f}" stroke="#000" stroke-width="1" stroke-linejoin="round"/><ellipse cx="13" cy="14" rx="2.6" ry="2" fill="${d}"/><ellipse cx="20" cy="17" rx="3" ry="2.2" fill="${d}"/><ellipse cx="14" cy="21" rx="2" ry="1.6" fill="${d}"/>`;
+const ICMAT={stone:{'#8d6e63':'#9e9e9e','#6d4c41':'#616161','#a1887f':'#bdbdbd','#b08968':'#bdbdbd','#7b5a3c':'#757575','#8d6a48':'#9e9e9e'},brick:{'#8d6e63':'#b5523b','#6d4c41':'#d8cbbd','#a1887f':'#c96a50','#b08968':'#c96a50','#7b5a3c':'#8a3b28','#8d6a48':'#a8472f'}};
 function iconBody(id){
+  {const vi=ITEMS[id];if(vi&&vi.base){let s=iconBody(vi.base);const m=ICMAT[vi.mat];for(const k in m)s=s.split(k).join(m[k]);return s}} // 돌·벽돌 재질: 기본 아이콘 색만 바꿈
   const it=ITEMS[id]||{},[mt,rest]=_mat(id),H='#8d6e63',O='stroke="#0006" stroke-width=".8"';
   const tc=mt?MATC[mt]:MATC.iron,c=mt?MATC[mt]:(ICOL[id]||'#9e9e9e');
   {const pm=/^(copper|gold|titanium)_(plate|rod)$/.exec(id);
@@ -2570,6 +2601,7 @@ function iconBody(id){
   if(id==='elastic_rope')return `<circle cx="16" cy="16" r="10" fill="none" stroke="#e0e0e0" stroke-width="3.6" stroke-dasharray="4 2"/><circle cx="16" cy="16" r="5" fill="none" stroke="#bdbdbd" stroke-width="2.2"/>`;
   if(id==='tension_string')return `<path d="M5 8 Q16 2 27 8 M5 16 Q16 10 27 16 M5 24 Q16 18 27 24" stroke="#eeeeee" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
   if(id==='long_arrow')return `<line x1="3" y1="29" x2="25" y2="7" stroke="#8d6e63" stroke-width="2.4"/><polygon points="30,2 21,5 27,11" fill="#cfd8dc"/><polygon points="3,29 2,22 8,28" fill="#eee"/><polygon points="3,29 10,30 4,24" fill="#ddd"/>`;
+  if(id==='brick')return `<rect x="4" y="12" width="24" height="11" rx="1.5" fill="#b5523b" ${O}/><rect x="4" y="12" width="24" height="3" fill="#fff3"/><line x1="16" y1="15" x2="16" y2="23" stroke="#0004"/>`;
   if(id==='floor')return `<polygon points="3,17 16,10 29,17 16,24" fill="#b08968" ${O}/><polygon points="3,17 16,24 16,29 3,22" fill="#7b5a3c" ${O}/><polygon points="29,17 16,24 16,29 29,22" fill="#8d6a48" ${O}/><line x1="9.5" y1="13.5" x2="22.5" y2="20.5" stroke="#0005"/><line x1="16" y1="10" x2="16" y2="24" stroke="#0005"/><line x1="22.5" y1="13.5" x2="9.5" y2="20.5" stroke="#0005"/>`;
   if(id==='wall')return `<rect x="5" y="4" width="22" height="24" fill="#8d6e63" ${O}/><rect x="4" y="7" width="24" height="3" fill="#6d4c41"/><rect x="4" y="14.5" width="24" height="3" fill="#6d4c41"/><rect x="4" y="22" width="24" height="3" fill="#6d4c41"/>`;
   if(id==='window')return `<rect x="5" y="4" width="22" height="24" fill="#8d6e63" ${O}/><rect x="9" y="8" width="14" height="13" fill="#b3e5fc" stroke="#6d4c41" stroke-width="1.6"/><line x1="16" y1="8" x2="16" y2="21" stroke="#6d4c41" stroke-width="1.4"/><line x1="11" y1="11" x2="11" y2="16" stroke="#fff" stroke-width="1.4"/>`;
@@ -2758,6 +2790,7 @@ function buildHeld(id){
     else{B(.08,.1,.16,a,-.06);B(.08,.1,.16,a,.06)}
   }
   else if(id==='titanium_alloy')B(.2,.07,.1,hx('#7986cb'));
+  else if(id==='brick')B(.2,.08,.1,hx('#b5523b'));
   else if(/_ingot$/.test(id))B(.2,.07,.1,tcol);
   else if(/_mold$/.test(id))B(.2,.06,.14,0xa1887f);
   else if(isHead)B(.26,.06,.08,tcol);
@@ -3032,7 +3065,7 @@ const RK=new Map(['flint_pickaxe','copper_pickaxe','gold_pickaxe','iron_pickaxe'
   'stick','long_stick','rope','flint','stake','plank','cloth','sugar','glass','wire','coil','spring','tension_string','coal_powder','gunpowder','hq_gunpowder','oil_bucket',
   'copper_plate','copper_rod','gold_plate','gold_rod','metal_plate','metal_rod','titanium_plate','titanium_rod','talloy_pickaxe_head','talloy_shovel_head',
   'campfire','table','adv_table','dis_table','furnace','chest','shelf','flag','anvil','foundry','gun_table','chem_table','util_table','drill','oil_tank','grinder','elec_table','edrill','generator','battery','pylon','efurnace','collector',
-  'floor','wall','window','door','filter_coal','filter_copper','filter_iron','filter_gold','filter_sulfur','filter_titanium','filter_diamond','filter_sand','filter_clay',
+  'floor','wall','window','door','stone_floor','stone_wall','stone_window','stone_door','brick_floor','brick_wall','brick_window','brick_door','filter_coal','filter_copper','filter_iron','filter_gold','filter_sulfur','filter_titanium','filter_diamond','filter_clay',
   'cooked_pork','flour','bread_dough','bread','salt','sugar'].map((id,i)=>[id,i]));
 const rk=r=>RK.has(r.id)?RK.get(r.id):9999;
 let craftSub=null,craftRst=false,craftFocus=null;
@@ -3112,7 +3145,7 @@ function saveGame(){
     const nk={};for(const n of nodes)if(!n.active&&!n.night&&!n.slime)nk[n.k]=n.respawn===Infinity?-1:Math.max(1,n.respawn-Date.now());
     const ws0=jget(WK,[]),w0=CUR&&ws0.find(x=>x.id===CUR.id);if(w0){w0.last=Date.now();jset(WK,ws0)}
     localStorage.setItem(SAVE,JSON.stringify({ver:SAVE_VER,seed:worldSeed,zone,pos:[camera.position.x,camera.position.z],yaw,pitch,P,inv,sel,buffT,
-      gv:2,td:tutDone?1:0,ns:noteSeen?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,oil:s.oil||0,pw:s.pw||0,gk:s.gk,rot:s.rot||0,lv:s.lv||0,uid:s.uid,tg:s.tg})),gq:1,ach:ACH,worldT,nk,chR:CH_RESP.map(r=>({gk:r.gk,left:Math.max(1,r.t-Date.now())}))}));
+      gv:2,td:tutDone?1:0,ns:noteSeen?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,oil:s.oil||0,pw:s.pw||0,gk:s.gk,rot:s.rot||0,lv:s.lv||0,uid:s.uid,tg:s.tg,mat:s.mat})),gq:1,ach:ACH,worldT,nk,chR:CH_RESP.map(r=>({gk:r.gk,left:Math.max(1,r.t-Date.now())}))}));
   }catch(e){}
 }
 function loadGame(){
@@ -3193,7 +3226,7 @@ function bindMobile(){
   let m=false;try{m=localStorage.getItem(SAVE+'m')==='1'}catch(e){}
   setMobile(m||matchMedia('(pointer:coarse)').matches);
   try{const q=localStorage.getItem(SAVE+'q');if(q!==null)gfx=Math.min(2,Math.max(0,+q||0))}catch(e){}
-  applyGfx();$('gfxBtn').addEventListener('click',e=>{e.stopPropagation();gfx=(gfx+1)%3;applyGfx()});
+  loadSet();applyGfx();$('gfxBtn').addEventListener('click',e=>{e.stopPropagation();gfx=(gfx+1)%3;applyGfx()});
   addEventListener('pagehide',saveGame);addEventListener('beforeunload',saveGame);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
 }
@@ -3246,7 +3279,7 @@ function moveItem(f,t){
   if(GHOST_SLOT(f)&&!GHOST_SLOT(t)){note('지정 칸의 아이템은 우클릭으로 뺄 수 있어요');return}
   if(GHOST_SLOT(t)){ // 지정(필터) 칸: 아이템은 소모되지 않고 종류만 지정됨
     if(GHOST_SLOT(f))return;
-    if(t===183){if(!/^(copper|gold|iron|titanium)_ingot$/.test(a.id)){note('구리·금·철·티타늄 주괴만 지정할 수 있어요');return}}
+    if(t===183){if(!/^((copper|gold|iron|titanium)_ingot|brick)$/.test(a.id)){note('구리·금·철·티타늄 주괴나 벽돌만 지정할 수 있어요');return}}
     else if(inv.slice(189,199).some(x=>x&&x.id===a.id)){note('이미 지정된 아이템이에요');return}
     inv[t]={id:a.id,count:1};renderInv();return;
   }
@@ -3432,6 +3465,7 @@ function updateSky(){
   scene.fog.density=.015-.01*f;
   if(zone==='cave'){scene.background.setHex(0x030303);scene.fog.color.copy(scene.background);scene.fog.density=.03;ambL.intensity=.28;sunL.intensity=0}
   else{ambL.intensity=.3+.6*f;sunL.intensity=.45+.6*f;if(zone==='forest')scene.fog.density+=.006;if(ghWave.on)scene.fog.density*=2} // 구울 웨이브: 가시거리 절반
+  scene.fog.density*=[1.7,1,.6][viewD]; // 시야 거리 설정
   sunL.color.lerpColors(C_MN,C_SD,f);
   const p=worldT%1200,day=p<600,left=Math.ceil((day?600:1200)-p);
   const ck=$('clock'),has=hasU('clock');
@@ -3570,14 +3604,25 @@ function ambInit(){ // 바람(저음 노이즈) + 물소리(강 가까이) — �
     AMB={buf:b,wind:mk('lowpass',380,.7),water:mk('bandpass',1100,.4),wt:0,wv:.02,rt:0,wl:0};
   }catch(e){AMB=null}
 }
-function stepSnd(){
-  const T=audio.currentTime,cp=camera.position,wet=zone==='main'&&gh(cp.x,cp.z)<-.3,cave=zone!=='main';
-  const s=audio.createBufferSource(),f=audio.createBiquadFilter(),g=audio.createGain();
-  s.buffer=AMB.buf;s.playbackRate.value=.8+Math.random()*.4;
-  f.type=wet?'bandpass':cave?'highpass':'lowpass';f.frequency.value=wet?1600:cave?1800:700+Math.random()*300;
-  const vol=(keys.crouch?.015:wet?.09:.06)*(keys.sprint?1.3:1);
-  g.gain.setValueAtTime(vol,T);g.gain.exponentialRampToValueAtTime(.001,T+(wet?.2:.09));
-  s.connect(f);f.connect(g);g.connect(audio.destination);s.start(T,Math.random()*1.5,.25);
+function stepSnd(){ // 발소리: 잔디(사각사각) · 돌(또각) · 나무 바닥(통) · 물(첨벙)
+  const T=audio.currentTime,cp=camera.position,feet=cp.y-(keys.crouch?1.2:2);
+  const wet=zone==='main'&&gh(cp.x,cp.z)<-.3&&feet<=.05;
+  let surf='grass';
+  if(zone==='cave')surf='stone';
+  else if(zone==='main'&&!wet){const fq=floorAt(cp.x,cp.z);if(fq&&feet>=fq.pos.y-.2)surf=(fq.mat==='stone'||fq.mat==='brick')?'stone':'wood'}
+  if(wet)surf='water';
+  const v=(keys.crouch?.35:1)*(keys.sprint?1.25:1)*stepVol,rn=Math.random();
+  const nb=(type,f,q,g,dur,att,dly,rate)=>{const s=audio.createBufferSource(),fl=audio.createBiquadFilter(),gn=audio.createGain(),t=T+(dly||0);
+    s.buffer=AMB.buf;s.playbackRate.value=rate||1;fl.type=type;fl.frequency.value=f;fl.Q.value=q;
+    gn.gain.setValueAtTime(.0001,t);gn.gain.linearRampToValueAtTime(g*v,t+att);gn.gain.exponentialRampToValueAtTime(.001,t+dur);
+    s.connect(fl);fl.connect(gn);gn.connect(audio.destination);s.start(t,Math.random()*1.5,dur+.05)};
+  const tn=(f0,f1,g,dur,type,dly)=>{const o=audio.createOscillator(),gn=audio.createGain(),t=T+(dly||0);
+    o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+    gn.gain.setValueAtTime(g*v,t);gn.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(gn);gn.connect(audio.destination);o.start(t);o.stop(t+dur+.02)};
+  if(surf==='grass'){nb('lowpass',1500+rn*700,.5,.10,.17,.035,0,.85+rn*.3);nb('bandpass',4200,.8,.035,.12,.03,.01,1);tn(105,55,.05,.09,'sine')}
+  else if(surf==='stone'){nb('bandpass',2600+rn*500,1.1,.11,.06,.004,0,1+rn*.2);nb('bandpass',1100,.9,.06,.1,.004,.014,.9);tn(230+rn*40,110,.07,.08,'triangle')}
+  else if(surf==='wood'){nb('lowpass',900,.7,.08,.09,.006,0,1);tn(170+rn*30,85,.1,.11,'triangle')}
+  else{nb('bandpass',1600,.8,.12,.24,.03,0,.9+rn*.2);nb('bandpass',2600,1,.05,.16,.02,.04,1)}
 }
 function ambTick(dt,on){
   if(!audio)return;
@@ -3588,7 +3633,7 @@ function ambTick(dt,on){
   const main=zone==='main',cp=camera.position;
   AMB.wt-=dt;if(AMB.wt<=0){AMB.wt=3+Math.random()*4;AMB.wv=.012+Math.random()*.03}
   AMB.rt-=dt;if(AMB.rt<=0){AMB.rt=.3;AMB.wl=main?Math.max(0,Math.min(1,1-riverInfo(cp.x,cp.z)/35))*.07:0}
-  AMB.wind.gain.setTargetAtTime(main?AMB.wv:0,T,1.2);AMB.water.gain.setTargetAtTime(AMB.wl,T,.5);
+  AMB.wind.gain.setTargetAtTime(main?AMB.wv*ambVol:0,T,1.2);AMB.water.gain.setTargetAtTime(AMB.wl*ambVol,T,.5);
   const pp=_ambP;_ambP={x:cp.x,z:cp.z};
   if(pp&&grounded){const m=Math.hypot(cp.x-pp.x,cp.z-pp.z);if(m<2){_stepAcc+=m;if(_stepAcc>=(keys.sprint?3.4:2.2)){_stepAcc=0;stepSnd()}}}
 }
@@ -4031,14 +4076,19 @@ function updateMobs(dt,now){
     n.mesh.position.set(n.x+lx,Math.max(height(n.x,n.z),fl0(n.x,n.z)+.2),n.z+lz);
     if(n.wind){ // 곰 전조: 뒷발로 서며 포효 (0.55초) — 그 사이 2.8m 이상 물러나면 피함
       const pr=Math.min(1,1-(n.wind-now)/550);n.mesh.rotation.z=-.55*pr;
-      if(now>=n.wind){n.wind=0;n.mesh.rotation.z=0;mobFlash(n,0);n.hitAt=now+(wv?800:1200);n.atk=.4;if(d<2.8)hurtPlayer(n.dmg*(wv?1.5:1))}
-    }else if(!lost&&d<2.2&&now>(n.hitAt||0)){
+      if(now>=n.wind){n.wind=0;n.mesh.rotation.z=0;mobFlash(n,0);n.hitAt=now+(wv?800:1200);n.atk=.4;if(d<2.8&&!wallBetween(n.x,n.z,cx,cz))hurtPlayer(n.dmg*(wv?1.5:1))}
+    }else if(!lost&&d<2.2&&now>(n.hitAt||0)&&!wallBetween(n.x,n.z,cx,cz)){ // 벽 너머로는 공격 못 함
       if(n.type==='bear'){n.wind=now+550;n.hitAt=now+99999;mobFlash(n,0xaa4400);roarSnd()}
       else{n.hitAt=now+(wv?800:1200);n.atk=.4;hurtPlayer(n.dmg*(wv?1.5:1))}
     }
   }
   if(zone==='main')for(const n of nc().an)if(n.active&&n.mob&&!n.golem)if(Math.abs(n.x-cx)<60&&Math.abs(n.z-cz)<60)for(const q of placed){if(PASS_ST[q.id]||!q.mesh||Math.abs(q.pos.x-n.x)>6||Math.abs(q.pos.z-n.z)>6)continue;for(const [i,j] of stCells(q))pushCell(n,i,j,(n.r||.8)*.6)}
-  if(zone==='main')for(const n of nc().an)if(n.active&&n.mob&&!n.golem&&Math.abs(n.x-cx)<60&&Math.abs(n.z-cz)<60)for(const q of placed){if(!EDGE[q.id]||!q.mesh||!nearXZ(q,n,6))continue;for(const r of edgeRects(q))pushRect(n,r[0],r[1],r[2],r[3],(n.r||.8)*.6)} // 몹도 벽·닫힌 문을 못 지나감
+  if(zone==='main')for(const n of nc().an)if(n.active&&n.mob&&!n.golem&&Math.abs(n.x-cx)<60&&Math.abs(n.z-cz)<60){ // 몹도 벽·닫힌 문을 못 지나감
+    const e=(n.r||.8)*.6,ws=[];for(const q of placed){if(!EDGE[q.id]||!q.mesh||!nearXZ(q,n,6))continue;for(const r of edgeRects(q))ws.push(r)}
+    if(n._wx!==undefined&&Math.hypot(n.x-n._wx,n.z-n._wz)<3)for(const r of ws)if(segRect(n._wx,n._wz,n.x,n.z,r[0]-e*.5,r[1]+e*.5,r[2]-e*.5,r[3]+e*.5)){n.x=n._wx;n.z=n._wz;break} // 한 프레임에 벽을 건너뛰면 되돌림
+    for(const r of ws)pushRect(n,r[0],r[1],r[2],r[3],e);
+    n._wx=n.x;n._wz=n.z;
+  }
   bbApply();
 }
 function updateCompass(){
@@ -4248,14 +4298,15 @@ let curMach=null,_mT=0,_mtShown='';
 const mBase=s=>s.id==='efurnace'?183:189; // 창이 열려 있는 동안 설비 칸은 inv의 이 번호부터 들어옴
 const mGet=(s,i)=>s===curMach?inv[mBase(s)+i]:s.items[i];
 const mSet=(s,i,v)=>{if(s===curMach)inv[mBase(s)+i]=v;else s.items[i]=v};
-const efOK=it=>!!it&&/^(copper|gold|iron|titanium)_ingot$/.test(it.id);
+const efOK=it=>!!it&&/^((copper|gold|iron|titanium)_ingot|brick)$/.test(it.id);
+const EF_RC=id=>id==='brick'?{ore:'clay',out:4,T:1}:{ore:id.replace('_ingot',''),out:1,T:EF_T[id.replace('_ingot','')]}; // 벽돌: 점토 1개 → 벽돌 4개 (시간 1초 — 임시값)
 const EF_MSG={idle:'주괴를 지정하세요',work:'작동 중',noore:'근처 상자·드릴에 광석이 없어요',nopw:'전력망 범위 밖이거나 전기가 없어요',full:'보관칸이 가득 찼어요',notg:'지정한 상자가 없어요 — 부수고 다시 지정하세요',nofil:'필터를 지정하세요',none:'옮길 아이템이 없어요',move:'옮기는 중'};
 function syncMach(){const s=curMach;if(!s)return;if(s.id==='efurnace'){for(let i=0;i<6;i++)s.items[i]=inv[183+i]||null}else{for(let i=0;i<10;i++)s.items[i]=inv[189+i]||null}}
 function openMach(s){
   if(invOpen)return;curMach=s;const ef=s.id==='efurnace';
   $('machWrap').classList.toggle('ef',ef);$('machWrap').classList.toggle('co',!ef);
-  $('machTitle').textContent=ef?'전기화로 — 주괴 하나를 지정하면 근처 상자·드릴의 광석을 석탄 없이 자동으로 구워 보관해요':'자동 수집기 — 필터로 지정한 아이템을 범위 안 설비에서 지정한 상자로 옮겨요';
-  $('machHelp').textContent=ef?`범위 ±${MACH_R}m 안의 상자·드릴에서 광석 1개 → 주괴 1개 · 구리·금 1초 / 철·티타늄 2초 · 같은 주괴를 지정한 전기화로가 근처에 있으면 2배 · 전력 필요 · 보관 5칸 · 지정 칸에는 인벤토리 주괴를 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`:`범위 ±${MACH_R}m 안의 드릴·전기 드릴·전기화로 보관칸에서 아이템 1개를 0.4초마다 상자로 옮김 · 전력 필요 · 필터 칸에는 인벤토리 아이템을 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`;
+  $('machTitle').textContent=ef?'전기화로 — 주괴(또는 벽돌) 하나를 지정하면 근처 상자·드릴의 재료를 석탄 없이 자동으로 구워 보관해요':'자동 수집기 — 필터로 지정한 아이템을 범위 안 설비에서 지정한 상자로 옮겨요';
+  $('machHelp').textContent=ef?`범위 ±${MACH_R}m 안의 상자·드릴에서 광석 1개 → 주괴 1개 · 구리·금 1초 / 철·티타늄 2초 · 벽돌은 점토 1개 → 4개 · 같은 주괴를 지정한 전기화로가 근처에 있으면 2배 · 전력 필요 · 보관 5칸 · 지정 칸에는 인벤토리 주괴를 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`:`범위 ±${MACH_R}m 안의 드릴·전기 드릴·전기화로 보관칸에서 아이템 1개를 0.4초마다 상자로 옮김 · 전력 필요 · 필터 칸에는 인벤토리 아이템을 끌어다 놓기 (소모 안 됨) · 우클릭으로 빼기`;
   const n=ef?6:10,b=ef?183:189;
   for(let i=0;i<n;i++){const it=s.items[i];inv[b+i]=(it&&ITEMS[it.id])?it:null}
   toggleInv();$('machWrap').style.display='block';renderInv();updMach(true);
@@ -4291,14 +4342,14 @@ function machTick(dt){
     if(s.id==='efurnace'){
       const sel=mGet(s,0);st='idle';
       if(efOK(sel)){
-        const ore=sel.id.replace('_ingot',''),T=EF_T[ore],srcs=[]; // 재료원: 근처 상자(구조물 상자 제외) · 드릴 보관칸
+        const rc=EF_RC(sel.id),ore=rc.ore,T=rc.T,srcs=[]; // 재료원: 근처 상자(구조물 상자 제외) · 드릴 보관칸
         for(const q of placed){if(q===s||!q.items||!near(s,q))continue;
           if(q.id==='chest'&&!q.sg&&!q.gk)srcs.push({n:45,g:i=>cGet(q,i),st:(i,v)=>cSet(q,i,v)});
           else if(q.id==='drill'||q.id==='edrill')srcs.push({n:5,g:i=>dGet(q,i),st:(i,v)=>dSet(q,i,v)})}
         const have=()=>{let n=0;for(const r of srcs)for(let i=0;i<r.n;i++){const c=r.g(i);if(c&&c.id===ore)n+=c.count}return n};
         const take=n=>{for(const r of srcs)for(let i=0;i<r.n&&n>0;i++){const c=r.g(i);if(c&&c.id===ore){const t=Math.min(c.count,n);c.count-=t;n-=t;if(c.count<=0)r.st(i,null)}}};
-        const room=()=>{for(let i=1;i<=5;i++){const c=mGet(s,i);if(!c||(c.id===sel.id&&c.count<99))return true}return false};
-        const put=()=>{for(let i=1;i<=5;i++){const c=mGet(s,i);if(c&&c.id===sel.id&&c.count<99){c.count++;return}}for(let i=1;i<=5;i++)if(!mGet(s,i)){mSet(s,i,{id:sel.id,count:1});return}};
+        const room=()=>{let f=0;for(let i=1;i<=5;i++){const c=mGet(s,i);f+=!c?99:c.id===sel.id?99-c.count:0}return f>=rc.out};
+        const put1=()=>{for(let i=1;i<=5;i++){const c=mGet(s,i);if(c&&c.id===sel.id&&c.count<99){c.count++;return}}for(let i=1;i<=5;i++)if(!mGet(s,i)){mSet(s,i,{id:sel.id,count:1});return}},put=()=>{for(let k=0;k<rc.out;k++)put1()};
         s.want=false;
         if(!room()){st='full';s.t=0}
         else if(have()<EF_ORE){st='noore';s.t=0}
@@ -4468,12 +4519,27 @@ function achToggle(el){const d=el.nextElementSibling,open=d.style.display==='blo
 const NOTE_PAGES=[
 {t:'📖 시작 · 조작',h:()=>`<p><b class="h">조작</b><br>이동 WASD · 달리기 Shift · 앉기 C · 점프 Space · 가방 Tab · 마우스 해제 E · 격자 G · 설치 회전 R · 노트 T · 슬롯 1~9</p><p><b class="h">시작</b><br>해변의 비행기에서 비상용 도끼를 챙기세요. 나무를 베어 막대·밧줄을 만들고, 땅의 돌을 도끼로 부싯돌로 가공해 부싯돌 곡괭이를 만드세요.</p><p><b class="h">저장</b><br>자동 저장돼요. 모바일은 인벤토리의 💾 저장 · ⏏ 종료 버튼을 쓰세요.</p>`},
 {t:'🔨 제작',h:()=>`<p><b class="h">제작창</b><br>화면 왼쪽 제작창에서 탭을 고르세요. 재료가 부족하면 주황색 재료 이름을 눌러 부족한 만큼만 바로 만들 수 있어요.</p><p><b class="h">한꺼번에</b><br>Ctrl+클릭은 5개, Shift+클릭은 가능한 만큼 제작합니다. 근처 창고(50m)의 재료도 자동으로 쓰입니다.</p><p><b class="h">작업대</b><br>제작대 · 화로 · 모루 · 주조소 · 유틸리티 · 총 · 화학 작업대 근처에서만 만들 수 있는 것들이 있어요.</p>`},
-{t:'⛏ 파밍',h:()=>`<p><b class="h">자원 위치</b><br>점토·사탕수수는 강가, 모래는 해변·강가(삽), 금·다이아·유황은 동굴에 있어요. 티타늄은 금속탐지기로 찾아 삽으로 발굴한 뒤 곡괭이로 캡니다.</p><p><b class="h">리젠</b><br>광물은 5분 뒤 다시 생겨요. 멀리(320m 밖) 있는 자원은 숨겨졌다가 가까이 가면 다시 보여요.</p><p><b class="h">구조물 상자</b><br>신전·전초기지·야영지의 상자에 좋은 보상이 있어요. 부수면 5분 뒤 새로 생깁니다.</p><p><b class="h">사냥</b><br>숲 동물에게서 가죽·고기를 얻어요. 늑대·곰은 조심하세요.</p>`},
+{t:'⛏ 파밍',h:()=>`<p><b class="h">자원 위치</b><br>점토·사탕수수는 강가, 모래는 해변·강가(삽)나 맷돌(돌 2 → 모래 1), 금·다이아·유황은 동굴에 있어요. 티타늄은 금속탐지기로 찾아 삽으로 발굴한 뒤 곡괭이로 캡니다.</p><p><b class="h">리젠</b><br>광물은 5분 뒤 다시 생겨요. 멀리(320m 밖) 있는 자원은 숨겨졌다가 가까이 가면 다시 보여요.</p><p><b class="h">구조물 상자</b><br>신전·전초기지·야영지의 상자에 좋은 보상이 있어요. 부수면 5분 뒤 새로 생깁니다.</p><p><b class="h">사냥</b><br>숲 동물에게서 가죽·고기를 얻어요. 늑대·곰은 조심하세요.</p>`},
 {t:'🏠 건축',h:()=>`<p><b class="h">조각</b><br>제작창 건물 → 건축 탭: 바닥 x2 · 벽 x2 · 문 · 창문 x2. 기능 탭의 상자 선반도 건축용이에요.</p><p><b class="h">설치</b><br>바닥은 2m 칸 위에 놓이고 걸어 다닐 수 있어요. 벽·문·창문은 바라보는 칸의 가까운 경계에 붙어요. 문은 우클릭으로 열고 닫아요(조각을 들고 있으면 설치가 우선).</p><p><b class="h">상자 선반</b><br>작업대처럼 다리 4개 + 판이에요. 맨땅에 놓고, 다리 사이(1층)와 판 위(2층)에 상자를 하나씩 놓아요. 상자만 있는 칸에 선반을 덧씌우면 그 상자는 1층이 돼요. 아래 선반에 상자 2개가 차면 그 바로 위에 선반을 한 번 더 깔 수 있고, 위 선반엔 상자를 1개만 놓을 수 있어요 (한 칸 최대 상자 3개). 선반이 없으면 칸당 상자는 1개예요.</p><p><b class="h">철거</b><br>망치로 부수면 아이템이 돌아와요. 격자 G · 회전 R.</p><p><b class="h">전기화로·자동 수집기</b><br>전기화로는 우클릭해서 구울 주괴를 지정하면 근처 상자·드릴의 광석을 알아서 구워 줘요. 자동 수집기는 들고 상자를 우클릭해 지정한 뒤 설치하고, 우클릭으로 필터를 정하면 근처 드릴·전기화로의 아이템을 그 상자로 옮겨 줘요.</p>`},
 {t:'🔥 생존',h:()=>`<p><b class="h">회복</b><br>모닥불 근처에서 체력이 회복돼요(피격 5초 뒤부터).</p><p><b class="h">밤</b><br>밤에는 몬스터가 나오니 불과 무기를 준비하세요.</p><p><b class="h">위험 지역</b><br>숲에는 늑대·곰이 있고, 동굴 깊은 곳에는 보스가 있습니다.</p>`},
 {t:'🎒 인벤토리',h:()=>`<p><b class="h">옮기기</b><br>Shift+클릭: 인벤토리·창고 아이템을 핫바 빈칸으로, 창고가 열려 있으면 인벤토리↔창고로 옮겨요.</p><p><b class="h">나누기</b><br>도구가 아닌 아이템을 우클릭하면 절반이 나뉘어 들립니다.</p><p><b class="h">부착물</b><br>도구·총을 우클릭(모바일은 꾹 누르기)하면 부착물창이 열립니다.</p><p><b class="h">정렬</b><br>인벤 정렬 · 창고 정렬 버튼으로 정리할 수 있어요.</p>`},
 {t:'🏆 도전과제',h:()=>{achSync();const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p style="margin:0 0 28px"><b class="h">달성 ${n} / ${ACH_LIST.length}</b> <span class="nk" style="font-size:12px">이름을 누르면 달성 방법이 보여요</span></p>`+ACH_LIST.map(a=>`<div class="${ACH[a[0]]?'ck':'nk'}" style="cursor:pointer;margin:0" onclick="achToggle(this)">${ACH[a[0]]?'✔':'☐'} ${a[1]}</div><div class="nk achd" style="display:none;font-size:12px;padding-left:22px;line-height:20px;margin-bottom:8px">${a[2]}</div>`).join('')}},
+{t:'⚙ 설정',h:()=>setHTML()},
 ];
+const NOTE_CATS=[['📖','생존 팁'],['🏆','도전과제'],['⚙','설정']]; // 노트 책갈피
+NOTE_PAGES.forEach(p=>{p.c=/도전과제/.test(p.t)?1:/설정/.test(p.t)?2:0});
+function masterInit(){const dest=audio.destination,mg=audio.createGain();mg.gain.value=masterVol;mg.connect(dest);window._mg=mg;Object.defineProperty(audio,'destination',{get:()=>mg,configurable:true})} // 모든 소리가 전체 볼륨을 거치게 함
+function saveSet(){try{localStorage.setItem(SAVE+'s',JSON.stringify({m:masterVol,s:stepVol,a:ambVol,v:viewD}))}catch(e){}}
+function loadSet(){try{const o=JSON.parse(localStorage.getItem(SAVE+'s')||'null');if(o){masterVol=+o.m;stepVol=+o.s;ambVol=+o.a;viewD=o.v|0}}catch(e){}
+  if(!(masterVol>=0&&masterVol<=1))masterVol=1;if(!(stepVol>=0&&stepVol<=1))stepVol=1;if(!(ambVol>=0&&ambVol<=1))ambVol=1;if(!(viewD>=0&&viewD<=2))viewD=1}
+function setVol(k,v){v=Math.max(0,Math.min(1,v/100));if(k==='m'){masterVol=v;if(window._mg)window._mg.gain.value=v}else if(k==='s')stepVol=v;else ambVol=v;saveSet()}
+function setView(i){viewD=i;saveSet();renderNote()}
+function setGfx(i){gfx=i;applyGfx();renderNote()}
+function setHTML(){
+  const sl=(k,v,n)=>`<div class="nSet"><span style="width:80px">${n}</span><input type="range" min="0" max="100" value="${Math.round(v*100)}" oninput="setVol('${k}',this.value);this.nextElementSibling.textContent=this.value+'%'"><span style="width:44px;text-align:right">${Math.round(v*100)}%</span></div>`;
+  const op=(arr,cur,fn)=>arr.map((t,i)=>`<button class="nOpt${i===cur?' on':''}" onclick="${fn}(${i})">${t}</button>`).join('');
+  return `<div class="nSet"><b class="h">🔊 소리</b></div>`+sl('m',masterVol,'전체')+sl('s',stepVol,'발소리')+sl('a',ambVol,'환경음 (바람·물)')+`<div class="nSet"></div><div class="nSet"><b class="h">🖥 그래픽</b></div><div class="nSet"><span style="width:80px">화질</span>${op(['낮음','보통','높음'],gfx,'setGfx')}</div><div class="nSet"><span style="width:80px">시야 거리</span>${op(['가깝게','보통','멀리'],viewD,'setView')}</div><div class="nSet"></div><div class="nSet nk" style="font-size:12px">설정은 이 기기에 저장돼요. 화질 · 시야 거리를 낮추면 더 부드러워져요.</div>`;
+}
 let notePg=0,_noteMM=false;
 function fitNote(){ // 모든 장의 높이를 가장 큰 장에 맞춤 (내용이 적으면 빈 줄 노트)
   const b=$('noteBody');b.style.height='auto';let mx=260;
@@ -4485,8 +4551,10 @@ function renderNote(){
   $('noteTitle').textContent=`${p.t} (${notePg+1}/${NOTE_PAGES.length})`;
   $('noteBody').innerHTML=p.h();$('noteBody').scrollTop=0;
   $('noteL').disabled=notePg===0;$('noteR').disabled=notePg===NOTE_PAGES.length-1;
+  $('noteTabs').innerHTML=NOTE_CATS.map((c,i)=>`<button class="nTab${i===p.c?' on':''}" onclick="noteCat(${i})"><span>${c[0]}</span>${c[1]}</button>`).join('');
   $('noteDots').innerHTML=NOTE_PAGES.map((_,i)=>`<i class="${i===notePg?'on':''}"></i>`).join('');
 }
+function noteCat(c){if(NOTE_PAGES[notePg].c===c)return;const i=NOTE_PAGES.findIndex(p=>p.c===c);if(i>=0){notePg=i;renderNote()}} // 책갈피: 그 분류의 첫 장으로
 function notePage(d){const n=Math.max(0,Math.min(NOTE_PAGES.length-1,notePg+d));if(n!==notePg){notePg=n;renderNote()}}
 function toggleNote(){
   noteOn=!noteOn;
@@ -4671,10 +4739,21 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v14.4.5';
+const SAVE_VER=7,GAME_VERSION='v14.6.6';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
   {v:"v14",t:"대규모 · 월드 파일 · 전기",subs:[
+    {v:"14.6.6",d:'모래·물·벽·발소리·노트 책갈피',items:[
+      "추가: 맷돌에서 모래 (돌 2 → 모래 1) · 드릴 모래 필터 제거",
+      "변경: 물에서의 감속은 발이 물에 닿아 있을 때만 (물 위로 점프해 뛰면 감속 없음)",
+      "수정: 몹이 벽·창문·닫힌 문을 통과하거나, 벽 너머로 공격하던 문제",
+      "변경: 발소리를 잔디(사각사각) · 돌(또각) · 나무 바닥 · 물에 맞게 새로 만듦 (동굴과 돌·벽돌 바닥은 돌 소리)",
+      "추가: 노트 오른쪽 책갈피 (생존 팁 · 도전과제 · 설정) — 화살표로도 계속 넘길 수 있음",
+      "추가: 노트 ⚙ 설정 — 전체·발소리·환경음 볼륨, 화질, 시야 거리"]},
+    {v:"14.5.5",d:'벽돌·돌/벽돌 건축',items:[
+      "추가: 벽돌 x4 (점토 2 + 석탄 1, 화로 근처) — 전기화로에서는 점토 1개로 벽돌 4개 (1초)",
+      "추가: 돌·벽돌 재질의 바닥·벽·창문·문 (돌 바닥 x2: 돌 8 / 돌 벽 x2: 돌 12 / 돌 창문 x2: 돌 8+유리 1 / 돌 문: 돌 12 · 벽돌은 같은 수량의 벽돌)",
+      "변경: 전기화로 지정 칸에 벽돌도 지정 가능"]},
     {v:"14.4.5",d:'전기화로·수집기 전력·효율',items:[
       "변경: 전기화로 광석 1개 → 주괴 1개 (구리·금 1초 / 철·티타늄 2초)",
       "변경: 전기화로·자동 수집기가 전력망 범위 안에서 전기를 써서 작동 (일할 때만 소비 · 전기가 부족하면 느려짐)",
