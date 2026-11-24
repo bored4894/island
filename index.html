@@ -498,6 +498,27 @@ let zone='main',tpCool=0,TGT=null,RESEED=null;const RS=k=>{if(RESEED)RESEED(k)};
 const keys={f:0,b:0,l:0,r:0,sprint:0,crouch:0};
 let velY=0,grounded=true,yaw=0,pitch=0;
 const P={hp:100,maxHp:100,st:100,maxSt:100};
+/* ---------- v15.0.0 스킬 시스템 ---------- */
+const SKD={
+  mine:{i:'⛏',n:'채굴',max:10,f:l=>`채굴 속도 +${5*l}%`+(l>=5?' · 저티어 광물 ×1.2':'')+(l>=10?' · 고티어 광물 ×1.2':'')},
+  combat:{i:'⚔',n:'전투',max:10,f:l=>`데미지 +${l}% · 강공격 차징 +${1.5*l}%`},
+  move:{i:'👟',n:'이동',max:10,f:l=>`이동 속도 +${2*l}% · 회피 ${.5*l}%`},
+  craft:{i:'🔨',n:'제작',max:10,f:l=>`재료 ${5*l}% 절약`},
+  energy:{i:'⚡',n:'기력',max:10,f:l=>`기력 소모 −${3*l}% · 최대 기력 +${5*l}`},
+  health:{i:'❤',n:'체력',max:10,f:l=>`받는 피해 −${.5*l}% · 최대 체력 +${5*l}`},
+  reload:{i:'🔄',n:'재장전',max:5,f:l=>`장전 시간 −${5*l}%`},
+  shoot:{i:'🏹',n:'사격',max:10,f:l=>`원거리 데미지 +${2*l}%`+(l>=6?` · 그림자탄 ${2*(l-5)}%`:'')},
+  luck:{i:'🍀',n:'행운',max:5,f:l=>`드랍 개수 +${5*l}% · 귀중품 확률 +${5*l}%`}
+};
+const SK={};for(const k in SKD)SK[k]={lv:0,xp:0};
+const skNeed=l=>Math.round(20*Math.pow(1.5,l)); // 레벨마다 필요 경험치 ×1.5
+const LKV=()=>1+.05*SK.luck.lv; // 귀중품 확률 배율
+const shadowP=()=>SK.shoot.lv>=6?.02*(SK.shoot.lv-5):0; // 그림자탄: 6Lv부터 2%씩, 탄·화살 소모 없음
+function skApply(){P.maxHp=100+5*SK.health.lv;P.maxSt=100+5*SK.energy.lv;P.hp=Math.min(P.hp,P.maxHp);P.st=Math.min(P.st,P.maxSt)}
+function skXP(k,x){const d=SKD[k],s=SK[k];if(!d||s.lv>=d.max)return;s.xp+=x;let up=0;while(s.lv<d.max&&s.xp>=skNeed(s.lv)){s.xp-=skNeed(s.lv);s.lv++;up++}if(s.lv>=d.max)s.xp=0;if(up){skApply();note(`🌟 ${d.n} Lv ${s.lv}`)}}
+let _mvD=0,_enD=0;
+function skMove(dd,sprint){if(!(dd>0)||dd>5)return;_mvD+=dd;while(_mvD>=10){_mvD-=10;skXP('move',1)}if(sprint){_enD+=dd;while(_enD>=5){_enD-=5;skXP('energy',1)}}}
+function skHTML(){return '<div style="font-size:12px;opacity:.7;margin-bottom:6px">활동하면 경험치를 얻어요.</div>'+Object.keys(SKD).map(k=>{const d=SKD[k],s=SK[k],mx=s.lv>=d.max,nd=skNeed(s.lv),pc=mx?100:Math.min(100,s.xp/nd*100);return `<div style="margin:8px 0;padding:8px;background:rgba(255,255,255,.06);border-radius:8px"><div style="display:flex;justify-content:space-between"><b>${d.i} ${d.n}</b><span>Lv ${s.lv}/${d.max}</span></div><div style="height:6px;background:rgba(255,255,255,.12);border-radius:3px;margin:4px 0"><div style="height:100%;width:${pc}%;background:#4CAF50;border-radius:3px"></div></div><div style="font-size:12px;opacity:.8">${mx?'만렙':Math.floor(s.xp)+' / '+nd+' XP'} · ${d.f(s.lv)}</div></div>`}).join('')}
 let lastStUse=0,buffT=0,nearCamp=false,nearFurn=false;
 const inv=new Array(199).fill(null); // 183 전기화로 지정칸 · 184~188 전기화로 보관칸 · 189~198 수집기 필터칸 (v14.3.4)
 const GHOST_SLOT=i=>i===183||(i>=189&&i<199); // 지정(필터) 칸: 아이템은 소모되지 않고 종류만 지정됨
@@ -1034,8 +1055,8 @@ const LOOT_RAIDER=[...LOOT_OUTPOST,...LOOT_CAMP.filter(e=>!LOOT_OUTPOST.some(o=>
 const LOOT_TREASURE=[['diamond',1,3],['titanium_alloy',1,3],['alloy',2,4],['gold_plate',2,3],['titanium_plate',1,2],['titanium_rod',1,3],['compass',1,1,.6],['lantern',1,1,.6],['bullet',6,10],['wire',2,4]];
 function lootDrops(k,R){
   if(k==='raider')return lootLive(LOOT_RAIDER,LQ(4,6));
-  if(k==='treasure')return [['gold_ingot',LQ(4,8)],['titanium_ingot',LQ(2,4)],['ruby',1],...lootLive(LOOT_TREASURE,LQ(3,4)),...(LR()<.1?[['power_crystal',1]]:[]),...(LR()<.25?[['forest_map',1]]:[])]; // 루비 1개 · 힘의 결정 10% · 숲 지도 25% // 구조물 창고 보상: 고정 몇 가지 + 풀에서 무작위 (R 인자는 호환용, 안 씀)
-  if(k==='temple')return [['gold_ingot',LQ(2,4)],['titanium_ingot',LQ(1,2)],...lootLive(LOOT_TEMPLE,LQ(3,4)),...(LR()<.1?[['ruby',1]]:[])]; // 루비 10% (상자가 새로 채워질 때마다)
+  if(k==='treasure')return [['gold_ingot',LQ(4,8)],['titanium_ingot',LQ(2,4)],['ruby',1],...lootLive(LOOT_TREASURE,LQ(3,4)),...(LR()<.1*LKV()?[['power_crystal',1]]:[]),...(LR()<.25?[['forest_map',1]]:[])]; // 루비 1개 · 힘의 결정 10% · 숲 지도 25% // 구조물 창고 보상: 고정 몇 가지 + 풀에서 무작위 (R 인자는 호환용, 안 씀)
+  if(k==='temple')return [['gold_ingot',LQ(2,4)],['titanium_ingot',LQ(1,2)],...lootLive(LOOT_TEMPLE,LQ(3,4)),...(LR()<.1*LKV()?[['ruby',1]]:[])]; // 루비 10% (상자가 새로 채워질 때마다)
   if(k==='outpost')return [['iron_ingot',LQ(2,4)],['long_arrow',LQ(6,12)],...lootLive(LOOT_OUTPOST,LQ(2,3))];
   return lootLive(LOOT_CAMP,LQ(3,4));
 }
@@ -2049,7 +2070,7 @@ function digGround(it){
 const BOW_MS=1500;let bowOn=false,bowT0=0,bowC=0;
 const isLong=()=>{const a=inv[sel];return !!a&&!!ITEMS[a.id].long};
 const bowMs=()=>isLong()?2000:BOW_MS;
-const bowStats=c=>{const m=pwr(inv[sel]);return isLong()?({rng:30*(1+1.5*c),dmg:6*(1+1.5*c)*m}):({rng:20*(1+1.5*c),dmg:4*(1+1.5*c)*m})}; // 장궁: 사거리 30→75m·데미지 6→15·차징 2초
+const bowStats=c=>{const m=pwr(inv[sel])*(1+.02*SK.shoot.lv);return isLong()?({rng:30*(1+1.5*c),dmg:6*(1+1.5*c)*m}):({rng:20*(1+1.5*c),dmg:4*(1+1.5*c)*m})}; // 장궁: 사거리 30→75m·데미지 6→15·차징 2초
 const arrowId=()=>isLong()?'long_arrow':'arrow';
 const isBow=()=>{const a=inv[sel];return !!a&&ITEMS[a.id].kind==='bow'};
 const hasArrow=()=>{ // 화살통 화살 우선, 없으면 인벤토리/가방
@@ -2069,7 +2090,7 @@ function bowRelease(){
   const now=Date.now();
   const ai=hasArrow();if(ai<0){note(isLong()?'긴 화살이 없습니다':'화살이 없습니다');return}
   if(now-lastAtk<(ai>=QV0?400:700))return; // 화살통 화살: 쿨타임 0.7초 → 0.4초
-  lastAtk=now;swing=1;swingDur=.2;inv[ai].count--;if(inv[ai].count<=0)inv[ai]=null;renderInv();
+  lastAtk=now;swing=1;swingDur=.2;if(!(Math.random()<shadowP()))inv[ai].count--;if(inv[ai].count<=0)inv[ai]=null;skXP('shoot',2);renderInv();
   const st=bowStats(c);
   shootArrow(st.rng,st.dmg); // 헤드샷(x1.5)은 화살이 맞는 순간 판정
 }
@@ -2102,9 +2123,9 @@ function reloadStart(){
   if(need<=0){note((ammoName()+'이 없습니다'));return}
   reloadClip=!!df.clipAll; // 클립장전은 경기관총만 (볼트액션은 항상 한 발씩)
   RGL=df.bolt?.5:.3;RPER=df.bolt?.95:.34; // 볼트액션: 탄당 장전시간 증가
-  const bf=hasAtt(a,'bandolier')?.8:1; // 탄띠: 장전 20% 빠름
+  const bf=(hasAtt(a,'bandolier')?.8:1)*(1-.05*SK.reload.lv); // 탄띠: 장전 20% 빠름
   RGL*=bf;RPER*=bf;
-  reloadSel=sel;reloadId=a.id;reloadNeed=need;reloadDone=0;reloadTotal=reloadClip?(df.clipT||1.6)*bf:RGL+need*RPER;reloadT0=Date.now();gunAim=false;$('bowg').style.display='block';
+  reloadSel=sel;reloadId=a.id;reloadNeed=need;reloadDone=0;reloadTotal=reloadClip?(df.clipT||1.6)*bf:RGL+need*RPER;reloadT0=Date.now();gunAim=false;$('bowg').style.display='block';skXP('reload',1);
 }
 function reloadCancel(){reloadT0=0;if(!bowOn&&!sgOn)$('bowg').style.display='none'}
 function reloadTick(){
@@ -2170,7 +2191,7 @@ function fireGun(now){
   const a=inv[sel];
   if(reloadT0)return;
   if(!a.mag){note(bulletCount()>0?'R키로 장전하세요':(ammoName()+'이 없습니다'));return}
-  const df=gd(),sil=hasAtt(a,'silencer');lastAtk=now;a.mag--;swing=1;swingDur=.2;gunFire=df.fire;gunNoise(sil);
+  const df=gd(),sil=hasAtt(a,'silencer');lastAtk=now;if(!(Math.random()<shadowP()))a.mag--;skXP('shoot',1);swing=1;swingDur=.2;gunFire=df.fire;gunNoise(sil);
   const cp=camera.getWorldPosition(new THREE.Vector3()),dir=new THREE.Vector3();camera.getWorldDirection(dir);
   const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
   {const sp=gunAim?(df.spA||0):(df.spH===undefined?.01:df.spH);if(sp>0){const r=sp*Math.sqrt(Math.random()),ph=Math.random()*6.283;dir.addScaledVector(right,r*Math.cos(ph)).addScaledVector(up,r*Math.sin(ph)).normalize()}} // 탄퍼짐: 기본 10m당 반지름 0.1m / 경기관총은 지향 사격 시 크게 퍼지고 정조준하면 모임
@@ -2183,7 +2204,7 @@ function fireGun(now){
     let o=h.object;while(o&&!live.some(n=>n.mesh===o))o=o.parent;const n=live.find(x=>x.mesh===o);
     if(!n||seen.has(n))continue;seen.add(n);D=h.distance;
     if(!n.animal)break;
-    const po=hitPart(h,hits,n.mesh),wk=!!po.userData.weak&&n.phase===2,hs=!!po.userData.head||wk,bh=n.type==='bear'?BEAR_HITS[a.id]:null;n.hp-=bh?n.maxHp/bh[hs?1:0]*1.001*pwr(a):df.dmg*pwr(a)*(wk?3:hs?1.5:1);if(hs)ding();if(n.golem&&n.phase===2&&po.userData.gem){golemGemFx(po);n._gem=true}hitFx(n);if(n.hp<=0)harvest(n,Date.now());
+    const po=hitPart(h,hits,n.mesh),wk=!!po.userData.weak&&n.phase===2,hs=!!po.userData.head||wk,bh=n.type==='bear'?BEAR_HITS[a.id]:null;n.hp-=bh?n.maxHp/bh[hs?1:0]*1.001*pwr(a):df.dmg*pwr(a)*(1+.02*SK.shoot.lv)*(wk?3:hs?1.5:1);if(hs)ding();if(n.golem&&n.phase===2&&po.userData.gem){golemGemFx(po);n._gem=true}hitFx(n);if(n.hp<=0)harvest(n,Date.now());
     if(++pc>=maxP)break;
   }
   const A=(curGun&&curGun.muz&&toolMesh.visible)?curGun.muz.getWorldPosition(new THREE.Vector3()):cp.clone().addScaledVector(dir,.8).addScaledVector(right,.12).addScaledVector(up,-.12),E=cp.clone().addScaledVector(dir,D);
@@ -2295,7 +2316,7 @@ function sgRelease(){if(!sgOn)return;const c=sgC;sgCancel();if(c>=1)attack(true)
 function sgTick(){
   if(!sgOn)return;
   if(!strongOK()||!active()){sgCancel();return}
-  sgC=Math.min(1,(Date.now()-sgT0)/SG_MS);
+  sgC=Math.min(1,(Date.now()-sgT0)/(SG_MS/(1+.015*SK.combat.lv)));
   $('bowf').style.width=(sgC*100)+'%';
   $('bowt').textContent=sgC>=1?'강공격 준비 완료! 놓으면 발동':`강공격 차징 ${Math.round(sgC*100)}%`;
 }
@@ -2307,7 +2328,7 @@ function aoeHit(a,it,now,mult=2){ // 강공격 범위 피해 (몹·동물·슬�
     const dx=n.x-cp.x,dz=n.z-cp.z,u=dx*fx+dz*fz,w=dx*rx+dz*rz,r=n.r||.8;
     const inside=spear?(u>0&&u<reach+r&&Math.abs(w)<1+r*.5):(u>0&&Math.hypot(u,w)<reach+r&&Math.atan2(Math.abs(w),u)<1.22);
     if(!inside)continue;
-    n.hp-=wdmg(it.kind,tier,a)*mult;hitFx(n,2);hit++;if(n.hp<=0)harvest(n,now);
+    n.hp-=wdmg(it.kind,tier,a)*mult;hitFx(n,2);hit++;skXP('combat',1);if(n.hp<=0)harvest(n,now);
   }
   return hit>0;
 }
@@ -2377,9 +2398,10 @@ function attack(strong,part,mot){ // mot: 덜 차징돼도 강공격 모션(데�
   if(good&&kind==='pickaxe'&&rk!==undefined&&tier-rk>=2)dm=99;
   if(good&&kind==='pickaxe'&&tier>=5&&hasAtt(a,'power_crystal')&&(n.type==='titanium'||n.type==='diamond'))dm=99; // 티타늄 합금 곡괭이 + 힘의 결정: 티타늄·다이아 1방
   if(good&&kind==='shovel'&&(n.type==='clay'||n.type==='sand')){const hs=(n.type==='clay'?[4,4,3,2,1,1]:[5,5,4,3,2,1])[tier]||3;dm=n.maxHp/hs+1e-6} // 삽 단계가 높을수록 적은 타수 (점토 구리3·철2·티타늄1 / 모래 구리4·철3·티타늄2)
+  if(good&&dm<99)dm*=1+.05*SK.mine.lv; // 채굴 스킬: 속도 +5%/Lv
   let gm=1;
   if(n.golem&&n.phase===2){const po=hitPart(hit,hits,n.mesh),wk=!!po.userData.weak,hs=!!po.userData.head||wk;gm=wk?3:hs?1.5:1;if(hs)ding();if(po.userData.gem){golemGemFx(po);n._gem=true}} // 골렘 2페이즈: 보석 근접 타격도 치명타
-  n.hp-=(((n.type==='cane'||n.type==='wheat')&&a&&a.id==='battle_axe')?999:good?dm*pwr(a):(n.animal?wdmg(kind,tier,a):1))*(strong?2:(part?1+part:1))*gm;hitFx(n,strong?2:1);
+  n.hp-=(((n.type==='cane'||n.type==='wheat')&&a&&a.id==='battle_axe')?999:good?dm*pwr(a):(n.animal?wdmg(kind,tier,a):1))*(strong?2:(part?1+part:1))*gm;hitFx(n,strong?2:1);if(n.animal)skXP('combat',1);
   if(n.hp>0)return;
   harvest(n,now);
 }
@@ -2398,13 +2420,16 @@ function harvest(n,now){
   if(n.weapon==='boss'&&n.sentries)for(const m of n.sentries)if(!m.active)m.respawn=n.respawn; // 두목을 잡으면 죽어 있던 보초도 두목과 함께 부활
   const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
   const drops=({
-    golem:[['diamond',R(4,6)],['gold',R(8,12)],['titanium',R(4,6)],['stone',R(20,30)],['golem_core',1],...(Math.random()<.25?[['power_crystal',1]]:[]),...(Math.random()<.2?[['speed_crystal',1]]:[]),...(Math.random()<.2?[['energy_crystal',1]]:[])], // 바위 골렘 (속도·기력의 결정 각 20%)
+    golem:[['diamond',R(4,6)],['gold',R(8,12)],['titanium',R(4,6)],['stone',R(20,30)],['golem_core',1],...(Math.random()<.25*LKV()?[['power_crystal',1]]:[]),...(Math.random()<.2*LKV()?[['speed_crystal',1]]:[]),...(Math.random()<.2*LKV()?[['energy_crystal',1]]:[])], // 바위 골렘 (속도·기력의 결정 각 20%)
     wood:[['log',4],['long_branch',R(2,3)],['branch',R(6,8)],['vine',R(8,10)]],
-    ghoul:[['cloth',R(1,2)]],wheat:[['wheat',R(1,2)]],bandit:[['cloth',R(1,2)],...(Math.random()<.3?[['rope',R(1,2)]]:[]),...(BDROP[n.weapon]?[[BDROP[n.weapon],(n.minion&&n.weapon==='musket')?R(3,10):R(2,4)]]:[]),...(n.weapon==='boss'?[['lmg_part',R(3,5)],...(Math.random()<.1?[['power_crystal',1]]:[]),...(Math.random()<.05?[['speed_crystal',1]]:[]),...(Math.random()<.05?[['energy_crystal',1]]:[])]:[])], // 약탈자: 기본템 + 든 무기의 탄약 조금 (도끼는 기본템만)
+    ghoul:[['cloth',R(1,2)]],wheat:[['wheat',R(1,2)]],bandit:[['cloth',R(1,2)],...(Math.random()<.3?[['rope',R(1,2)]]:[]),...(BDROP[n.weapon]?[[BDROP[n.weapon],(n.minion&&n.weapon==='musket')?R(3,10):R(2,4)]]:[]),...(n.weapon==='boss'?[['lmg_part',R(3,5)],...(Math.random()<.1*LKV()?[['power_crystal',1]]:[]),...(Math.random()<.05*LKV()?[['speed_crystal',1]]:[]),...(Math.random()<.05*LKV()?[['energy_crystal',1]]:[])]:[])], // 약탈자: 기본템 + 든 무기의 탄약 조금 (도끼는 기본템만)
     wolf:[['pork',R(1,2)],['wild_hide',R(1,2)]],bear:[['big_hide',R(2,3)],['pork',R(2,3)]],spider:[['rope',R(1,2)],['elastic_rope',R(1,2)]],cow:[['hide',R(1,2)],['pork',1]],sheep:[['wool',R(1,2)],['pork',1]],pig:[['pork',R(1,2)]],coal:[['coal',R(4,8)]],stone:[['stone',1]],rock:[['stone',R(4,6)]],clay:[['clay',R(2,4)]],sand:[['sand',1]],cane:[['sugarcane',R(1,2)]],slime:[['chemical',R(2,4)]]
   })[n.type]||[[n.type,R(2,4)]];
   if((ORE.includes(n.type)&&n.type!=='rock')||n.type==='titanium')drops.push(['stone',R(1,2)]);
   {let lc=0;for(let i=37;i<45;i++)if(inv[i]&&inv[i].id==='lucky_charm')lc++;if(lc)for(const d of drops){const m=d[1]*(2-Math.pow(.5,lc)),f=Math.floor(m);d[1]=f+(Math.random()<m-f?1:0)}} // 행운의 부적: 1개 +50% · 중첩할수록 절반씩 (2개 +75% · 3개 +87.5%)
+  {const T1=['rock','stone','coal','copper','sulfur','clay','sand'],T2=['iron','gold','titanium','diamond'];if(!n.animal&&((SK.mine.lv>=5&&T1.includes(n.type))||(SK.mine.lv>=10&&T2.includes(n.type))))for(const d of drops){const m=d[1]*1.2,f=Math.floor(m);d[1]=f+(Math.random()<m-f?1:0)}} // 채굴 스킬: 5Lv 저티어·10Lv 고티어 광물 ×1.2
+  {const lm=1+.05*SK.luck.lv;if(lm>1)for(const d of drops){const m=d[1]*lm,f=Math.floor(m);d[1]=f+(Math.random()<m-f?1:0)}} // 행운 스킬: 드랍 개수 +5%/Lv
+  {const r0={rock:0,stone:0,coal:1,copper:2,sulfur:2,gold:2,iron:3,titanium:4,diamond:5}[n.type];if(r0!==undefined)skXP('mine',1+r0);else if(n.type==='wood')skXP('mine',1);if(n.animal||n.weapon)skXP('combat',5);skXP('luck',1)}
   drops.forEach(([id,c])=>addItem(id,c));
   try{dropFx(n,drops)}catch(e){}
   note((n.golem?'🏆 바위 골렘 처치! ':'')+drops.map(([id,c])=>`${ITEMS[id].name} ${c}`).join(', ')+' 획득!');
@@ -2482,11 +2507,12 @@ function updatePlayer(dt){
     else if(now-lastStUse>=5000)P.st=Math.min(P.maxSt,P.st+5*1.3*dt);
     if(moving){
       const bY0=bridgeY(camera.position.x,camera.position.z),onBr=bY0!==null&&camera.position.y-eyeH>=bY0-1.5; // 다리 위에서는 물속 감속 없음
-      const sp=(sprint?12:6)*(1+armorSpd())*(gh(camera.position.x,camera.position.z)<-.3&&!onBr&&camera.position.y-eyeH<=.05?.55:1),dz=keys.f-keys.b,dx=keys.r-keys.l;
+      const sp=(sprint?12:6)*(1+armorSpd())*(1+.02*SK.move.lv)*(gh(camera.position.x,camera.position.z)<-.3&&!onBr&&camera.position.y-eyeH<=.05?.55:1),dz=keys.f-keys.b,dx=keys.r-keys.l;
       const len=Math.hypot(dx,dz)||1;
       const sy=Math.sin(yaw),cy=Math.cos(yaw),ox=camera.position.x,oz=camera.position.z;
       const stp=Math.max(1,Math.ceil(sp*dt/.2)),fx=((-sy)*dz+cy*dx)/len*sp*dt/stp,fz=((-cy)*dz+(-sy)*dx)/len*sp*dt/stp; // 한 번에 0.2m 이하로 나눠 이동 → 얇은 벽을 뚫지 못함
       for(let k=0;k<stp;k++){camera.position.x+=fx;camera.position.z+=fz;playerCollide(eyeH)}
+      skMove(Math.hypot(camera.position.x-ox,camera.position.z-oz),sprint);
       if(gh(camera.position.x,camera.position.z)<-2.2){const b2=bridgeY(camera.position.x,camera.position.z);if(!(b2!==null&&camera.position.y-eyeH>=b2-1.5)){camera.position.x=ox;camera.position.z=oz}}
     }
   }
@@ -2504,7 +2530,7 @@ function updatePlayer(dt){
 }
 
 /* ---------- 탐지기 ---------- */
-function ecF(){let n=0;for(let i=37;i<45;i++)if(inv[i]&&inv[i].id==='energy_charm')n++;return Math.pow(.5,n)} // 기력의 부적: 1개 기력 소모 50% 감소 · 중첩할수록 절반씩 (2개 75% · 3개 87.5%)
+function ecF(){let n=0;for(let i=37;i<45;i++)if(inv[i]&&inv[i].id==='energy_charm')n++;return Math.pow(.5,n)*(1-.03*SK.energy.lv)} // 기력의 부적: 1개 기력 소모 50% 감소 · 중첩할수록 절반씩 (2개 75% · 3개 87.5%)
 const hasAtt=(a,id)=>!!(a&&a.att&&a.att.some(x=>x&&x.id===id));
 const pwr=a=>hasAtt(a,'power_crystal')?1.5:1; // 힘의 결정 장착: 모든 데미지 1.5배
 function updateDetector(){
@@ -2963,6 +2989,7 @@ function findAxe(){
   const ok=s=>s&&ITEMS[s.id].kind==='axe'&&ITEMS[s.id].tier>=3&&s.id!=='battle_axe'; // 전투도끼는 제작 불가
   return ok(inv[sel])?inv[sel]:(SL().map(i=>inv[i]).find(ok)||null);
 }
+const cx=c=>c<=1?c:Math.max(1,Math.round(c*(1-.05*SK.craft.lv))); // 제작 스킬: 재료 5% 절약/Lv
 function craft(r){
   if(ctrlHeld&&!craftLoop){craftLoop=true;let c=0;try{for(let i=0;i<5;i++){craftOK=false;craft(r);if(!craftOK)break;c++}}finally{craftLoop=false}if(c>1)note(`${r.name} ${c}개 제작`);return} // Ctrl+제작: 5번
   if(shiftDown&&!craftLoop){craftLoop=true;let c=0;try{do{craftOK=false;craft(r)}while(craftOK&&++c<500)}finally{craftLoop=false}if(c>1)note(`${r.name} ${c}번 제작`);return}
@@ -2971,11 +2998,11 @@ function craft(r){
   const mg=r.up?inv.find(x=>x&&x.id===r.up&&(x.lv||0)<3):null;
   if(r.up&&!mg){note('강화할 돋보기가 없거나 이미 최대예요');return}
   if(r.tool&&!hold){note('철 이상 도끼가 필요합니다');return}
-  for(const [m,c] of Object.entries(r.cost))if(count(m)<c){note(`재료 부족! (${ITEMS[m].name})`);return}
+  for(const [m,c] of Object.entries(r.cost).map(([k,v])=>[k,cx(v)]))if(count(m)<c){note(`재료 부족! (${ITEMS[m].name})`);return}
   for(const [m,c] of Object.entries(r.need||{}))if(count(m)<c){note(`${ITEMS[m].name} 필요`);return}
   const snap=inv.map(s=>s&&{...s});
   const chs=nearChests(),csnap=chs.map(s=>({s,a:Array.from({length:45},(_,i)=>{const c=cGet(s,i);return c&&{...c}})}));
-  for(const [m,c] of Object.entries(r.cost)){
+  for(const [m,c] of Object.entries(r.cost).map(([k,v])=>[k,cx(v)])){
     let need=c;
     for(const i of SL()){
       if(need<=0)break;
@@ -2996,7 +3023,7 @@ function craft(r){
   if(r.up){mg.lv=(mg.lv||0)+1;renderInv();note(`돋보기 강화 +${mg.lv} (배율 x${magZ(mg.lv)})`);craftOK=true;renderRec();return}
   if(!addItem(r.id,r.yield||1)){snap.forEach((s,i)=>inv[i]=s);csnap.forEach(({s,a})=>a.forEach((c,i)=>cSet(s,i,c)));renderInv();note('인벤토리가 가득 찬 상태라 제작할 수 없습니다');return}
   if(r.ret)for(const [k,v] of Object.entries(r.ret))addItem(k,v);
-  note(`${r.name} 제작 완료!`);ACH['c:'+r.id]=1;craftOK=true;renderRec();
+  note(`${r.name} 제작 완료!`);ACH['c:'+r.id]=1;craftOK=true;skXP('craft',Math.max(1,Math.round(Object.values(r.cost).reduce((a,b)=>a+b,0)/4)));renderRec();
 }
 function takeAll(items){ // 상자 내용물을 인벤토리로 (공간이 모자라면 아무것도 옮기지 않고 false)
   const snap=inv.map(x=>x&&{...x});
@@ -3098,8 +3125,8 @@ function renderCraft(){
   rs.sort((a,b)=>rk(a)-rk(b));
   if(!rs.length){const d0=document.createElement('div');d0.className='rc';d0.textContent=craftSub==='유틸리티'&&!nearUtil?'고급 유틸리티 작업대 근처(10m)에서 제작할 수 있어요':craftCat==='weapons'&&craftSub==='도끼'?'모루 근처에서 전투도끼를 제작할 수 있어요':'제작법 없음';list.appendChild(d0)};
   rs.forEach(r=>{
-    const ok=!(r.up&&!inv.some(x=>x&&x.id===r.up&&(x.lv||0)<3))&&Object.entries(r.cost).every(([k,v])=>count(k)>=v)&&Object.entries(r.need||{}).every(([k,v])=>count(k)>=v)&&!(r.tool&&!findAxe());
-    let txt=Object.entries(r.cost).map(([k,v])=>{const h=count(k);return (h>=v||!RECIPES.some(x=>x.id===k))?`${ITEMS[k].name} ${h}/${v}`:`<span class="miss" data-m="${k}" data-n="${v}" title="눌러서 부족한 재료 바로 제작">${ITEMS[k].name} ${h}/${v}</span>`}).join(', ');
+    const ok=!(r.up&&!inv.some(x=>x&&x.id===r.up&&(x.lv||0)<3))&&Object.entries(r.cost).every(([k,v])=>count(k)>=cx(v))&&Object.entries(r.need||{}).every(([k,v])=>count(k)>=v)&&!(r.tool&&!findAxe());
+    let txt=Object.entries(r.cost).map(([k,v0])=>{const v=cx(v0),h=count(k);return (h>=v||!RECIPES.some(x=>x.id===k))?`${ITEMS[k].name} ${h}/${v}`:`<span class="miss" data-m="${k}" data-n="${v}" title="눌러서 부족한 재료 바로 제작">${ITEMS[k].name} ${h}/${v}</span>`}).join(', ');
     if(r.need)txt+=' · '+Object.keys(r.need).map(k=>ITEMS[k].name).join(',')+' 필요';
     if(r.tool)txt+=' · 철 이상 도끼';
     const d=document.createElement('div');d.className='rc';d.dataset.id=r.id;
@@ -3128,7 +3155,7 @@ function makeMissing(k,need){ // 부족한 재료를 바로 제작
   try{for(let i=0;i<times&&i<200;i++){if(count(k)>=need)break;craftOK=false;craft(r);if(!craftOK)break;c++}}finally{craftLoop=false}
   if(c>0)note(`${r.name} ${c}번 제작`);
   if(count(k)<need){ // 재료 부족: 해당 레시피 탭으로 이동해 무엇이 부족한지 표시
-    const lack=Object.entries(r.cost).filter(([m,v])=>count(m)<v).map(([m,v])=>`${ITEMS[m].name} ${count(m)}/${v}`);
+    const lack=Object.entries(r.cost).map(([k,v])=>[k,cx(v)]).filter(([m,v])=>count(m)<v).map(([m,v])=>`${ITEMS[m].name} ${count(m)}/${v}`);
     for(const [m,v] of Object.entries(r.need||{}))if(count(m)<v)lack.push(`${ITEMS[m].name} ${count(m)}/${v}`);
     if(r.tool&&!findAxe())lack.push('철 이상 도끼');
     craftCat=rcat(r);craftSub=rsub(r)||null;craftFocus=r.id;craftRst=true;renderCraft();
@@ -3144,7 +3171,7 @@ function saveGame(){
     if(curMach)syncMach();
     const nk={};for(const n of nodes)if(!n.active&&!n.night&&!n.slime)nk[n.k]=n.respawn===Infinity?-1:Math.max(1,n.respawn-Date.now());
     const ws0=jget(WK,[]),w0=CUR&&ws0.find(x=>x.id===CUR.id);if(w0){w0.last=Date.now();jset(WK,ws0)}
-    localStorage.setItem(SAVE,JSON.stringify({ver:SAVE_VER,seed:worldSeed,zone,pos:[camera.position.x,camera.position.z],yaw,pitch,P,inv,sel,buffT,
+    localStorage.setItem(SAVE,JSON.stringify({ver:SAVE_VER,seed:worldSeed,zone,pos:[camera.position.x,camera.position.z],yaw,pitch,P,sk:SK,inv,sel,buffT,
       gv:2,td:tutDone?1:0,ns:noteSeen?1:0,placed:placed.map(s=>({id:s.id,x:s.pos.x,z:s.pos.z,age:s.age,items:s.items,oil:s.oil||0,pw:s.pw||0,gk:s.gk,rot:s.rot||0,lv:s.lv||0,uid:s.uid,tg:s.tg,mat:s.mat})),gq:1,ach:ACH,worldT,nk,chR:CH_RESP.map(r=>({gk:r.gk,left:Math.max(1,r.t-Date.now())}))}));
   }catch(e){}
 }
@@ -3154,7 +3181,7 @@ function loadGame(){
     {const cv=a=>{if(Array.isArray(a))a.forEach(q=>{if(!q)return;if(q.id==='smg_bullet')q.id='bullet';else if(q.id==='bow')q.id='longbow';else if(q.id==='arrow')q.id='long_arrow'})};cv(saved.inv);(saved.placed||[]).forEach(p=>cv(p.items))} // 기관단총 탄약 → 탄약 변환
     setZone(saved.zone||'main',saved.pos[0],saved.pos[1],null);
     yaw=saved.yaw;pitch=saved.pitch;camera.rotation.set(pitch,yaw,0);
-    Object.assign(P,saved.P);worldT=saved.worldT||0;buffT=saved.buffT||0;
+    Object.assign(P,saved.P);for(const k in SK){const q=(saved.sk||{})[k]||{};SK[k].lv=Math.min(SKD[k].max,Math.max(0,q.lv|0));SK[k].xp=+q.xp||0}skApply();worldT=saved.worldT||0;buffT=saved.buffT||0;
     saved.inv.forEach((v,i)=>inv[i]=v);
     for(let i=0;i<inv.length;i++)if(inv[i]&&!ITEMS[inv[i].id])inv[i]=null; // 삭제된 아이템 정리
     for(let i=140;i<199;i++)inv[i]=null;
@@ -3474,7 +3501,7 @@ function updateSky(){
 }
 
 let nightT=0;
-function wdmg(k,t,a){return _wdmg(k,t,a)*pwr(a)}
+function wdmg(k,t,a){return _wdmg(k,t,a)*pwr(a)*(1+.01*SK.combat.lv)}
 function _wdmg(k,t,a){if(a&&a.id==='battle_axe')return 8;return k==='spear'?[1,1.5,2,2.5,3,3.5][t]||1.5:k==='sword'?[2,2.5,3.5,4,5,9][t]||2:(k==='axe'||k==='pickaxe')?2:1}
 function armorSpd(){let b=0;for(const s of inv.slice(ARM0,ARM0+4)){const d=s&&ITEMS[s.id].spd;if(d>b)b=d}return b}
 function addCrack(n){
@@ -3647,11 +3674,12 @@ function hitFx(n,melee){
   }
   n.mesh.rotation.z=.08;setTimeout(()=>{n.mesh.rotation.z=0},80); // 나무 등은 흔들림
 }
-function armorDef(){const b={};for(const s of inv.slice(ARM0,ARM0+4).concat(inv.slice(37,45),[inv[ACC_S],inv[CAPE_S]])){const it=s&&ITEMS[s.id];if(it&&it.def){const k=it.part||s.id;b[k]=Math.max(b[k]||0,it.def)}}return Math.min(.8,Object.values(b).reduce((a,c)=>a+c,0))}
+function armorDef(){const b={};for(const s of inv.slice(ARM0,ARM0+4).concat(inv.slice(37,45),[inv[ACC_S],inv[CAPE_S]])){const it=s&&ITEMS[s.id];if(it&&it.def){const k=it.part||s.id;b[k]=Math.max(b[k]||0,it.def)}}return Math.min(.8,Object.values(b).reduce((a,c)=>a+c,0)+.005*SK.health.lv)}
 let invT=0; // 피격 후 무적 종료 시각 (0.3초)
 function hurtPlayer(d){
-  const tn=Date.now();if(tn<invT)return;invT=tn+300;lastHurtT=tn; // 피격 후 0.3초 무적
-  P.hp-=d*(1-armorDef());
+  const tn=Date.now();if(tn<invT)return;if(Math.random()<.005*SK.move.lv){invT=tn+300;return} // 이동 스킬: 회피 0.5%/Lv
+  invT=tn+300;lastHurtT=tn; // 피격 후 0.3초 무적
+  P.hp-=d*(1-armorDef());skXP('health',Math.max(.5,d*(1-armorDef())/4));
   {const h=$('hurt');h.style.transition='none';h.style.opacity='1';void h.offsetWidth;h.style.transition='opacity .45s';h.style.opacity='0'} // 피격 시 화면이 붉어졌다 사라짐
   if(P.hp<=0){P.hp=P.maxHp;P.st=P.maxSt;invT=Date.now()+2000;setZone('main',START.x,START.z,null);note('쓰러졌습니다. 스폰 지점에서 부활')}
 }
@@ -4523,11 +4551,12 @@ const NOTE_PAGES=[
 {t:'🏠 건축',h:()=>`<p><b class="h">조각</b><br>제작창 건물 → 건축 탭: 바닥 x2 · 벽 x2 · 문 · 창문 x2. 기능 탭의 상자 선반도 건축용이에요.</p><p><b class="h">설치</b><br>바닥은 2m 칸 위에 놓이고 걸어 다닐 수 있어요. 벽·문·창문은 바라보는 칸의 가까운 경계에 붙어요. 문은 우클릭으로 열고 닫아요(조각을 들고 있으면 설치가 우선).</p><p><b class="h">상자 선반</b><br>작업대처럼 다리 4개 + 판이에요. 맨땅에 놓고, 다리 사이(1층)와 판 위(2층)에 상자를 하나씩 놓아요. 상자만 있는 칸에 선반을 덧씌우면 그 상자는 1층이 돼요. 아래 선반에 상자 2개가 차면 그 바로 위에 선반을 한 번 더 깔 수 있고, 위 선반엔 상자를 1개만 놓을 수 있어요 (한 칸 최대 상자 3개). 선반이 없으면 칸당 상자는 1개예요.</p><p><b class="h">철거</b><br>망치로 부수면 아이템이 돌아와요. 격자 G · 회전 R.</p><p><b class="h">전기화로·자동 수집기</b><br>전기화로는 우클릭해서 구울 주괴를 지정하면 근처 상자·드릴의 광석을 알아서 구워 줘요. 자동 수집기는 들고 상자를 우클릭해 지정한 뒤 설치하고, 우클릭으로 필터를 정하면 근처 드릴·전기화로의 아이템을 그 상자로 옮겨 줘요.</p>`},
 {t:'🔥 생존',h:()=>`<p><b class="h">회복</b><br>모닥불 근처에서 체력이 회복돼요(피격 5초 뒤부터).</p><p><b class="h">밤</b><br>밤에는 몬스터가 나오니 불과 무기를 준비하세요.</p><p><b class="h">위험 지역</b><br>숲에는 늑대·곰이 있고, 동굴 깊은 곳에는 보스가 있습니다.</p>`},
 {t:'🎒 인벤토리',h:()=>`<p><b class="h">옮기기</b><br>Shift+클릭: 인벤토리·창고 아이템을 핫바 빈칸으로, 창고가 열려 있으면 인벤토리↔창고로 옮겨요.</p><p><b class="h">나누기</b><br>도구가 아닌 아이템을 우클릭하면 절반이 나뉘어 들립니다.</p><p><b class="h">부착물</b><br>도구·총을 우클릭(모바일은 꾹 누르기)하면 부착물창이 열립니다.</p><p><b class="h">정렬</b><br>인벤 정렬 · 창고 정렬 버튼으로 정리할 수 있어요.</p>`},
-{t:'🏆 도전과제',h:()=>{achSync();const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p style="margin:0 0 28px"><b class="h">달성 ${n} / ${ACH_LIST.length}</b> <span class="nk" style="font-size:12px">이름을 누르면 달성 방법이 보여요</span></p>`+ACH_LIST.map(a=>`<div class="${ACH[a[0]]?'ck':'nk'}" style="cursor:pointer;margin:0" onclick="achToggle(this)">${ACH[a[0]]?'✔':'☐'} ${a[1]}</div><div class="nk achd" style="display:none;font-size:12px;padding-left:22px;line-height:20px;margin-bottom:8px">${a[2]}</div>`).join('')}},
+{t:'🌟 스킬',h:()=>skHTML()},
+  {t:'🏆 도전과제',h:()=>{achSync();const n=ACH_LIST.filter(a=>ACH[a[0]]).length;return `<p style="margin:0 0 28px"><b class="h">달성 ${n} / ${ACH_LIST.length}</b> <span class="nk" style="font-size:12px">이름을 누르면 달성 방법이 보여요</span></p>`+ACH_LIST.map(a=>`<div class="${ACH[a[0]]?'ck':'nk'}" style="cursor:pointer;margin:0" onclick="achToggle(this)">${ACH[a[0]]?'✔':'☐'} ${a[1]}</div><div class="nk achd" style="display:none;font-size:12px;padding-left:22px;line-height:20px;margin-bottom:8px">${a[2]}</div>`).join('')}},
 {t:'⚙ 설정',h:()=>setHTML()},
 ];
-const NOTE_CATS=[['📖','생존 팁'],['🏆','도전과제'],['⚙','설정']]; // 노트 책갈피
-NOTE_PAGES.forEach(p=>{p.c=/도전과제/.test(p.t)?1:/설정/.test(p.t)?2:0});
+const NOTE_CATS=[['📖','생존 팁'],['🌟','스킬'],['🏆','도전과제'],['⚙','설정']]; // 노트 책갈피
+NOTE_PAGES.forEach(p=>{p.c=/스킬/.test(p.t)?1:/도전과제/.test(p.t)?2:/설정/.test(p.t)?3:0});
 function masterInit(){const dest=audio.destination,mg=audio.createGain();mg.gain.value=masterVol;mg.connect(dest);window._mg=mg;Object.defineProperty(audio,'destination',{get:()=>mg,configurable:true})} // 모든 소리가 전체 볼륨을 거치게 함
 function saveSet(){try{localStorage.setItem(SAVE+'s',JSON.stringify({m:masterVol,s:stepVol,a:ambVol,v:viewD}))}catch(e){}}
 function loadSet(){try{const o=JSON.parse(localStorage.getItem(SAVE+'s')||'null');if(o){masterVol=+o.m;stepVol=+o.s;ambVol=+o.a;viewD=o.v|0}}catch(e){}
@@ -4739,9 +4768,11 @@ function updateGrid(){
 
 /* ---------- 메인 메뉴 / 월드 관리 ---------- */
 let CUR=null;
-const SAVE_VER=7,GAME_VERSION='v14.6.6';
+const SAVE_VER=7,GAME_VERSION='v15.0.0';
 /* 로드맵: 새 업데이트는 맨 위에 추가 (major=대규모, subs=소규모) */
 const ROADMAP=[
+  {v:"v15",t:"대규모 · 스킬",subs:[
+    {v:"15.0.0",d:'스킬 시스템',items:['스킬 9종: 채굴·전투·이동·제작·기력·체력·재장전·사격·행운','활동하면 경험치 획득 · 레벨마다 필요 경험치 ×1.5','채굴: 속도 +5%/Lv · 5Lv 저티어 / 10Lv 고티어 광물 ×1.2','전투: 데미지 +1%/Lv · 강공격 차징 +1.5%/Lv','이동: 속도 +2%/Lv · 회피 0.5%/Lv','제작: 재료 5% 절약/Lv · 기력: 소모 −3%/Lv, 최대 +5/Lv','체력: 방어력 +0.5%/Lv, 최대 +5/Lv · 재장전: 시간 −5%/Lv (5Lv)','사격: 데미지 +2%/Lv · 6Lv부터 그림자탄 · 행운: 드랍·귀중품 +5%/Lv (5Lv)','노트에 스킬 책갈피 추가']}]},
   {v:"v14",t:"대규모 · 월드 파일 · 전기",subs:[
     {v:"14.6.6",d:'모래·물·벽·발소리·노트 책갈피',items:[
       "추가: 맷돌에서 모래 (돌 2 → 모래 1) · 드릴 모래 필터 제거",
